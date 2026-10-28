@@ -1541,8 +1541,8 @@ def watch():
 
 
 PIA_SETTINGS = r'C:\Program Files\Private Internet Access\data\settings.json'
-PIA_HOW = ('PIA > Settings > Protocols: OpenVPN. Then Settings > Multi-Hop: tick "Multi-hop and Obfuscation", '
-           'choose SOCKS5 Proxy, EDIT: host 127.0.0.1, port 2080, no username or password')
+PIA_HOW = ('PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Then Settings > Multi-Hop: tick '
+           '"Multi-hop and Obfuscation", choose SOCKS5 Proxy, EDIT: host 127.0.0.1, port 2080, no username or password')
 
 
 def is_setup():
@@ -1594,15 +1594,25 @@ and the router's local API secret.
 
 
 def vpn_check():
-    """One line about the VPN app: PIA is read from its own settings file; other apps cannot be checked."""
+    """One line about the VPN app: PIA is read from its own settings file (OpenVPN over TCP 443 through SOCKS5
+    127.0.0.1:2080); other apps cannot be checked."""
     try:
         st = json.load(open(PIA_SETTINGS))
     except (OSError, ValueError):
-        return 'VPN app: PIA not found. Point your VPN app at SOCKS5 127.0.0.1:2080 (see the VPN step in the setup)'
-    pc = st.get('proxyCustom') or {}
-    if st.get('proxyType') == 'custom' and pc.get('host') == '127.0.0.1' and pc.get('port') == 2080:
-        return 'VPN app: PIA uses SOCKS5 127.0.0.1:2080, correct'
-    return 'VPN app: SET THIS IN PIA BY HAND: ' + PIA_HOW
+        return ('VPN app: PIA not found. Point your VPN app at SOCKS5 127.0.0.1:2080 and use OpenVPN over TCP port 443 '
+                '(see the VPN step in the setup)')
+    pc, wrong = st.get('proxyCustom') or {}, []
+    if st.get('method') != 'openvpn':
+        wrong.append('protocol is not OpenVPN')
+    if st.get('protocol') != 'tcp':
+        wrong.append('transport is not TCP')
+    if st.get('remotePortTCP') != 443:
+        wrong.append('remote port is not 443')
+    if not (st.get('proxyType') == 'custom' and st.get('proxyEnabled', True) and pc.get('host') == '127.0.0.1' and pc.get('port') == 2080):
+        wrong.append('the SOCKS5 proxy is not 127.0.0.1:2080')
+    if not wrong:
+        return 'VPN app: PIA uses OpenVPN over TCP 443 through SOCKS5 127.0.0.1:2080, correct'
+    return f"VPN app: SET THIS IN PIA BY HAND ({', '.join(wrong)}): " + PIA_HOW
 
 
 def setup_pc():

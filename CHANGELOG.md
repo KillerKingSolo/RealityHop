@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- VPN instructions: OpenVPN over **TCP port 443** (setup wizard, README, docs).
+- Check PIA also checks the protocol (OpenVPN), the transport (TCP) and the remote port (443).
+
 ## 1.0.0
 
 First public release.

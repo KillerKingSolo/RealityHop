@@ -12,7 +12,8 @@ it to you, and opens a GitHub issue to attach it to. **Do not paste `pc-config.j
 - Is the tunnel running? The window's PC TUNNEL tile should say Running. If not, press **Restart tunnel**.
 - Is the VPN app pointed at SOCKS5 `127.0.0.1:2080`? For PIA, see [vpn-setup.md](vpn-setup.md), or use the setup
   wizard's **Check PIA** button.
-- PIA: use the **OpenVPN** protocol.
+- Use **OpenVPN over TCP, port 443**. In PIA: Settings > Protocols, Protocol OpenVPN, Transport TCP, Remote Port 443.
+  UDP and WireGuard cannot go through the SOCKS5 proxy.
 - Press **Check now**. If every node is red, press **Rescue**.
 
 ## SmartScreen or antivirus blocks RealityHop.exe

@@ -1506,19 +1506,21 @@ class Wizard(tk.Tk):
 
     def page_vpn(self):
         self.h('Point your VPN app at the tunnel')
-        self.p('Your VPN app connects through RealityHop\'s SOCKS5 proxy: address 127.0.0.1, port 2080, no username or password.')
+        self.p('Your VPN app connects through RealityHop\'s SOCKS5 proxy: address 127.0.0.1, port 2080, no username or password. '
+               'Use OpenVPN over TCP port 443: a SOCKS5 proxy carries TCP only, and 443 is the normal HTTPS port.')
         cols = tk.Frame(self.body, bg=BG); cols.pack(fill='both', expand=True)
         left = tk.Frame(cols, bg=BG, width=330); left.pack(side='left', fill='y', anchor='n'); left.pack_propagate(False)
         self.p('Private Internet Access (PIA)', bold=True, parent=left)
-        self.items(['PIA > Settings > Protocols: choose OpenVPN.',
+        self.items(['PIA > Settings > Protocols: Protocol OpenVPN, Transport TCP, Remote Port 443.',
                     'Settings > Multi-Hop: tick "Multi-hop and Obfuscation" and choose SOCKS5 Proxy.',
                     'Click EDIT: host 127.0.0.1, port 2080. Leave username and password empty. Save.',
                     'Connect.'], parent=left, wrap=280, numbered=True)
         row = tk.Frame(left, bg=BG); row.pack(fill='x', pady=(6, 4))
         ttk.Button(row, text='Check PIA', command=lambda: (lambda r: self.note(r, 'ok' if 'correct' in r else 'warn'))(N.vpn_check())).pack(side='left')
         self.p('Other VPN apps', bold=True, parent=left)
-        self.p('Any VPN app with a SOCKS5 proxy setting works the same way. In an OpenVPN config file add the line '
-               '"socks-proxy 127.0.0.1 2080" and use "proto tcp".', parent=left, wrap=310)
+        self.p('Any VPN app with a SOCKS5 proxy setting works the same way; set it to OpenVPN over TCP, port 443. In an '
+               'OpenVPN config file: "proto tcp", the server on port 443, and the line "socks-proxy 127.0.0.1 2080".',
+               parent=left, wrap=310)
         self.p('Games or apps that should skip the VPN: use your VPN app\'s split tunnel (PIA: Settings > Split Tunnel).',
                muted=True, parent=left, wrap=310)
         try:

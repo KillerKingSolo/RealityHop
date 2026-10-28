@@ -56,14 +56,18 @@ Requirements: Windows 10 or 11 (64-bit), and a VPN app that can use a SOCKS5 pro
 
 RealityHop listens on **SOCKS5 `127.0.0.1` port `2080`**, with no username or password.
 
+Your VPN must use **OpenVPN over TCP, port 443**. A SOCKS5 proxy carries TCP only, and 443 is the normal HTTPS port.
+
 **Private Internet Access (PIA):**
-Settings > Protocols: **OpenVPN**. Then Settings > Multi-Hop: tick **Multi-hop and Obfuscation**, choose **SOCKS5
-Proxy**, click **EDIT**, enter host `127.0.0.1` and port `2080`, and save.
+Settings > Protocols: Protocol **OpenVPN**, Transport **TCP**, Remote Port **443**. Then Settings > Multi-Hop: tick
+**Multi-hop and Obfuscation**, choose **SOCKS5 Proxy**, click **EDIT**, enter host `127.0.0.1` and port `2080`, and
+save.
 
 ![PIA Multi-Hop with the SOCKS5 proxy](docs/images/pia-multihop-socks5.png)
 
-**Other VPN apps:** any app with a SOCKS5 proxy setting works the same way. In an OpenVPN config file, add
-`socks-proxy 127.0.0.1 2080` and use `proto tcp`. See [docs/vpn-setup.md](docs/vpn-setup.md).
+**Other VPN apps:** any app with a SOCKS5 proxy setting works the same way, using OpenVPN over TCP port 443. In an
+OpenVPN config file, use `proto tcp`, the server's port `443`, and add `socks-proxy 127.0.0.1 2080`. See
+[docs/vpn-setup.md](docs/vpn-setup.md).
 
 ## Day to day
 
