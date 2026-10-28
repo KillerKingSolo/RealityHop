@@ -3,8 +3,24 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings > Install
 RealityHop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
-## Unreleased
+## 1.0.2 (2026-10-27)
 
+**Why update:** pressing **Update** in 1.0.0 or 1.0.1 could leave RealityHop half-broken until you restarted it: the
+window icon turned into the default Python quill, the PC tunnel tile said "Needs restart", **Restart tunnel** reported
+that the tunnel did not come back (even though it was running), and Windows showed "Failed to remove temporary
+directory". This release fixes that, and moves RealityHop to Program Files.
+
+- **Update fix:** RealityHop.exe is a one-file program that unpacks itself to a temporary folder when it starts. When
+  the old version started the new one, the new one took over the old one's temporary folder instead of unpacking its own,
+  and Windows deleted that folder from under it when the old version closed. Every restart that RealityHop does itself
+  (after an update, from the tray, from Settings) now gives the new process a clean start.
+- **Installs to `C:\Program Files\RealityHop`** instead of `%LOCALAPPDATA%\Programs\RealityHop`. Installing asks for one
+  UAC prompt. It also gives your Windows user modify rights on that one folder, so later updates still install silently.
+  The program never runs as administrator.
+- **Moving from 1.0.0 or 1.0.1:** the first time you open the window after this update, RealityHop offers to move itself to
+  Program Files (one UAC prompt). It also updates the Start menu entry, the logon start and the Apps list, and removes the
+  old folder. Your settings, nodes and the running tunnel are kept. If the update to 1.0.2 came through the background
+  watcher, restart RealityHop once (tray > Quit, then open it from the Start menu) so the fixed version takes over cleanly.
 - **Release page:** the SHA-256 checksum of `RealityHop.exe` is now printed in the release notes. It replaces the
   separate `RealityHop.exe.sha256` download. GitHub also shows the checksum next to the download, and the built-in
   updater checks it before it installs anything, so updating works exactly as before.
@@ -29,8 +45,8 @@ First public release.
 
 **Setup**
 - One file: download `RealityHop.exe`, run it, and the setup wizard installs it to
-  `%LOCALAPPDATA%\Programs\RealityHop`. No admin rights are needed, except one UAC prompt if you want the tunnel to
-  start at boot.
+  `%LOCALAPPDATA%\Programs\RealityHop` (moved to Program Files in 1.0.2). No admin rights are needed, except one UAC
+  prompt if you want the tunnel to start at boot.
 - The wizard downloads sing-box (official releases, checksum checked), finds and tests the first 6 nodes, starts the
   tunnel and shows how to set up your VPN app.
 - Choose sing-box **stable** (default) or **test builds** (beta, alpha).

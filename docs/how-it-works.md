@@ -58,7 +58,7 @@ It runs as your user in "do not store password" mode. Creating or removing the t
 
 | Path | What |
 |---|---|
-| `%LOCALAPPDATA%\Programs\RealityHop\RealityHop.exe` | the program |
+| `C:\Program Files\RealityHop\RealityHop.exe` | the program; the install gives your Windows user modify rights on this one folder, so updates need no UAC prompt |
 | `%LOCALAPPDATA%\RealityHop\PC\pc-config.json` | PC tunnel config (its API secret is random per install) |
 | `%LOCALAPPDATA%\RealityHop\PC\rh-core.exe` | sing-box (official release, stable or test builds) |
 | `%LOCALAPPDATA%\RealityHop\Router\router-config.json` | router tunnel config |

@@ -33,7 +33,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.join(getattr(sys, '_MEIPASS', HERE), 'resources')   # config templates and router scripts (inside the exe)
 _LOCAL = os.environ.get('LOCALAPPDATA') or os.path.expanduser('~')
 DATA = os.path.join(_LOCAL, APP)                                   # everything this PC keeps
-INSTALL_DIR = os.path.join(_LOCAL, 'Programs', APP)
+INSTALL_DIR = os.path.join(os.environ.get('ProgramW6432') or os.environ.get('ProgramFiles') or r'C:\Program Files', APP)
+LEGACY_DIR = os.path.join(_LOCAL, 'Programs', APP)               # where 1.0.0 and 1.0.1 installed; moved on update
 INSTALLED_EXE = os.path.join(INSTALL_DIR, APP + '.exe')
 PC_DIR, ROUTER_DIR = os.path.join(DATA, 'PC'), os.path.join(DATA, 'Router')   # the backend files, readable by the person
 PC_CFG, ROUTER_CFG = os.path.join(PC_DIR, 'pc-config.json'), os.path.join(ROUTER_DIR, 'router-config.json')
@@ -139,6 +140,15 @@ def pythonw():
 def exe():
     """The installed RealityHop.exe (also when this run is the installer in the Downloads folder)."""
     return INSTALLED_EXE if os.path.exists(INSTALLED_EXE) else sys.executable
+
+
+def own_env():
+    """Environment for starting RealityHop.exe from RealityHop.exe. Without this the new process inherits the
+    one-file unpack folder (_MEI...) of the old one, keeps using it, and breaks when the old one exits and deletes it
+    (lost icon, failed checks, "Failed to remove temporary directory")."""
+    e = {k: v for k, v in os.environ.items() if not k.startswith(('_PYI', '_MEIPASS')) and k not in ('TCL_LIBRARY', 'TK_LIBRARY')}
+    e['PYINSTALLER_RESET_ENVIRONMENT'] = '1'
+    return e
 
 
 def self_cmd(*args):
@@ -1395,7 +1405,7 @@ def gui_open():
     """Start the RealityHop window (or do nothing if it is already open)."""
     if not port_taken(GUI_PORT):
         cmd = [exe()] if FROZEN else [pythonw(), os.path.join(HERE, 'realityhop.pyw')]
-        subprocess.Popen(cmd, cwd=DATA, creationflags=subprocess.DETACHED_PROCESS)
+        subprocess.Popen(cmd, cwd=DATA, env=own_env(), creationflags=subprocess.DETACHED_PROCESS)
 
 
 _procs_feed = []
@@ -1718,7 +1728,7 @@ def startup(on):
               f"$s.Arguments = '{' '.join(chr(34) + a + chr(34) if ' ' in a else a for a in cmd[1:])}'; $s.WorkingDirectory = '{DATA}'; $s.Save()")
         run(['powershell', '-NoProfile', '-Command', ps], timeout=30)
         if not port_taken(WATCH_PORT):
-            subprocess.Popen(cmd, cwd=DATA, creationflags=subprocess.DETACHED_PROCESS)
+            subprocess.Popen(cmd, cwd=DATA, env=own_env(), creationflags=subprocess.DETACHED_PROCESS)
         say('background watcher: on, starts at every logon')
     else:
         if os.path.exists(STARTUP_LNK):

@@ -270,7 +270,7 @@ class App(tk.Tk):
         install.apply_update(rel); N.watcher_kill()
         if os.path.exists(N.STARTUP_LNK):
             install.start_watcher()
-        self.lock.close(); subprocess.Popen([N.INSTALLED_EXE], cwd=N.DATA, creationflags=subprocess.DETACHED_PROCESS); os._exit(0)
+        self.lock.close(); restart_window()
 
     def build(self):
         self.buttons = []
@@ -1178,7 +1178,8 @@ class ReportDialog(tk.Toplevel):
 def restart_window(args=()):
     """Close this window and open RealityHop again (with args, e.g. --setup for the wizard)."""
     cmd = ([N.exe()] if N.FROZEN else [N.pythonw(), os.path.abspath(__file__)]) + list(args)
-    subprocess.Popen(cmd, cwd=N.DATA if os.path.isdir(N.DATA) else None, creationflags=subprocess.DETACHED_PROCESS); os._exit(0)
+    subprocess.Popen(cmd, cwd=N.DATA if os.path.isdir(N.DATA) else None, env=N.own_env(),
+                     creationflags=subprocess.DETACHED_PROCESS); os._exit(0)
 
 
 class Wizard(tk.Tk):
@@ -1340,8 +1341,8 @@ class Wizard(tk.Tk):
     def page_install(self):
         self.h('Install')
         self.p('This step:')
-        self.items((['copies RealityHop to %LOCALAPPDATA%\\Programs\\RealityHop and adds it to the Start menu (no admin rights needed)']
-                    if N.FROZEN else []) +
+        self.items((['copies RealityHop to C:\\Program Files\\RealityHop and adds it to the Start menu (one admin prompt; it '
+                     'also lets RealityHop update itself there later without asking again)'] if N.FROZEN else []) +
                    ['downloads sing-box from its official releases (github.com/SagerNet/sing-box, about 35 MB) and checks its SHA-256 checksum',
                     'downloads the public node list (github.com/rtwo2/FastNodes), tests the 40 fastest candidates from this PC and keeps '
                     'the 6 fastest that work (about a minute)',
@@ -1590,16 +1591,22 @@ if __name__ == '__main__':
     if '--uninstall' in sys.argv:
         uninstall_dialog(); sys.exit(0)
     install.cleanup()
-    if install.needs_install() and N.is_setup() and os.path.exists(N.INSTALLED_EXE):
-        # RealityHop.exe started again from Downloads on a PC where it is set up: replace the installed copy, open it
+    if N.is_setup() and (install.running_legacy() or (install.needs_install() and
+                                                       (os.path.exists(N.INSTALLED_EXE) or os.path.exists(install.LEGACY_EXE)))):
+        # set up already: this copy came from Downloads, or it is an old per-user install. Install it to Program Files.
         root = tk.Tk(); root.withdraw()
-        if messagebox.askyesno('RealityHop', f"RealityHop {install.installed_version() or ''} is installed. Replace it with this "
-                               f"copy ({N.VERSION}) and open it?\n\nYour settings and nodes are kept."):
-            install.install()
-            if os.path.exists(N.STARTUP_LNK):
-                install.start_watcher()
-            subprocess.Popen([N.INSTALLED_EXE], cwd=N.DATA, creationflags=subprocess.DETACHED_PROCESS)
-        sys.exit(0)
+        q = (f'RealityHop now installs to {N.INSTALL_DIR}. Move it there now? (one admin prompt)' if install.running_legacy() else
+             f"RealityHop {install.installed_version() or ''} is installed. Replace it with this copy ({N.VERSION}) and open it?")
+        if messagebox.askyesno('RealityHop', q + '\n\nYour settings, nodes and the running tunnel are kept.'):
+            try:
+                install.install()
+            except Exception as e:
+                messagebox.showerror('RealityHop', str(e)); sys.exit(1)
+            subprocess.Popen([N.INSTALLED_EXE], cwd=N.DATA, env=N.own_env(), creationflags=subprocess.DETACHED_PROCESS)
+            sys.exit(0)
+        if not install.running_legacy():
+            sys.exit(0)
+        root.destroy()   # keep running from the old place this time; asked again next start
     if '--setup' in sys.argv or install.needs_install() or not N.is_setup():
         Wizard(router_only='--router' in sys.argv).mainloop(); sys.exit(0)
     App().mainloop()

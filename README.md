@@ -34,7 +34,8 @@ public nodes, tests them, keeps the fastest working ones in use and replaces dea
   folders: the live sing-box configs, the router scripts and the three logs.
 - **Anonymous problem reports.** *Report a problem* bundles the three logs with addresses, names, keys and secrets
   replaced by tokens. You read it first, then attach it to a GitHub issue. Nothing is sent automatically.
-- **No admin rights needed** except one UAC prompt for the optional start at boot. No telemetry.
+- **Installs to `C:\Program Files\RealityHop`** with one UAC prompt, and updates itself there without asking again.
+  The program never runs as administrator. No telemetry.
 
 ## Install
 
@@ -43,7 +44,7 @@ public nodes, tests them, keeps the fastest working ones in use and replaces dea
    antivirus programs flag PyInstaller apps by mistake; the source is all here, and you can
    [build it yourself](docs/building.md).
 3. Follow the setup wizard:
-   - **Install** copies RealityHop to `%LOCALAPPDATA%\Programs\RealityHop`, downloads sing-box, finds the first nodes
+   - **Install** copies RealityHop to `C:\Program Files\RealityHop` (one UAC prompt), downloads sing-box, finds the first nodes
      and starts the tunnel. This takes about a minute.
    - **Router?** answers whether you also want a GL.iNet router set up. If you answer yes, the wizard guides you
      through it step by step ([details](docs/router-setup.md)). If you answer no, RealityHop shows only the PC part.
