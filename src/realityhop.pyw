@@ -314,6 +314,7 @@ class App(tk.Tk):
         if ROUTER:
             group('Router', '▲')
             sbtn('Test on router', lambda: self.work(self.check_router))
+            sbtn('Devices', lambda: DevicesDialog(self))
             sbtn('Push to router', self.push_phone)
         group('Files & help' if BACKEND else 'Help', '●')
         sbtn('Report a problem', lambda: ReportDialog(self))
@@ -1145,6 +1146,95 @@ class Candidates(tk.Toplevel):
         sentence = ' '.join(f"{tag}: {old} -> {new['server']}" + (f" ({new['ms']} ms, tested)." if new.get('ok') else ' (not tunnel-tested).')
                             for tag, old, new in swaps)
         self.app.after_files('Configs updated. ' + sentence); self.msg = self.app.status_text
+
+
+class DevicesDialog(tk.Toplevel):
+    """The devices the router puts through the tunnel: tick to add, untick to remove, then push. Also how to keep a
+    device's address from changing, which is what the router goes by."""
+    def __init__(self, app):
+        super().__init__(app); self.app = app; self.configure(bg=BG); self.title('Router devices'); self.geometry('900x760')
+        self.picked, self.shown = set(N.devices()), set()
+        tk.Label(self, text='Router devices', bg=BG, fg=FG, font=(UIB, 16)).pack(anchor='w', padx=22, pady=(18, 4))
+        tk.Label(self, text='Ticked devices go through the tunnel on the router; everything else on your network stays as it is. '
+                 'Click a row to tick or untick it, then press Save and push.', bg=BG, fg=MUTED, font=(UI, 10), wraplength=850,
+                 justify='left').pack(anchor='w', padx=22)
+        c = card(self, fill='x', padx=22, pady=(12, 0))
+        self.tree = table(c, (('num', 40), ('ip', 150), ('name', 300), ('state', 300)), height=9, stretch='state')
+        for k, t in (('num', ''), ('ip', 'ADDRESS'), ('name', 'DEVICE'), ('state', 'STATUS')):
+            self.tree.heading(k, text=t)
+        self.tree.pack(fill='x', padx=8, pady=6); self.tree.bind('<Button-1>', self.toggle)
+        row = tk.Frame(self, bg=BG); row.pack(fill='x', padx=22, pady=(10, 0))
+        tk.Label(row, text='Add an address', bg=BG, fg=FG, font=(UI, 10)).pack(side='left')
+        self.extra = tk.StringVar()
+        tk.Entry(row, textvariable=self.extra, width=20, bg=BTN, fg=FG, insertbackground=FG, relief='flat', font=(UI, 10)).pack(side='left', padx=10, ipady=4)
+        ttk.Button(row, text='Add', command=self.add).pack(side='left')
+        ttk.Button(row, text='Refresh list', command=lambda: threading.Thread(target=self.load, daemon=True).start()).pack(side='left', padx=8)
+        info = card(self, fill='x', padx=22, pady=(14, 0))
+        tk.Label(info, text='KEEP EACH DEVICE ON THE SAME ADDRESS', bg=CARD, fg=DIM, font=(UIB, 8)).pack(anchor='w', padx=16, pady=(12, 4))
+        for i, t in enumerate(('On the phone, turn off the changing ("private" or "random") Wi-Fi address for this network, so it '
+                               'keeps one MAC address. iPhone: Settings > Wi-Fi > (i) next to the network > Private Wi-Fi Address: '
+                               'Off (or Fixed). Android: Wi-Fi > the network > Privacy > Use device MAC. Names vary by phone.',
+                               'Then reserve its address on the router: GL.iNet web panel > NETWORK > LAN > Address Reservation > '
+                               'Add, pick the device, Submit. Reconnect the device to Wi-Fi once.'), 1):
+            tk.Label(info, text=f'{i}.  {t}', bg=CARD, fg=FG, font=(UI, 10), wraplength=820, justify='left').pack(anchor='w', padx=16, pady=(0, 6))
+        host = N.settings_load()['router_host']
+        link(info, f'Open the GL.iNet web panel (http://{host})', f'http://{host}').pack(anchor='w', padx=16, pady=(0, 12))
+        bar = tk.Frame(self, bg=BG); bar.pack(fill='x', padx=22, pady=16)
+        self.msg = tk.Label(bar, text='Reading the router\'s device list...', bg=BG, fg=MUTED, font=(UI, 10), anchor='w')
+        self.msg.pack(side='left', fill='x', expand=True)
+        ttk.Button(bar, text='Close', command=self.destroy).pack(side='right')
+        self.save_btn = ttk.Button(bar, text='Save and push', style='Accent.TButton', command=self.save)
+        self.save_btn.pack(side='right', padx=8)
+        dark_titlebar(self); threading.Thread(target=self.load, daemon=True).start()
+
+    def load(self):
+        try:
+            rows, err = N.router_clients(), ''
+        except Exception as e:
+            rows, err = [], f'Could not read the router ({e}); you can still add addresses by hand.'
+        self.after(0, self.fill, rows, err)
+
+    def fill(self, rows, err=''):
+        if not self.winfo_exists():
+            return
+        names = dict(rows); self.shown = set(names)
+        self.tree.delete(*self.tree.get_children())
+        for i, ip in enumerate(sorted(self.shown | self.picked, key=lambda x: tuple(int(k) for k in x.split('.')))):
+            on = ip in self.picked
+            state = ('tunnelled' if ip in N.devices() else 'added, press Save and push') if on else 'not tunnelled'
+            if on and ip not in self.shown:
+                state += '  ·  not connected now'
+            self.tree.insert('', 'end', iid=ip, values=('✓' if on else '', ip, names.get(ip, '(not in the router list)'), state),
+                             tags=('odd' if i % 2 else 'even', 'ok' if on else 'unk'))
+        self.msg.configure(text=err or f'{len(self.picked)} device(s) ticked.', fg=STATE['bad'] if err else MUTED)
+
+    def toggle(self, e):
+        ip = self.tree.identify_row(e.y)
+        if ip:
+            self.picked ^= {ip}; self.fill([(i, self.tree.set(i, 'name')) for i in self.tree.get_children() if i in self.shown])
+        return 'break'
+
+    def add(self):
+        ip = self.extra.get().strip()
+        if not re.fullmatch(r'\d{1,3}(\.\d{1,3}){3}', ip):
+            self.msg.configure(text='That is not an address like 192.168.8.20.', fg=STATE['bad']); return
+        self.picked.add(ip); self.extra.set('')
+        self.fill([(i, self.tree.set(i, 'name')) for i in self.tree.get_children() if i in self.shown])
+
+    def save(self):
+        ips = sorted(self.picked)
+        if not messagebox.askyesno('Router devices', 'Push this device list to the router?\n\n' + ('\n'.join(ips) or '(none: the router '
+                                   'tunnel then carries no device)') + '\n\nThe router tunnel restarts; it drops for a few seconds.', parent=self):
+            return
+        N.settings_save({'devices': ', '.join(ips)}); self.msg.configure(text='Pushing to the router...', fg=MUTED)
+        self.app.work(self.push)
+
+    def push(self):
+        out = N.push(); self.app.say(out); ok = 'sing-box service: running' in out
+        self.app.status_text, self.app.status_state = (('Router updated: ' + (', '.join(N.devices()) or 'no devices') + ' go through the tunnel.', 'ok')
+                                                       if ok else ('Router NOT updated; see the activity log.', 'bad'))
+        self.after(0, lambda: self.winfo_exists() and (self.msg.configure(text=self.app.status_text, fg=STATE['ok' if ok else 'bad']),
+                                                       self.load()))
 
 
 class ReportDialog(tk.Toplevel):

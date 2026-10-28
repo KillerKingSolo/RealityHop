@@ -48,6 +48,9 @@ Pick devices from the router's DHCP list, or type their addresses. Then click **
 - enables and restarts the router's sing-box service;
 - installs the self-repair (`/etc/sing-box/heal.sh`, run by cron every 30 minutes) with a vault of known-good nodes.
 
+**Change the list later** in the window: Router > **Devices**. Tick or untick devices, add an address by hand, then
+**Save and push**.
+
 **Give each chosen device a fixed address,** or it loses the tunnel when its address changes: GL.iNet web panel >
 **NETWORK > LAN > Address Reservation > Add**. On phones, turn off rotating private addresses for this Wi-Fi network
 (iPhone: Private Wi-Fi Address set to Off or Fixed; Android: use the device MAC).

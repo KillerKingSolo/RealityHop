@@ -3,6 +3,23 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings > Install
 RealityHop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.0.4 (2026-10-27)
+
+**Why update:** the tray icon now shows on the taskbar instead of hiding, and you can change which devices use the router
+tunnel without running the setup again.
+
+- **Tray icon visible:** Windows 11 hides every new tray icon behind the `^` arrow, and moving RealityHop to Program
+  Files in 1.0.2 counted as new, so the icon seemed to be missing. RealityHop now shows its icon on the taskbar the first
+  time it runs. If you hide it yourself later (Windows Settings > Personalization > Taskbar > Other system tray icons),
+  your choice is kept.
+
+- **Router > Devices** (new window): every device the router knows, with the ones in the tunnel ticked. Tick to add,
+  untick to remove, or type an address. **Save and push** sends the list to the router.
+- The same window explains how to keep a device on one address, which is what the router goes by. Turn off the
+  changing ("private" or "random") Wi-Fi MAC address on the phone for your network, then reserve its address in the
+  GL.iNet panel (NETWORK > LAN > Address Reservation). A link opens the panel.
+- README: a clearer picture of how the traffic flows, and screenshots of the app.
+
 ## 1.0.3 (2026-10-27)
 
 **Why update:** RealityHop is easier to find, and it now says plainly where its nodes come from.

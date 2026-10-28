@@ -1499,6 +1499,7 @@ def watch():
                     + (f"  ·  PIA dropped {drops}x in the last hour" if drops else '')
                     + ('' if core_mode() else '  ·  rh-core missing'), st.get('segs', ()))
     pia_feed(on_pia); show()
+    threading.Timer(15, tray_promote).start()   # Windows lists the icon a moment after it appears
     wait_api(90)
     while True:
         CANCEL.clear(); now = time.time(); settings_load()
@@ -1757,6 +1758,27 @@ def tray_icon_file(state, segs=()):
         d.ellipse((84, 84, 172, 172), fill=col.get(state, (120, 120, 130)) + (255,))
         im.save(path, sizes=[(16, 16), (20, 20), (24, 24), (32, 32), (48, 48), (64, 64)])
     return path
+
+
+def tray_promote():
+    """Windows 11 puts a new tray icon in the hidden overflow (^). Show RealityHop's on the taskbar once, unless the
+    person already chose (Windows Settings > Personalization > Taskbar > Other system tray icons); their choice wins."""
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Control Panel\NotifyIconSettings') as root:
+            for i in range(winreg.QueryInfoKey(root)[0]):
+                with winreg.OpenKey(root, winreg.EnumKey(root, i), 0, winreg.KEY_READ | winreg.KEY_SET_VALUE) as k:
+                    try:
+                        if not winreg.QueryValueEx(k, 'ExecutablePath')[0].lower().endswith('\\realityhop\\realityhop.exe'):
+                            continue
+                    except OSError:
+                        continue
+                    try:
+                        winreg.QueryValueEx(k, 'IsPromoted')
+                    except OSError:
+                        winreg.SetValueEx(k, 'IsPromoted', 0, winreg.REG_DWORD, 1); say('tray icon: shown on the taskbar')
+    except OSError:
+        pass
 
 
 class Tray:

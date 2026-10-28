@@ -10,11 +10,26 @@ ones on its own.
 
 ![Setup wizard](docs/images/setup-welcome.png)
 
+```mermaid
+flowchart LR
+    vpn["VPN app<br/>PIA or another"] -- "SOCKS5<br/>127.0.0.1:2080" --> rh["RealityHop<br/>on your PC"]
+    phone["Phone, console, TV"] -. "optional" .-> router["GL.iNet router<br/>RealityHop's router tunnel"]
+    rh -- "looks like HTTPS<br/>to apple.com" --> node["REALITY node<br/>public, from FastNodes"]
+    router -- "looks like HTTPS" --> node
+    node --> server["VPN server"] --> net(("Internet"))
 ```
- VPN app ──► 127.0.0.1:2080 ──► REALITY node ──────────────► VPN server ──► internet
- (PIA, ...)   RealityHop         (looks like HTTPS to          (your VPN's own
-              on your PC          apple.com to the network)     encryption inside)
-```
+
+The network in between only sees an ordinary encrypted connection to a big website. Your VPN's own encryption stays
+inside it the whole way.
+
+## Screenshots
+
+| | |
+|---|---|
+| ![Main window](docs/images/main-window.png) | ![Candidates](docs/images/candidates.png) |
+| **Main window:** every node tested through the live tunnel, the last 24 hours, the router tunnel. | **Candidates:** nodes from the public list, pinged and tested on your PC; put any of them in a slot. |
+| ![Node details](docs/images/node-details.png) | ![Report a problem](docs/images/report.png) |
+| **Node details:** where a node is, how it tests, its ping over 24 hours. | **Report a problem:** the logs with everything personal replaced, ready for a GitHub issue. |
 
 ## Features
 
@@ -27,7 +42,9 @@ ones on its own.
 - **Tray icon shows the state.** The centre is the overall state. The ring has one segment per node: green working,
   amber slow, red dead.
 - **Start menu and Windows search.** Press the Windows key and type RealityHop. A desktop icon is optional.
-- **Optional GL.iNet router support.** Put a phone, console or TV through the tunnel too, with nothing installed on
+- **Optional GL.iNet router support,** with a **Devices** window: tick or untick which devices use the tunnel, and how to
+  keep their address fixed (no changing MAC on the phone, an address reservation on the router).
+- **GL.iNet router:** Put a phone, console or TV through the tunnel too, with nothing installed on
   them. Turn it off and the router section disappears.
 - **Stop / Start for when you travel.** One button turns everything off, including the start at boot, until you press
   Start.

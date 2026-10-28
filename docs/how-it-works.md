@@ -2,10 +2,10 @@
 
 ## The tunnel
 
-```
- VPN app ──SOCKS5──► rh-core.exe (sing-box) ──VLESS + REALITY──► node ──► VPN server
-                     127.0.0.1:2080            TLS to the node, with
-                                               the SNI of a big website
+```mermaid
+flowchart LR
+    vpn["VPN app"] -- "SOCKS5 127.0.0.1:2080" --> core["rh-core.exe<br/>sing-box"]
+    core -- "VLESS + REALITY<br/>TLS with the SNI of a big website" --> node["node"] --> server["VPN server"]
 ```
 
 - **REALITY** makes the node answer like the real front site (www.apple.com, www.microsoft.com, ...) to anyone who
