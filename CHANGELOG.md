@@ -3,6 +3,22 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings > Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.1.2 (2026-10-28)
+
+**Why update:** Reality Hop keeps finding nodes when GitHub is blocked where you are, and the overview reads cleaner.
+
+- **Node list when GitHub is blocked.** Sources are tried in this order: GitHub direct, GitHub through your own tunnel
+  (one working node is enough), the jsDelivr mirrors, the router (only with router features on), then the last good
+  copy saved on disk. Also covers a download that stalls partway, as DPI filters do.
+- **sing-box and app updates** also retry through the tunnel. The SHA-256 check is unchanged.
+- **Fix: test online nodes** falls back to the nodes that worked before when the online list cannot be reached or has
+  no working node, instead of stopping with an error.
+- **PC only:** a failed node list download no longer tries to reach the router over SSH (up to 10 s wasted).
+- Each scan keeps only the usable lines of the 18 MB node list (about 4.5 MB).
+- **Overview:** "Press Test on router" in the router tile is now a link that runs the test; "press Push to router"
+  runs the push. Legend and counters are capitalised (PIA Dropped, Node Replaced, Tunnel Restart; PIA Drops,
+  Replacements, Restarts, Rescues), and so are the tile hints (Hourly checks wait while this window is open).
+
 ## 1.1.1 (2026-10-28)
 
 **Why update:** clearer node fix actions, a new fix from nodes that worked before, a readable 24-hour legend, and the
@@ -17,7 +33,7 @@ new license.
     cannot be reached.
   - **Fix: quick swap, untested**: puts the fastest-answering node into the configs only, without a test or a restart.
 
-  These replace "Replace selected · configs only / tested".
+  These replace "Replace selected Â· configs only / tested".
 - **Window size:** the window opens tall enough for the whole sidebar, so the Settings button is no longer cut off
   (never taller than the screen).
 - **Last 24 hours:** Rescue is purple now, so it no longer looks like PIA dropped (red). The legend is capitalised.
@@ -42,8 +58,8 @@ public node list can no longer stop every scan, and several crashes and wrong in
   network** switch (setup and Router > Devices), every device on the router's main Wi-Fi and LAN, this PC included. Guest
   and IoT networks stay as they are. In this mode the node tests run on the router, because this PC's own traffic may go
   through the tunnel, and the main network's IPv6 is refused so nothing goes around the tunnel.
-- **sing-box version in the window:** under the name, for example `sing-box 1.13.2 · stable` or
-  `sing-box 1.15.0-alpha.13 · test build`.
+- **sing-box version in the window:** under the name, for example `sing-box 1.13.2 Â· stable` or
+  `sing-box 1.15.0-alpha.13 Â· test build`.
 - **Router security fix:** sing-box on the router listened for the diverted traffic on every address, so any device on
   your network could connect to the router's port 7895 and make sing-box dial itself. The router's firewall rule now
   drops every packet sent to that port directly (diverted traffic keeps its real port). Press **Push to router** once
@@ -54,7 +70,7 @@ public node list can no longer stop every scan, and several crashes and wrong in
 - **Router > Devices and the setup:** the address reservation steps were wrong. It is GL.iNet web panel > **CLIENTS**,
   then the **Reserved IP** slider next to the device.
 - **Fixed:** one malformed line in the node list (a port like 99999) stopped every scan, replace and rescue.
-- **Fixed:** a node location with letters outside Western European ones (such as Łódź) stopped a replace halfway, with
+- **Fixed:** a node location with letters outside Western European ones (such as ÅÃ³dÅº) stopped a replace halfway, with
   the configs written but not deployed.
 - **Fixed:** putting a candidate into vless-5 or vless-6 failed when fewer than 6 nodes were in use.
 - **Fixed:** Install again (repair) in Run setup again could break the install by copying the program onto itself.

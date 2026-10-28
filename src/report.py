@@ -11,7 +11,8 @@ import engine as N
 
 KEEP_IPS = {'0.0.0.0', '9.9.9.9', '149.112.112.112', '1.1.1.1', '8.8.8.8'}   # public DNS resolvers say nothing about anyone
 KEEP_HOSTS = {'api.ipify.org', 'www.gstatic.com', 'ip-api.com', 'api.github.com', 'github.com', 'raw.githubusercontent.com',
-              'objects.githubusercontent.com', 'release-assets.githubusercontent.com'} | N.FRONTS   # what Reality Hop itself uses
+              'objects.githubusercontent.com', 'release-assets.githubusercontent.com', 'cdn.jsdelivr.net',
+              'fastly.jsdelivr.net'} | N.FRONTS   # what Reality Hop itself uses
 LINES = 400   # per log
 
 

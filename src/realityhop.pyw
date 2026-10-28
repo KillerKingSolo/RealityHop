@@ -40,8 +40,8 @@ PILL = {'ok': '#123222', 'bad': '#3a1214', 'warn': '#3a2a0c', 'unk': '#1f1f25'}
 COLS = (('slot', 70), ('server', 135), ('where', 190), ('tcp', 90), ('tunnel', 95), ('verdict', 420))
 HEAD = {'slot': 'SLOT', 'server': 'SERVER', 'front': 'FRONT', 'where': 'LOCATION', 'tcp': '443 PING', 'tunnel': 'TUNNEL',
         'verdict': 'STATUS', 'num': '#', 'result': 'RESULT'}
-EVENTS = {'drop': ('#ff4d4f', 'PIA dropped'), 'back': ('#5fd38d', 'PIA back'), 'replace': ('#f5a524', 'Node replaced'),
-          'rescue': ('#b57cff', 'Rescue'), 'restart': ('#5b9cff', 'Tunnel restart'), 'heal': ('#f5a524', 'Router repaired'),
+EVENTS = {'drop': ('#ff4d4f', 'PIA Dropped'), 'back': ('#5fd38d', 'PIA Back'), 'replace': ('#f5a524', 'Node Replaced'),
+          'rescue': ('#b57cff', 'Rescue'), 'restart': ('#5b9cff', 'Tunnel Restart'), 'heal': ('#f5a524', 'Router Repaired'),
           'error': ('#ff4d4f', 'error')}
 ROUTER = not N.pc_only()   # router features on: router section, router node table, router tile
 RONLY = N.router_only()    # router-only mode: no PC tunnel, no PC section
@@ -386,6 +386,8 @@ class App(tk.Tk):
             v = tk.Label(t, text='-', bg=CARD, fg=FG, font=(UIB, 17)); v.pack(anchor='w', padx=16)
             sub = tk.Label(t, text='', bg=CARD, fg=MUTED, font=(UI, 9), anchor='w', justify='left'); sub.pack(anchor='w', padx=16, pady=(0, 14))
             self.tiles[k] = (v, sub)
+            sub.bind('<Button-1>', lambda e, k=k: self.tile_act.get(k) and self.tile_act[k]())
+        self.tile_act = {}   # a tile hint that names a button runs that button when clicked
 
         self.status = strip(main, self.status_text, pad)
         hs = card(main, fill='x', pady=(12, 0), **pad)
@@ -641,8 +643,8 @@ class App(tk.Tk):
             else:
                 c.create_oval(x - 3, y - 3, x + 3, y + 3, fill=col, outline='')
             counts[kind] = counts.get(kind, 0) + 1
-        self.strip_info.configure(text=f"PIA drops {counts.get('drop', 0)}   ·   replacements {counts.get('replace', 0)}   ·   "
-                                       f"restarts {counts.get('restart', 0)}   ·   rescues {counts.get('rescue', 0)}")
+        self.strip_info.configure(text=f"PIA Drops {counts.get('drop', 0)}   ·   Replacements {counts.get('replace', 0)}   ·   "
+                                       f"Restarts {counts.get('restart', 0)}   ·   Rescues {counts.get('rescue', 0)}")
 
     def details(self, key, e):
         row = self.trees[key].identify_row(e.y)
@@ -693,22 +695,23 @@ class App(tk.Tk):
         if v is None:
             pass   # router-only mode: no PC tunnel tile
         elif p is None:
-            v.configure(text='-', fg=MUTED); sub.configure(text='not checked yet')
+            v.configure(text='-', fg=MUTED); sub.configure(text='Not checked yet')
         elif p['api'] or p['listening']:
             old = not p['api'] or self.pc_pending
             v.configure(text='Needs restart' if old else 'Running', fg=STATE['warn' if old else 'ok'])
             sub.configure(text=f"{p['now'] or '?'}  ·  exit {p['exit'] or '?'}")
         else:
-            v.configure(text='Down', fg=STATE['bad']); sub.configure(text='nothing on 127.0.0.1:2080')
+            v.configure(text='Down', fg=STATE['bad']); sub.configure(text='Nothing on 127.0.0.1:2080')
         if ROUTER:
             v, sub = self.tiles['router']; r = self.router
             if r is None:
-                v.configure(text='-', fg=MUTED); sub.configure(text='press Test on router')
+                v.configure(text='-', fg=MUTED); self.tile_link('router', 'Press Test on router', lambda: self.work(self.check_router))
             elif r[0]['service']:
                 v.configure(text='Older config' if self.router_stale else 'Running', fg=STATE['warn' if self.router_stale else 'ok'])
-                sub.configure(text=f"{r[0]['now'] or '?'}  ·  checked {r[1]}")
+                self.tile_link('router', f"{r[0]['now'] or '?'}  ·  checked {r[1]}")
             else:
-                v.configure(text='Stopped', fg=STATE['bad']); sub.configure(text=f'checked {r[1]}; press Push to router')
+                v.configure(text='Stopped', fg=STATE['bad'])
+                self.tile_link('router', f'Checked {r[1]}; press Push to router', self.push_phone)
         v, sub = self.tiles['nodes']
         key = 'pc' if not RONLY and (any(n.get('pc_why') is not None for n in self.lists['pc']) or not self.router) else 'phone'
         nodes = self.lists[key]
@@ -721,7 +724,7 @@ class App(tk.Tk):
         v, sub = self.tiles['watch']
         on = N.port_taken(N.WATCH_PORT)
         v.configure(text='On' if on else 'Off', fg=STATE['ok' if on else 'unk'])
-        sub.configure(text='hourly checks wait while this window is open' if on else 'tick Run in background at logon')
+        sub.configure(text='Hourly checks wait while this window is open' if on else 'Tick Run in background at logon')
 
         for key, st in (('pc', self.pending), ('phone', self.router_stale)):
             if key in self.card_status:
@@ -786,6 +789,12 @@ class App(tk.Tk):
         else:
             swaps = N.replace(slots, vault=how == 'vault')
             self.after_deploy(' '.join(f"{tag} was replaced: {old} -> {new['server']} ({new['ms']} ms, {new.get('where', '?')})." for tag, old, new in swaps), ask)
+
+    def tile_link(self, k, text, act=None):
+        """A tile's hint text; with act it looks like a link and clicking it does the same as the button it names."""
+        sub = self.tiles[k][1]; self.tile_act[k] = act
+        sub.configure(text=text, fg=ACC_HI if act else MUTED, cursor='hand2' if act else '',
+                      font=(UI, 9, 'underline') if act else (UI, 9))
 
     def rescue(self):
         if messagebox.askyesno('Rescue', 'For when every node is dead and nothing else works.\n\nThis PC tests the nodes in '

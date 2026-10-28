@@ -83,6 +83,9 @@ STARTUP_LNK = os.path.join(os.environ.get('APPDATA', ''), r'Microsoft\Windows\St
 API = 'http://127.0.0.1:9090'
 TEST_URL = 'https://www.gstatic.com/generate_204'
 FEEDS = ('https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt',)   # github.com/rtwo2/FastNodes
+# the same file on CDN mirrors, for when GitHub is blocked; {0} = owner/repo, {1} = path
+MIRRORS = ('https://cdn.jsdelivr.net/gh/{0}@main/{1}', 'https://fastly.jsdelivr.net/gh/{0}@main/{1}')
+TUNNEL_PROXY = 'http://127.0.0.1:2080'   # the PC tunnel's mixed inbound also speaks HTTP proxy
 DEFAULTS = {'check_min': 60, 'slow_ms': 200, 'tolerance_ms': 25, 'top': 40, 'router': 0, 'router_host': '192.168.8.1',
             'router_key': '', 'devices': '', 'auto_update': 1, 'singbox': 'stable', 'backend_files': 0,
             'start_menu': 1, 'desktop_icon': 0, 'pc_tunnel': 1}
@@ -334,20 +337,69 @@ def lan_ip(x):
         return False
 
 
+def gh_get(url, timeout=30):
+    """A whole download from GitHub (url or Request): direct first, then through the PC tunnel, which gets past a block.
+    The retry also covers a download that stalls partway, as DPI filters do. TLS stays end to end with GitHub."""
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as r:
+            return r.read()
+    except Exception as e:
+        if router_only() or not port_open(2080):
+            raise
+        say(f'direct download failed ({e}); retrying through the tunnel')
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({'http': TUNNEL_PROXY, 'https': TUNNEL_PROXY}))
+    with opener.open(url, timeout=timeout * 3) as r:
+        return r.read()
+
+
+def mirrors(u):
+    p = urlparse(u).path.split('/')   # /owner/repo/branch/path...
+    return [m.format('/'.join(p[1:3]), '/'.join(p[4:])) for m in MIRRORS] if urlparse(u).hostname == 'raw.githubusercontent.com' else []
+
+
+def feed_download():
+    """The node lists from GitHub (direct, then through the tunnel), the CDN mirrors, the router, then the last good copy.
+    Only the usable lines are kept (about a quarter of the 18 MB)."""
+    cache = os.path.join(DATA, 'feed-cache.txt')
+    def get(u):
+        for src in [u] + mirrors(u):
+            try:
+                raw = '\n'.join(l for l in gh_get(src, 20).decode('utf-8', 'ignore').splitlines()
+                                if l.startswith('vless://') and 'reality' in l and 'vision' in l)
+                if raw:
+                    return raw
+            except Exception as e:
+                say(f'node list source failed ({urlparse(src).hostname}): {e}')
+        return ''
+    with ThreadPoolExecutor(len(FEEDS)) as ex:
+        raw = '\n'.join(ex.map(get, FEEDS))
+    if 'vless://' not in raw and not pc_only():
+        say('this PC could not download the node lists; asking the router to download them...')
+        try:
+            raw = router_feed()
+        except Exception as e:
+            say(f'router download failed: {e}')
+    if 'vless://' in raw:
+        try:
+            with open(cache, 'w', encoding='utf-8') as f:
+                f.write(raw)
+        except OSError:
+            pass
+        return raw
+    try:
+        age = (time.time() - os.path.getmtime(cache)) / 3600
+        with open(cache, encoding='utf-8') as f:
+            raw = f.read()
+    except OSError:
+        raise RuntimeError('no node list source works and there is no saved copy')
+    say(f'every node list source failed; using the saved copy from {age:.0f} h ago')
+    return raw
+
+
 def feed():
     """Candidates from the public node lists (FEEDS), merged, one per server; the download is reused for 15 minutes."""
     if _feed[1] is None or time.time() - _feed[0] > 900:
-        def get(u):
-            try:
-                return urllib.request.urlopen(u, timeout=20).read().decode('utf-8', 'ignore')
-            except OSError as e:
-                say(f'feed skipped ({u.split("/")[4]}): {e}'); return ''
-        with ThreadPoolExecutor(len(FEEDS)) as ex:
-            raw = '\n'.join(ex.map(get, FEEDS))
-        if 'vless://' not in raw:
-            say('this PC could not download the node lists; asking the router to download them...')
-            raw = router_feed()
-        _feed[:] = [time.time(), raw]
+        _feed[:] = [time.time(), feed_download()]
     seen = {}
     for l in _feed[1].splitlines():
         if not l.startswith('vless://') or 'reality' not in l or 'vision' not in l:
@@ -1094,7 +1146,7 @@ def vkey(tag):
 def core_release():
     """The newest sing-box release on the chosen channel (Settings): stable = the newest full release, testing = the
     newest of all, alpha and beta included. From the official releases of github.com/SagerNet/sing-box."""
-    rels = json.loads(urllib.request.urlopen('https://api.github.com/repos/SagerNet/sing-box/releases?per_page=40', timeout=30).read())
+    rels = json.loads(gh_get('https://api.github.com/repos/SagerNet/sing-box/releases?per_page=40', 30))
     testing = settings_load()['singbox'] == 'testing'
     rels = [r for r in rels if not r.get('draft') and (testing or not r.get('prerelease'))
             and any(a['name'] == f"sing-box-{r['tag_name'].lstrip('v')}-windows-amd64.zip" for a in r.get('assets', []))]
@@ -1117,8 +1169,8 @@ def core_update(force=False):
     with tempfile.TemporaryDirectory() as d:
         z = os.path.join(d, a['name'])
         say(f"downloading sing-box {ver} ({a['size'] // 1_000_000} MB) from the official releases (github.com/SagerNet/sing-box)...")
-        with urllib.request.urlopen(a['browser_download_url'], timeout=180) as r, open(z, 'wb') as f:
-            shutil.copyfileobj(r, f)
+        with open(z, 'wb') as f:
+            f.write(gh_get(a['browser_download_url'], 180))
         if a.get('digest') != 'sha256:' + hashlib.sha256(open(z, 'rb').read()).hexdigest():
             raise RuntimeError('download does not match the checksum GitHub publishes; not installed')
         new = os.path.join(d, 'rh-core.exe')
@@ -1349,8 +1401,17 @@ def replace(slots, top=None, vault=False):
     """Swap the in-use nodes at the given slot indexes (0-based) for the best tested spares, from the online node list
     or (vault=True) from the nodes that worked before, then deploy."""
     top = top or TOP
-    cur = inuse()
-    spares, tested = (vault_spares if vault else find_spares)(top, {n['server'] for n in cur})
+    cur = inuse(); ex = {n['server'] for n in cur}
+    try:
+        spares, tested = (vault_spares if vault else find_spares)(top, ex)
+    except Exception as e:
+        if vault:
+            raise
+        say(f'node list unavailable ({e}); trying the nodes that worked before (vault)')
+        spares, tested, vault = *vault_spares(top, ex), True
+    if not spares and not vault:
+        say('no working spare in the node list; trying the nodes that worked before (vault)')
+        spares, tested, vault = *vault_spares(top, ex), True
     if not spares:
         raise RuntimeError(f"no working spare found {'among the nodes that worked before' if vault else 'in the online node list'}; "
                            'nothing changed')

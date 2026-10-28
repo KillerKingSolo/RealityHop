@@ -187,7 +187,7 @@ def start_watcher():
 def latest():
     """The newest release on GitHub: {'ver', 'asset', 'sha', 'notes'}, or None when it has no RealityHop.exe."""
     req = urllib.request.Request(f'https://api.github.com/repos/{N.REPO}/releases/latest', headers={'Accept': 'application/vnd.github+json'})
-    r = json.loads(urllib.request.urlopen(req, timeout=20).read())
+    r = json.loads(N.gh_get(req, 20))
     assets = {a['name']: a for a in r.get('assets', [])}
     if 'RealityHop.exe' not in assets:
         return None
@@ -212,8 +212,8 @@ def apply_update(rel):
     a, tmp = rel['asset'], os.path.join(N.DATA, 'update.exe')
     os.makedirs(N.DATA, exist_ok=True)
     N.say(f"downloading Reality Hop {rel['ver']} ({a['size'] // 1_000_000} MB)...")
-    with urllib.request.urlopen(a['browser_download_url'], timeout=180) as r, open(tmp, 'wb') as f:
-        shutil.copyfileobj(r, f)
+    with open(tmp, 'wb') as f:
+        f.write(N.gh_get(a['browser_download_url'], 180))
     want = (a.get('digest') or '').removeprefix('sha256:') or rel.get('sha', '')
     got = hashlib.sha256(open(tmp, 'rb').read()).hexdigest()
     if not want or got.lower() != want.lower():
