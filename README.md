@@ -176,9 +176,12 @@ python src/realityhop.pyw
 
 ## License
 
-[PolyForm Noncommercial 1.0.0](LICENSE). You may use, change and share Reality Hop for any **noncommercial** purpose:
-personal use, study, research, hobby projects, charities, schools and public bodies. **Selling it or using it for
-commercial purposes is not allowed.** This is a source-available license, not an OSI "open source" license.
+[CC BY-NC-ND 4.0](LICENSE) (Creative Commons Attribution-NonCommercial-NoDerivatives 4.0). In short:
 
-sing-box and the node list are separate projects under their own licenses. Reality Hop downloads them at run time and
-does not ship them.
+- **Share it unchanged, with credit:** Reality Hop by KillerKingSolo, sing-box by SagerNet and FastNodes by rtwo2, with
+  their links (see [LICENSE](LICENSE)).
+- **No changed versions:** you may not share an edited copy.
+- **No commercial use:** you may not sell it or use it for profit.
+
+Anything beyond that needs permission. sing-box (GPL-3.0-or-later) and FastNodes (MIT) are separate projects under
+their own licenses; Reality Hop downloads them at run time and does not ship them.

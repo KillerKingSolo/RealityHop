@@ -3,6 +3,12 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings > Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## Next release
+
+- **License:** now CC BY-NC-ND 4.0 instead of PolyForm Noncommercial 1.0.0. You may share Reality Hop unchanged and
+  with credit (Reality Hop by KillerKingSolo, sing-box by SagerNet, FastNodes by rtwo2); changed versions and
+  commercial use are not allowed. See [LICENSE](LICENSE).
+
 ## 1.1.0 (2026-10-28)
 
 **Why update:** everything Reality Hop keeps now sits in one folder that only you can open, a broken line in the

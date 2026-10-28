@@ -12,7 +12,7 @@ VSVersionInfo(
     StringStruct('FileDescription', 'Reality Hop'), StringStruct('ProductName', 'Reality Hop'),
     StringStruct('FileVersion', '$v'), StringStruct('ProductVersion', '$v'),
     StringStruct('OriginalFilename', 'RealityHop.exe'), StringStruct('InternalName', 'RealityHop'),
-    StringStruct('LegalCopyright', 'PolyForm Noncommercial 1.0.0, github.com/KillerKingSolo/RealityHop')])]),
+    StringStruct('LegalCopyright', '(c) 2026 KillerKingSolo, CC BY-NC-ND 4.0, github.com/KillerKingSolo/RealityHop')])]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])])
 "@)   # no byte order mark: PyInstaller reads it as Python
 python -m PyInstaller --noconfirm --onefile --noconsole --name RealityHop --version-file build\version-info.txt `
