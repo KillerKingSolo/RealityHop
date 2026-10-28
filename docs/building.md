@@ -30,7 +30,8 @@ Releases are built by GitHub Actions ([`.github/workflows/release.yml`](../.gith
    git push origin v1.0.1
    ```
 3. The workflow writes the version from the tag into `src/version.py` and builds `RealityHop.exe` on Windows. It then
-   publishes a release with `RealityHop.exe` and `RealityHop.exe.sha256`.
+   publishes a release with `RealityHop.exe`. The release notes are the CHANGELOG section for that version, plus the
+   SHA-256 checksum of the exe.
 
 Installed copies find the new release within a day (the watcher checks daily, and the window checks when it opens).
 They check the download against the release's SHA-256 before they swap it in.

@@ -88,8 +88,10 @@ def latest():
     assets = {a['name']: a for a in r.get('assets', [])}
     if 'RealityHop.exe' not in assets:
         return None
-    return {'ver': r['tag_name'].lstrip('v'), 'asset': assets['RealityHop.exe'], 'sum': assets.get('RealityHop.exe.sha256'),
-            'notes': (r.get('body') or '')[:1500]}
+    body = r.get('body') or ''
+    m = re.search(r'SHA-256[^0-9a-fA-F]*([0-9a-fA-F]{64})', body)   # also printed in the release notes
+    return {'ver': r['tag_name'].lstrip('v'), 'asset': assets['RealityHop.exe'], 'sha': m.group(1) if m else '',
+            'notes': body.split('\n---')[0][:1500]}
 
 
 def check_update():
@@ -101,16 +103,14 @@ def check_update():
 
 
 def apply_update(rel):
-    """Download the release exe, check its SHA-256 against the release (GitHub's asset digest, or the .sha256 file
-    published next to it), then swap it in. The caller restarts whatever it needs."""
+    """Download the release exe, check its SHA-256 against the release (GitHub's asset digest, or the checksum printed
+    in the release notes), then swap it in. The caller restarts whatever it needs."""
     a, tmp = rel['asset'], os.path.join(N.DATA, 'update.exe')
     os.makedirs(N.DATA, exist_ok=True)
     N.say(f"downloading RealityHop {rel['ver']} ({a['size'] // 1_000_000} MB)...")
     with urllib.request.urlopen(a['browser_download_url'], timeout=180) as r, open(tmp, 'wb') as f:
         shutil.copyfileobj(r, f)
-    want = (a.get('digest') or '').removeprefix('sha256:')
-    if not want and rel.get('sum'):
-        want = urllib.request.urlopen(rel['sum']['browser_download_url'], timeout=30).read().decode().split()[0]
+    want = (a.get('digest') or '').removeprefix('sha256:') or rel.get('sha', '')
     got = hashlib.sha256(open(tmp, 'rb').read()).hexdigest()
     if not want or got.lower() != want.lower():
         os.remove(tmp)

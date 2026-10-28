@@ -19,7 +19,7 @@ it to you, and opens a GitHub issue to attach it to. **Do not paste `pc-config.j
 ## SmartScreen or antivirus blocks RealityHop.exe
 
 The exe is not code-signed. SmartScreen: **More info > Run anyway**. Some antivirus products flag PyInstaller apps by
-mistake. Check the SHA-256 against `RealityHop.exe.sha256` on the release page, or build from source
+mistake. Check its SHA-256 against the one printed in the release notes, or build from source
 ([building.md](building.md)).
 
 ## "port 2080 is used by ..."

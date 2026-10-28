@@ -4,5 +4,4 @@ Set-Location $PSScriptRoot
 python -m PyInstaller --noconfirm --onefile --noconsole --name RealityHop `
     --icon src\resources\app.ico --add-data "src\resources;resources" --paths src src\realityhop.pyw
 $h = (Get-FileHash dist\RealityHop.exe -Algorithm SHA256).Hash.ToLower()
-"$h  RealityHop.exe" | Set-Content -Encoding ascii dist\RealityHop.exe.sha256
-Write-Host "dist\RealityHop.exe  sha256 $h"
+Write-Host "dist\RealityHop.exe  SHA-256 $h"
