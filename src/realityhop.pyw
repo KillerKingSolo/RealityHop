@@ -561,19 +561,28 @@ class App(tk.Tk):
         self.judge()
 
     def first_check(self):
-        """Check now: everything this PC can see; in router-only mode also the router's own test, the only tunnel there is."""
+        """Check now: first the router's nodes when another PC changed them, then everything this PC can see; in router-only
+        mode also the router's own test, the only tunnel there is."""
+        if ROUTER and N.router_up():
+            s = N.router_sync()
+            if s:
+                self.say(s); N.hist_add(event=('heal', s))
         self.check_local('both')
         if RONLY:
             self.check_router()
 
     def check_router(self):
-        """The router's own tunnel tests every node over SSH; also compares its config with router-config.json."""
+        """The router's own tunnel tests every node over SSH; also compares its config with router-config.json.
+        First takes the router's nodes when another PC (or the self-repair) changed them."""
+        s = N.router_sync()
+        if s:
+            self.say(s); N.hist_add(event=('heal', s)); self.check_local('both')
         nodes = self.lists['phone'] or N.nodes_of(N.ROUTER_CFG)
         self.say('router: asking the router tunnel to test every node...')
         with ThreadPoolExecutor(2) as ex:
             g = ex.submit(N.geolocate, nodes); r = N.check_phone(nodes); g.result()
         self.router = (r, time.strftime('%H:%M')); self.lists['phone'] = nodes
-        self.router_stale = bool(r.get('cfg')) and r['cfg'] != hashlib.md5(open(N.ROUTER_CFG, 'rb').read()).hexdigest()
+        self.router_stale = N.router_stale(r.get('cfg'))
         self.count('phone'); self.judge()
 
     def verdict(self, key, n):

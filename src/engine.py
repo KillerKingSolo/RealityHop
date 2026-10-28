@@ -1006,8 +1006,14 @@ def push():
     shutil.copy(HEAL_SH, os.path.join(ROUTER_DIR, 'heal.sh'))
     script = ("cat > /tmp/sb-new.json <<'SBEOF'\n" + open(ROUTER_CFG, encoding='utf-8').read() + "\nSBEOF\n"
               "sing-box check -c /tmp/sb-new.json || { echo 'CONFIG REJECTED, nothing deployed'; exit 1; }\n"
-              "cat > /tmp/nft-devices.sh <<'NFTEOF'\n" + nft_script() + "NFTEOF\n" + PUSH_SH)
+              "cat > /tmp/nft-devices.sh <<'NFTEOF'\n" + nft_script() + "NFTEOF\n" + PUSH_SH
+              + f"echo '{'all' if all_devices() else ' '.join(devices())}' > /etc/sing-box/rh-devices\n"   # for the other PCs
+              "echo \"pushed-md5 $(md5sum /etc/sing-box/config.json | cut -c1-32)\"\n")
     out = ssh('sh -s', script).strip() or 'no answer from the router'
+    m = re.search(r'^pushed-md5 ([0-9a-f]{32})$', out, re.M)
+    if m and 'CONFIG REJECTED' not in out:
+        router_synced(m.group(1))
+    out = re.sub(r'\n?pushed-md5 \S*', '', out)
     if 'sing-box service: running' in out:
         try:
             out += '\n' + push_heal()
@@ -1028,20 +1034,55 @@ def push_heal():
                f'echo "self-repair: installed, {len(vault)} vault nodes on the router"\n').strip()
 
 
-def router_healed():
-    """If the router's self-repair swapped nodes, copy its node set into the configs and the PC tunnel.
-    Returns a sentence, or None when the router did not heal since the last look."""
-    out = ssh('cat /etc/sing-box/heal.state 2>/dev/null; echo ---; cat /etc/sing-box/config.json')
-    state, _, cfg = out.partition('---\n')
-    if not state.strip():
+def file_md5(path):
+    try:
+        return hashlib.md5(open(path, 'rb').read()).hexdigest()
+    except OSError:
+        return ''
+
+
+def router_synced(router_md5):
+    """Remember what the router runs and the router-config.json that matches it."""
+    set_this_pc(router_md5=router_md5, router_local=file_md5(ROUTER_CFG))
+
+
+def router_stale(router_md5):
+    """True when router-config.json has changes the router does not run yet."""
+    t = this_pc()
+    return bool(router_md5) and (router_md5 != t.get('router_md5') or file_md5(ROUTER_CFG) != t.get('router_local'))
+
+
+def router_sync():
+    """Several PCs can share one router, and the router runs what was pushed last. When its config changed since this PC
+    last pushed or looked (another PC pushed, or the router's self-repair swapped nodes), this PC takes the router's
+    nodes and device list instead of pushing its own over them. Returns a sentence when the nodes changed, else None."""
+    out = ssh("md5sum /etc/sing-box/config.json 2>/dev/null | cut -c1-32; echo ---; cat /etc/sing-box/rh-devices 2>/dev/null; "
+              "echo; echo ---; cat /etc/sing-box/heal.state 2>/dev/null; echo; echo ---; cat /etc/sing-box/config.json 2>/dev/null")
+    md5, devs, heal, cfg = [p.strip() for p in (out.split('---\n', 3) + ['', '', '', ''])[:4]]
+    if not md5 or md5 == this_pc().get('router_md5'):
         return None
-    nodes = [from_outbound(o) for o in json.loads(cfg)['outbounds'] if o.get('type') == 'vless']
+    try:
+        r = json.loads(cfg); nodes = [from_outbound(o) for o in r['outbounds'] if o.get('type') == 'vless']
+    except (ValueError, KeyError, TypeError):
+        return None
+    if not nodes:
+        return None
+    before = [n['server'] for n in inuse()]
     meta = vault_load()
-    for n in nodes:
-        n.update({k: v for k, v in meta.get(n['server'], {}).items() if k in ('where', 'isp', 'fp', 'ms') and v})
-    write_configs(nodes); write_txt(nodes, nodes); pc_push()
-    ssh('rm -f /etc/sing-box/heal.state')
-    return f"The router repaired itself with vault nodes ({', '.join(n['server'] for n in nodes)}); the configs and the PC tunnel follow it now."
+    for n in nodes:   # a node another PC found is not in this PC's vault: no latency or place known yet
+        n.update({'ms': None, **{k: v for k, v in meta.get(n['server'], {}).items() if k in ('where', 'isp', 'fp', 'ms') and v}})
+    jsave(ROUTER_CFG, r, indent=2)   # the router's own file: its API secret too, so this PC can still test it
+    write_configs(nodes); write_txt(nodes, nodes)
+    if devs == 'all' or (devs and all(lan_ip(x) for x in devs.split())):
+        settings_save({'devices': devs})
+    router_synced(md5)
+    if heal:
+        ssh('rm -f /etc/sing-box/heal.state')
+    if [n['server'] for n in nodes] == before:
+        return None
+    pc_push()
+    who = 'The router repaired itself with vault nodes' if heal else "Another PC changed the router's nodes"
+    return f"{who} ({', '.join(n['server'] for n in nodes)}); this PC follows them now."
 
 
 def core_mode():
@@ -1087,11 +1128,40 @@ def core_up(wait=15):
     return False
 
 
+LEGACY_CORE = 'sb-core.exe'   # the PC tunnel's name in the test builds before 1.0; their boot task may still start it
+
+
+def legacy_ps():
+    """PowerShell (needs admin): remove every scheduled task that starts the old sb-core.exe, then stop it."""
+    return ("Get-ScheduledTask | Where-Object { $_.Actions.Execute -like '*sb-core.exe*' } | "
+            "Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue; "
+            "Stop-Process -Name sb-core -Force -ErrorAction SilentlyContinue")
+
+
+def port_blocker():
+    """The other program on port 2080 that keeps rh-core from starting, or None. The old sb-core is stopped if it can be."""
+    owner = port_owner(2080) if port_taken(2080) else None
+    if owner and owner.lower() == LEGACY_CORE:
+        run(['taskkill', '/F', '/IM', LEGACY_CORE], timeout=20); time.sleep(1)
+        owner = port_owner(2080) if port_taken(2080) else None
+    return owner if owner and owner.lower() != os.path.basename(CORE).lower() else None
+
+
+def blocker_hint(owner):
+    return (f'{owner} uses port 2080, so the PC tunnel cannot start. '
+            + ('It is the tunnel of an old Reality Hop test build, started at boot: press Run setup again, which removes it '
+               '(one UAC prompt).' if owner.lower() == LEGACY_CORE else 'Close that program, then press Restart PC tunnel.'))
+
+
 def core_restart():
     """Plain sing-box runs the PC tunnel: restart it on pc-config.json. No UAC.
     If the task-started copy does not come up, a direct start is the fallback, so the tunnel is never left down."""
     if router_only():
         say('router-only mode: no tunnel on this PC'); return True
+    owner = port_blocker()
+    if owner:
+        say('PC tunnel: ' + blocker_hint(owner)); hist_add(event=('error', f'{owner} holds port 2080'))
+        return False
     if not core_stop():
         say('an old rh-core would not stop; trying anyway')
     how = core_start()
@@ -1401,6 +1471,10 @@ def replace(slots, top=None, vault=False):
     """Swap the in-use nodes at the given slot indexes (0-based) for the best tested spares, from the online node list
     or (vault=True) from the nodes that worked before, then deploy."""
     top = top or TOP
+    if router_up():
+        s = router_sync()
+        if s:   # the slots now hold other nodes: what was picked no longer applies
+            raise RuntimeError(s + ' Nothing replaced; check again and pick the node to fix.')
     cur = inuse(); ex = {n['server'] for n in cur}
     try:
         spares, tested = (vault_spares if vault else find_spares)(top, ex)
@@ -1565,7 +1639,7 @@ def watch_cycle(st, background=True):
             check_phone(cur); return {n['tag']: n['phone_ms'] for n in cur}
         check_pc(cur); return {n['tag']: n['pc_ms'] for n in cur}
     if router_up():
-        healed = router_healed()
+        healed = router_sync()
         if healed:
             say(healed); notify(healed); hist_add(event=('heal', healed)); return healed
         try:
@@ -1881,11 +1955,11 @@ def setup_pc():
         res.append(f"nodes: the {len(best)} fastest working ones are in use (best {best[0]['ms']} ms)")
     else:
         res.append(f'nodes: {len(nodes_of(PC_CFG))} already in use, kept')
-    owner = None if router_only() else port_owner(2080)
+    owner = None if router_only() else port_blocker()
     if router_only():
         res.append('PC tunnel: off (router-only mode: the router tunnels your devices)')
-    elif owner and owner != os.path.basename(CORE):
-        res.append(f'PC tunnel: NOT started, {owner} already uses port 2080; close it and run the setup again')
+    elif owner:
+        res.append('PC tunnel: NOT started. ' + blocker_hint(owner))
     else:
         res.append('PC tunnel: running on 127.0.0.1:2080' if core_restart() else 'PC tunnel: rh-core did not come up, see logs/core.log')
     if not router_only():

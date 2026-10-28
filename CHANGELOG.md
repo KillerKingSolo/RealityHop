@@ -3,6 +3,19 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings > Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.1.3 (2026-10-28)
+
+**Why update:** several PCs can share one router without overwriting each other, and a program blocking port 2080 is named at once.
+
+- **Several PCs, one router.** The router now holds the node set and the device list that run. When another PC pushed
+  (or the router repaired itself), Check now, Test on router, a fix and every background check take the router's nodes
+  into both configs and the PC tunnel, instead of pushing this PC's older set over them. A push replaces the 6 nodes on
+  the router; nothing is added twice. The device list is shared too: set it once on any PC.
+- The router tile says "Older config" only when this PC has changes the router does not run yet.
+- **PC tunnel blocked by another program on port 2080.** Restart no longer loops for a minute and ends with "did not come
+  back"; it says at once which program holds the port and what to do. The tunnel of the test builds before 1.0
+  (`sb-core.exe`, started at boot by its own scheduled task) is now removed by the setup, in the same UAC prompt.
+
 ## 1.1.2 (2026-10-28)
 
 **Why update:** Reality Hop keeps finding nodes when GitHub is blocked where you are, and the overview reads cleaner.

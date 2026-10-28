@@ -133,6 +133,7 @@ def install(target=None):
              "[DateTimeOffset]::Now.ToUnixTimeSeconds() + '.exe') }; "
              f"Copy-Item -LiteralPath {N.psq(sys.executable)} -Destination $e -Force; " if copy else '')
           + lock_ps(sid)   # also lets Reality Hop update itself there later without a UAC prompt
+          + '; ' + N.legacy_ps()   # a test build's sb-core would hold port 2080
           + ('; ' + N.boot_task_ps(os.path.join(d, 'PC', 'rh-core.exe'), os.path.join(d, 'PC', 'pc-config.json'))
              if N.boot_task_exists() else ''))
     N.say(f'installing to {d}; answer the UAC prompt...')
