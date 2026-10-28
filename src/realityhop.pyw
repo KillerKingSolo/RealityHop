@@ -196,6 +196,14 @@ def strip(parent, text, pad):
     return lab
 
 
+def link(parent, text, url, bg=CARD):
+    """A clickable web link."""
+    import webbrowser
+    lab = tk.Label(parent, text=text, bg=bg, fg=ACC_HI, font=(UI, 9, 'underline'), cursor='hand2')
+    lab.bind('<Button-1>', lambda e: webbrowser.open(url))
+    return lab
+
+
 def menu(parent):
     return tk.Menu(parent, tearoff=0, bg=CARD, fg=FG, activebackground=SEL, activeforeground=FG, relief='flat', bd=0, font=(UI, 10))
 
@@ -907,14 +915,22 @@ class SettingsDialog(tk.Toplevel):
         c2 = card(self, fill='x', padx=22, pady=(14, 0)); c2.configure(bg=CARD)
         self.router_var, self.upd_var = tk.BooleanVar(value=bool(cur['router'])), tk.BooleanVar(value=bool(cur['auto_update']))
         self.beta_var, self.files_var = tk.BooleanVar(value=cur['singbox'] == 'testing'), tk.BooleanVar(value=bool(cur['backend_files']))
-        self.channel = cur['singbox']
+        self.menu_var, self.desk_var = tk.BooleanVar(value=bool(cur['start_menu'])), tk.BooleanVar(value=bool(cur['desktop_icon']))
+        self.channel, self.icons = cur['singbox'], (cur['start_menu'], cur['desktop_icon'])
         for text, var in (('Router features (GL.iNet): show the router section', self.router_var),
                           ('Install RealityHop updates automatically', self.upd_var),
                           ('sing-box test builds (beta, alpha) instead of stable; updated daily either way', self.beta_var),
-                          ('Show backend files: buttons for the PC, Router and logs folders', self.files_var)):
+                          ('Show backend files: buttons for the PC, Router and logs folders', self.files_var),
+                          ('Show RealityHop in the Start menu and Windows search', self.menu_var),
+                          ('Desktop icon', self.desk_var)):
             t = Toggle(c2, text, var); t.configure(bg=CARD); t.c.configure(bg=CARD); t.lab.configure(bg=CARD, font=(UI, 10))
             t.pack(anchor='w', padx=16, pady=(10, 0))
-        tk.Label(c2, text=f'RealityHop {N.VERSION}  ·  github.com/{N.REPO}', bg=CARD, fg=MUTED, font=(UI, 9)).pack(anchor='w', padx=16, pady=(12, 4))
+        tk.Label(c2, text=f'RealityHop {N.VERSION}', bg=CARD, fg=MUTED, font=(UI, 9)).pack(anchor='w', padx=16, pady=(12, 2))
+        for text, url in ((f'github.com/{N.REPO}', f'https://github.com/{N.REPO}'),
+                          ("What's new (changelog)", f'https://github.com/{N.REPO}/blob/main/CHANGELOG.md'),
+                          ('Nodes come from github.com/rtwo2/FastNodes', 'https://github.com/rtwo2/FastNodes'),
+                          ('Tunnel engine: github.com/SagerNet/sing-box', 'https://github.com/SagerNet/sing-box')):
+            link(c2, text, url).pack(anchor='w', padx=16)
         row2 = tk.Frame(c2, bg=CARD); row2.pack(fill='x', padx=16, pady=(4, 14))
         for text, cmd in (('Check for updates', self.check_updates), ('Run setup again', lambda: (self.destroy(), app.rerun_setup())),
                           ('Uninstall', self.uninstall)):
@@ -949,11 +965,14 @@ class SettingsDialog(tk.Toplevel):
         try:
             d = N.settings_save(dict({k: v.get() for k, v in self.vars.items()}, router=int(self.router_var.get()),
                                      auto_update=int(self.upd_var.get()), singbox='testing' if self.beta_var.get() else 'stable',
-                                     backend_files=int(self.files_var.get())))
+                                     backend_files=int(self.files_var.get()), start_menu=int(self.menu_var.get()),
+                                     desktop_icon=int(self.desk_var.get())))
         except (tk.TclError, ValueError):
             messagebox.showerror('Settings', 'Numbers only, please.', parent=self); return
         self.app.auto_min.set(d['check_min']); self.app.say(f'settings saved: {d}'); self.destroy()
         channel = d['singbox'] != self.channel   # a new window picks the channel change up by itself
+        if (d['start_menu'], d['desktop_icon']) != self.icons and N.FROZEN:
+            install.shortcuts()
         if bool(d['router']) != ROUTER:
             if d['router'] and not os.path.exists(d['router_key'] or N.ROUTER_KEY):
                 if messagebox.askyesno('Router features', 'The router is not set up yet. Open the router steps of the setup wizard now?'):
@@ -1331,6 +1350,11 @@ class Wizard(tk.Tk):
                'connects anyway.')
         self.p('It runs sing-box with VLESS + REALITY, takes free public nodes from the FastNodes list, tests them from this PC, '
                'keeps the 6 fastest that work and replaces dead ones on its own.')
+        row = tk.Frame(self.body, bg=BG); row.pack(fill='x', pady=(0, 10))
+        for label, text, url in (('Nodes:', 'github.com/rtwo2/FastNodes', 'https://github.com/rtwo2/FastNodes'),
+                                 ('Tunnel engine:', 'github.com/SagerNet/sing-box', 'https://github.com/SagerNet/sing-box')):
+            tk.Label(row, text=label, bg=BG, fg=MUTED, font=(UI, 9)).pack(side='left')
+            link(row, text, url, BG).pack(side='left', padx=(4, 18))
         self.p('What you need', bold=True)
         self.items(['Windows 10 or 11, 64-bit.',
                     'A VPN app that can use a SOCKS5 proxy. Private Internet Access (PIA) works out of the box; the VPN step shows how.',
@@ -1351,14 +1375,22 @@ class Wizard(tk.Tk):
         t = Toggle(self.body, 'Use sing-box test builds (beta, alpha) instead of stable releases. Either way it updates itself daily.',
                    self.beta)
         t.configure(bg=BG); t.c.configure(bg=BG); t.lab.configure(bg=BG, font=(UI, 10)); t.pack(anchor='w', pady=(6, 4))
-        self.buttons(('Install' if 'install' not in self.ok else 'Install again (repair)', lambda: self.work(self.do_install, self.beta.get()), True))
+        s = N.settings_load()
+        self.menu, self.desk = tk.BooleanVar(value=bool(s['start_menu'])), tk.BooleanVar(value=bool(s['desktop_icon']))
+        if N.FROZEN:
+            for text, var in (('Show RealityHop in the Start menu and Windows search (press the Windows key, type RealityHop)', self.menu),
+                              ('Desktop icon', self.desk)):
+                t = Toggle(self.body, text, var)
+                t.configure(bg=BG); t.c.configure(bg=BG); t.lab.configure(bg=BG, font=(UI, 10)); t.pack(anchor='w', pady=(2, 4))
+        self.buttons(('Install' if 'install' not in self.ok else 'Install again (repair)',
+                      lambda: self.work(self.do_install, self.beta.get(), self.menu.get(), self.desk.get()), True))
         if 'install' in self.ok:
             self.note('Already installed. Press Next, or Install again to repair.', 'ok')
         self.log_box()
 
-    def do_install(self, testing):
+    def do_install(self, testing, start_menu=True, desktop=False):
         channel = 'testing' if testing else 'stable'
-        N.settings_save({'singbox': channel})
+        N.settings_save({'singbox': channel, 'start_menu': int(start_menu), 'desktop_icon': int(desktop)})
         if N.FROZEN:
             install.install()
         if os.path.exists(N.CORE) and N.this_pc().get('core_channel') != channel:

@@ -80,10 +80,21 @@ def user_sid():
     return m.group(0) if m else None
 
 
-def shortcut(lnk, target, args=''):
-    ps = (f"$s = (New-Object -ComObject WScript.Shell).CreateShortcut('{lnk}'); $s.TargetPath = '{target}'; "
-          f"$s.Arguments = '{args}'; $s.WorkingDirectory = '{os.path.dirname(target)}'; $s.IconLocation = '{target},0'; $s.Save()")
-    N.run(['powershell', '-NoProfile', '-Command', ps], timeout=30)
+DESKTOP_LNK_PS = "(Join-Path ([Environment]::GetFolderPath('Desktop')) 'RealityHop.lnk')"
+
+
+def shortcuts():
+    """The Start menu entry (it is also what Windows search finds when you press the Windows key and type RealityHop)
+    and the desktop icon, each as chosen in the setup or in Settings."""
+    s, target = N.settings_load(), N.exe()
+    for on, where in ((s['start_menu'], f"'{MENU_LNK}'"), (s['desktop_icon'], DESKTOP_LNK_PS)):
+        if on:
+            ps = (f"$s = (New-Object -ComObject WScript.Shell).CreateShortcut({where}); $s.TargetPath = '{target}'; "
+                  f"$s.WorkingDirectory = '{os.path.dirname(target)}'; $s.IconLocation = '{target},0'; "
+                  "$s.Description = 'RealityHop: get your VPN through networks that block VPNs'; $s.Save()")
+        else:
+            ps = f"Remove-Item -LiteralPath {where} -ErrorAction SilentlyContinue"
+        N.run(['powershell', '-NoProfile', '-Command', ps], timeout=30)
 
 
 def install():
@@ -105,7 +116,7 @@ def install():
     N.elevated(ps)
     if not os.path.exists(e) or os.path.getsize(e) != os.path.getsize(sys.executable):
         raise RuntimeError('not installed (the UAC prompt was declined or the copy failed)')
-    shortcut(MENU_LNK, e)
+    shortcuts()
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, UNINSTALL_KEY) as k:
         for name, val in (('DisplayName', 'RealityHop'), ('DisplayVersion', N.VERSION), ('Publisher', 'RealityHop'),
                           ('DisplayIcon', e), ('InstallLocation', d),
@@ -199,6 +210,7 @@ def uninstall(keep_data=False, router_too=False):
             os.remove(f)
         except OSError:
             pass
+    N.run(['powershell', '-NoProfile', '-Command', f'Remove-Item -LiteralPath {DESKTOP_LNK_PS} -ErrorAction SilentlyContinue'], timeout=30)
     try:
         import winreg
         winreg.DeleteKey(winreg.HKEY_CURRENT_USER, UNINSTALL_KEY)

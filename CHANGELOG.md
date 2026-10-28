@@ -3,6 +3,19 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings > Install
 RealityHop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.0.3 (2026-10-27)
+
+**Why update:** RealityHop is easier to find, and it now says plainly where its nodes come from.
+
+- **Start menu and Windows search:** a choice in the setup (Install step) and in Settings, on by default. Press the
+  Windows key and type RealityHop. An optional **desktop icon** is there too. Both follow the program when it moves or
+  updates, and Uninstall removes them.
+- **Where the nodes come from** is now linked everywhere you meet RealityHop: the setup's welcome page, Settings, the
+  README and every release page. RealityHop takes its nodes from the public list
+  [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes) and tests each one itself before using it. The tunnel engine is
+  [SagerNet/sing-box](https://github.com/SagerNet/sing-box).
+- **Settings** links to this changelog ("What's new") and to the project page.
+
 ## 1.0.2 (2026-10-27)
 
 **Why update:** pressing **Update** in 1.0.0 or 1.0.1 could leave RealityHop half-broken until you restarted it: the
@@ -47,8 +60,8 @@ First public release.
 - One file: download `RealityHop.exe`, run it, and the setup wizard installs it to
   `%LOCALAPPDATA%\Programs\RealityHop` (moved to Program Files in 1.0.2). No admin rights are needed, except one UAC
   prompt if you want the tunnel to start at boot.
-- The wizard downloads sing-box (official releases, checksum checked), finds and tests the first 6 nodes, starts the
-  tunnel and shows how to set up your VPN app.
+- The wizard downloads sing-box (official releases, checksum checked), finds and tests the first 6 nodes from the public
+  list [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), starts the tunnel and shows how to set up your VPN app.
 - Choose sing-box **stable** (default) or **test builds** (beta, alpha).
 
 **Staying connected**

@@ -3,7 +3,10 @@
 **Get your VPN through networks that block VPNs.** RealityHop wraps your VPN connection in a VLESS + REALITY tunnel
 ([sing-box](https://github.com/SagerNet/sing-box)). To the network it looks like ordinary HTTPS to a big website,
 such as apple.com, so school, work, hotel and dorm Wi-Fi, or a router with "VPN blocking", lets it through. It finds free
-public nodes, tests them, keeps the fastest working ones in use and replaces dead ones on its own.
+public nodes from [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), tests them itself, keeps the fastest working ones in use and replaces dead
+ones on its own.
+
+**What's new:** [CHANGELOG.md](CHANGELOG.md) (newest version first) · **Download:** [latest release](../../releases/latest)
 
 ![Setup wizard](docs/images/setup-welcome.png)
 
@@ -23,6 +26,7 @@ public nodes, tests them, keeps the fastest working ones in use and replaces dea
   rescues from a vault of known-good nodes when all are down. With PIA, it reacts the moment the VPN drops.
 - **Tray icon shows the state.** The centre is the overall state. The ring has one segment per node: green working,
   amber slow, red dead.
+- **Start menu and Windows search.** Press the Windows key and type RealityHop. A desktop icon is optional.
 - **Optional GL.iNet router support.** Put a phone, console or TV through the tunnel too, with nothing installed on
   them. Turn it off and the router section disappears.
 - **Stop / Start for when you travel.** One button turns everything off, including the start at boot, until you press

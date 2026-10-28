@@ -42,7 +42,8 @@ jobs:
           $m = [regex]::Match($log, "(?ms)^## $([regex]::Escape($v))\b[^\n]*\n(.*?)(?=^## |\z)")
           $notes = if ($m.Success) { $m.Groups[1].Value.Trim() } else { 'See CHANGELOG.md.' }
           $h = (Get-FileHash dist/RealityHop.exe -Algorithm SHA256).Hash.ToLower()
-          $tail = "**Install or update:** download ``RealityHop.exe`` and run it. Installed copies update themselves.`n`n**SHA-256 of RealityHop.exe:** ``$h``"
+          $src = "**Where the nodes come from:** the public node list [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), tested by RealityHop on your PC. Tunnel engine: [SagerNet/sing-box](https://github.com/SagerNet/sing-box)."
+          $tail = "$src`n`n**Install or update:** download ``RealityHop.exe`` and run it. Installed copies update themselves. All changes: [CHANGELOG.md](https://github.com/KillerKingSolo/RealityHop/blob/main/CHANGELOG.md).`n`n**SHA-256 of RealityHop.exe:** ``$h``"
           "$notes`n`n---`n`n$tail" | Set-Content -Encoding utf8 dist/notes.md
           Get-Content dist/notes.md
 

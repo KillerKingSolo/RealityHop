@@ -55,7 +55,8 @@ API = 'http://127.0.0.1:9090'
 TEST_URL = 'https://www.gstatic.com/generate_204'
 FEEDS = ('https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt',)   # github.com/rtwo2/FastNodes
 DEFAULTS = {'check_min': 60, 'slow_ms': 200, 'tolerance_ms': 25, 'top': 40, 'router': 0, 'router_host': '192.168.8.1',
-            'router_key': '', 'devices': '', 'auto_update': 1, 'singbox': 'stable', 'backend_files': 0}
+            'router_key': '', 'devices': '', 'auto_update': 1, 'singbox': 'stable', 'backend_files': 0,
+            'start_menu': 1, 'desktop_icon': 0}
 TOP = 40   # candidates tested per scan (settings)
 FRONTS = {'www.apple.com', 'swdist.apple.com', 'www.icloud.com', 'www.cloudflare.com', 'cloudflare.com', 'www.amazon.com',
           'amazon.com', 'yahoo.com', 'www.yahoo.com', 'cdnjs.com', 'www.microsoft.com', 'www.bing.com', 'www.python.org',
