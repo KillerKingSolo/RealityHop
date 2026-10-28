@@ -1,0 +1,47 @@
+# VPN app setup
+
+RealityHop gives your VPN app a local SOCKS5 proxy:
+
+| Setting | Value |
+|---|---|
+| Type | SOCKS5 |
+| Host | `127.0.0.1` |
+| Port | `2080` |
+| Username / password | none |
+
+The VPN app sends its own encrypted connection through the proxy. RealityHop carries it inside the REALITY tunnel.
+
+## Private Internet Access (PIA)
+
+1. PIA > **Settings > Protocols**: choose **OpenVPN**. This is the protocol RealityHop is tested with.
+2. **Settings > Multi-Hop**: tick **Multi-hop and Obfuscation** and choose **SOCKS5 Proxy**.
+3. Click **EDIT**, enter host `127.0.0.1` and port `2080`, leave the username and password empty, and save.
+4. Connect.
+
+![PIA Multi-Hop with the SOCKS5 proxy](images/pia-multihop-socks5.png)
+
+The setup wizard's **Check PIA** button reads PIA's settings file and tells you whether the proxy is set correctly.
+
+With PIA, RealityHop also follows PIA's own connection state (`piactl monitor`). When PIA drops and has not
+reconnected a minute later, RealityHop checks the nodes and fixes them at once.
+
+**Games and apps that should skip the VPN:** PIA > Settings > **Split Tunnel**.
+
+## Other VPN apps
+
+Any VPN app with a SOCKS5 proxy setting works the same way: point it at `127.0.0.1:2080`.
+
+**OpenVPN config files** (OpenVPN GUI, OpenVPN Connect and others): add this line, and use TCP:
+
+```
+socks-proxy 127.0.0.1 2080
+proto tcp
+```
+
+Without PIA, RealityHop checks the nodes on its normal schedule (every 60 minutes by default, set in Settings). It does
+not get an instant signal when the VPN drops.
+
+## While RealityHop is stopped
+
+**Stop** in the window turns the tunnel off. While it is stopped, turn the VPN app's proxy off; in PIA, untick
+**Multi-hop and Obfuscation**. Otherwise the VPN has nothing to connect through. After **Start**, turn the proxy back on.

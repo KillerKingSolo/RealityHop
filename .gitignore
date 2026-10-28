@@ -1,0 +1,23 @@
+# build output
+build/
+dist/
+*.spec
+__pycache__/
+*.pyc
+
+# never commit runtime data: configs with node keys and API secrets, keys, logs, binaries
+*.log
+*.exe
+*.key
+*_ed25519*
+id_*
+known_hosts
+/pc-config.json
+/router-config.json
+vault.json
+nodes.txt
+settings.json
+this-pc.json
+history.json
+last.json
+tray.json

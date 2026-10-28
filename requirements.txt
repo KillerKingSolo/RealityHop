@@ -1,0 +1,3 @@
+# runtime: the tray and window icons
+pillow>=11.0
+# build only: pip install pyinstaller

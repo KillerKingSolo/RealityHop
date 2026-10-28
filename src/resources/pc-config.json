@@ -1,0 +1,61 @@
+{
+  "log": {
+    "level": "warn",
+    "timestamp": true,
+    "output": "logs/core.log"
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+      }
+    ],
+    "final": "quad9",
+    "strategy": "prefer_ipv4"
+  },
+  "inbounds": [
+    {
+      "type": "mixed",
+      "tag": "socks-in",
+      "listen": "127.0.0.1",
+      "listen_port": 2080
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "urltest",
+      "tag": "auto",
+      "outbounds": [],
+      "url": "https://www.gstatic.com/generate_204",
+      "interval": "10m",
+      "tolerance": 25
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "direct"
+      }
+    ],
+    "final": "auto",
+    "auto_detect_interface": true,
+    "default_domain_resolver": "quad9"
+  },
+  "experimental": {
+    "clash_api": {
+      "external_controller": "127.0.0.1:9090",
+      "secret": "@SECRET@"
+    }
+  }
+}
