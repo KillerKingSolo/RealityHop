@@ -3,11 +3,22 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings > Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
-## Next release
+## 1.1.1 (2026-10-28)
+
+**Why update:** clearer node fix actions, a new fix from nodes that worked before, a readable 24-hour legend, and the
+new license.
 
 - **License:** now CC BY-NC-ND 4.0 instead of PolyForm Noncommercial 1.0.0. You may share Reality Hop unchanged and
   with credit (Reality Hop by KillerKingSolo, sing-box by SagerNet, FastNodes by rtwo2); changed versions and
   commercial use are not allowed. See [LICENSE](LICENSE).
+- **Fixing a node says what it does.** Right-click a node, or use the Nodes section:
+  - **Fix: test online nodes**: tests the fastest nodes from the online list and swaps in the best one.
+  - **Fix: nodes that worked before** (new): tests the vault again and swaps in the best one. Useful when the online list
+    cannot be reached.
+  - **Fix: quick swap, untested**: puts the fastest-answering node into the configs only, without a test or a restart.
+
+  These replace "Replace selected · configs only / tested".
+- **Last 24 hours:** Rescue is purple now, so it no longer looks like PIA dropped (red). The legend is capitalised.
 
 ## 1.1.0 (2026-10-28)
 

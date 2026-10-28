@@ -1337,13 +1337,23 @@ def scan(top=None):
     return nodes
 
 
-def replace(slots, top=None):
-    """Swap the in-use nodes at the given slot indexes (0-based) for the best spares, then deploy."""
+def vault_spares(top, exclude):
+    """Working nodes from the vault (nodes that passed a test before), tested again now, best tunnel latency first."""
+    test = vault_nodes(exclude)[:top]
+    if test:
+        say(f'testing {len(test)} nodes that worked before (vault)...'); router_test(test)
+    return sorted([n for n in test if n['ok']], key=lambda n: n['ms']), test
+
+
+def replace(slots, top=None, vault=False):
+    """Swap the in-use nodes at the given slot indexes (0-based) for the best tested spares, from the online node list
+    or (vault=True) from the nodes that worked before, then deploy."""
     top = top or TOP
     cur = inuse()
-    spares, tested = find_spares(top, {n['server'] for n in cur})
+    spares, tested = (vault_spares if vault else find_spares)(top, {n['server'] for n in cur})
     if not spares:
-        raise RuntimeError('no working spare found in the feed; nothing changed')
+        raise RuntimeError(f"no working spare found {'among the nodes that worked before' if vault else 'in the online node list'}; "
+                           'nothing changed')
     if len(spares) < len(slots):
         say(f'only {len(spares)} working spare(s) for {len(slots)} slot(s); replacing what can be replaced')
     swaps = []

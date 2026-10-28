@@ -9,7 +9,7 @@ on this PC. Everything lives in the install folder (C:\\Program Files\\RealityHo
   Overview               tiles, node tables (double-click a node for details and its ping graph), last-24-hours strip
   Check now              tests the nodes from this PC and through the PC tunnel
   Restart tunnel / Stop  restart rh-core (about 2 s); Stop turns everything off until Start (for when you are away)
-  Nodes                  Show candidates, Replace selected (configs only / tested), Replace all with best 6, Rescue
+  Nodes                  Show candidates, Fix (online / worked before / quick swap), Replace all with best 6, Rescue
   PC tunnel              Restart, Run setup again
   Router                 Test on router, Push to router (only with router features on)
   Help / Files           Report a problem (anonymous logs); with "Show backend files" on: the PC, Router and logs folders
@@ -40,8 +40,8 @@ PILL = {'ok': '#123222', 'bad': '#3a1214', 'warn': '#3a2a0c', 'unk': '#1f1f25'}
 COLS = (('slot', 70), ('server', 135), ('where', 190), ('tcp', 90), ('tunnel', 95), ('verdict', 420))
 HEAD = {'slot': 'SLOT', 'server': 'SERVER', 'front': 'FRONT', 'where': 'LOCATION', 'tcp': '443 PING', 'tunnel': 'TUNNEL',
         'verdict': 'STATUS', 'num': '#', 'result': 'RESULT'}
-EVENTS = {'drop': ('#ff4d4f', 'PIA dropped'), 'back': ('#5fd38d', 'PIA back'), 'replace': ('#f5a524', 'node replaced'),
-          'rescue': ('#ff4d4f', 'rescue'), 'restart': ('#5b9cff', 'tunnel restart'), 'heal': ('#f5a524', 'router repaired'),
+EVENTS = {'drop': ('#ff4d4f', 'PIA dropped'), 'back': ('#5fd38d', 'PIA back'), 'replace': ('#f5a524', 'Node replaced'),
+          'rescue': ('#b57cff', 'Rescue'), 'restart': ('#5b9cff', 'Tunnel restart'), 'heal': ('#f5a524', 'Router repaired'),
           'error': ('#ff4d4f', 'error')}
 ROUTER = not N.pc_only()   # router features on: router section, router node table, router tile
 RONLY = N.router_only()    # router-only mode: no PC tunnel, no PC section
@@ -317,8 +317,9 @@ class App(tk.Tk):
             w = NavButton(side, text, cmd); w.pack(fill='x', padx=(18, 10)); self.buttons.append(w); return w
         group('Nodes', '\ue774', '◆')   # globe
         sbtn('Show candidates', self.show_candidates)
-        sbtn('Replace selected  ·  configs only', lambda: self.replace_selected(False))
-        sbtn('Replace selected  ·  tested', lambda: self.replace_selected(True))
+        sbtn('Fix: test online nodes', lambda: self.replace_selected('online'))
+        sbtn('Fix: nodes that worked before', lambda: self.replace_selected('vault'))
+        sbtn('Fix: quick swap, untested', lambda: self.replace_selected('quick'))
         sbtn('Replace all with best 6', self.replace_all)
         sbtn('Rescue from verified vault', self.rescue)
         if not RONLY:
@@ -424,8 +425,10 @@ class App(tk.Tk):
         self.log_shown = True
         self.log_btn = ttk.Button(lhead, text='Hide', style='Ghost.TButton', command=self.toggle_log); self.log_btn.pack(side='right')
         self.menu = menu(self)
-        self.menu.add_command(label='Replace this node  ·  files only', command=lambda: self.replace_selected(False))
-        self.menu.add_command(label='Replace this node  ·  tested', command=lambda: self.replace_selected(True))
+        for how, label in (('online', 'Fix this node: test online nodes and swap in the best one'),
+                           ('vault', 'Fix this node: swap in a node that worked before (tested again)'),
+                           ('quick', 'Fix this node: quick swap to the fastest ping (configs only, not tested)')):
+            self.menu.add_command(label=label, command=lambda how=how: self.replace_selected(how))
 
     def show_core(self):
         """Under the name: the sing-box build on this PC and whether it is a stable release or a test build."""
@@ -744,32 +747,37 @@ class App(tk.Tk):
         else:
             self.cand = Candidates(self)
 
-    def replace_selected(self, tested):
+    def replace_selected(self, how):
+        """Fix one node: 'online' = test the online node list and swap in the best, 'vault' = the same with the nodes that
+        worked before, 'quick' = the fastest 443 ping into the configs only, untested."""
         if not self.sel or not self.lists[MAIN]:
             messagebox.showinfo('Reality Hop', 'Select a node in one of the tables first.'); return
-        tag = self.sel[1]; i = [n['tag'] for n in self.lists[MAIN]].index(tag); cur = self.lists[MAIN][i]['server']
-        where = 'the router and the PC tunnel are' if ROUTER else 'the PC tunnel is'
-        if tested:
-            ok = messagebox.askyesno('Replace node', f'Replace {tag} ({cur}) with a tested spare?\n\nThis PC tests the {N.TOP} '
-                                     f'fastest candidates (under a minute), the best goes into the configs, then {where} updated.')
-        else:
-            ok = messagebox.askyesno('Replace node', f'Replace {tag} ({cur}) in the configs only?\n\nThe fastest candidate by 443 ping '
-                                     'from this PC goes into the configs. Not tunnel-tested, nothing restarted.')
-        if ok:
-            self.work(self.do_replace, [i], True, not tested)
+        tags = [n['tag'] for n in self.lists[MAIN]]
+        if self.sel[1] not in tags:
+            messagebox.showinfo('Reality Hop', 'Select a node in the node table first.'); return
+        tag = self.sel[1]; i = tags.index(tag); cur = self.lists[MAIN][i]['server']
+        where = 'the router tunnel is' if RONLY else 'the router and the PC tunnel are' if ROUTER else 'the PC tunnel is'
+        text = {'online': f'Test the {N.TOP} fastest nodes from the online node list (under a minute) and swap the best one '
+                          f'in for {tag} ({cur})? Then {where} updated.',
+                'vault': f'Test the nodes that worked before (the vault) again and swap the best one in for {tag} ({cur})? '
+                         f'Then {where} updated. Useful when the online node list cannot be reached.',
+                'quick': f'Swap {tag} ({cur}) for the node that answers fastest on port 443 from this PC? Only the configs '
+                         'change: the node is not tested and nothing restarts until you say so.'}[how]
+        if messagebox.askyesno('Fix node', text):
+            self.work(self.do_replace, [i], True, how)
 
     def replace_all(self):
         if messagebox.askyesno('Replace all', f'Scan the node list, test the {N.TOP} fastest candidates plus the current nodes on this PC, '
                                'put the 6 best into the configs, and update the tunnel(s)?\n\nAbout a minute.'):
             self.work(self.do_replace_all)
 
-    def do_replace(self, slots, ask=True, local=False):
-        if local:
+    def do_replace(self, slots, ask=True, how='online'):
+        if how == 'quick':
             swaps = N.replace_local(slots)
             self.after_files(' '.join(f"{tag} was replaced in the configs: {old} -> {new['server']} (443 ping {new['tcp_ms']} ms, not tunnel-tested)."
                                       for tag, old, new in swaps))
         else:
-            swaps = N.replace(slots)
+            swaps = N.replace(slots, vault=how == 'vault')
             self.after_deploy(' '.join(f"{tag} was replaced: {old} -> {new['server']} ({new['ms']} ms, {new.get('where', '?')})." for tag, old, new in swaps), ask)
 
     def rescue(self):
