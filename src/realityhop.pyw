@@ -247,7 +247,7 @@ class App(tk.Tk):
         except Exception:
             pass
         self.icon_key = None
-        theme(self); self.build(); dark_titlebar(self); self.render()
+        theme(self); self.build(); self.fit(); dark_titlebar(self); self.render()
         self.after(150, self.drain); self.after(400, lambda: self.work(self.first_check)); self.after(1500, self.auto_tick); self.after(5000, self.watchdog)
         threading.Thread(target=self.find_update, daemon=True).start(); self.after(30000, self.maybe_core_update)
 
@@ -296,7 +296,7 @@ class App(tk.Tk):
         self.bg_on = tk.BooleanVar(value=os.path.exists(N.STARTUP_LNK))
 
         # sidebar: every action, grouped
-        side = ttk.Frame(self, style='Side.TFrame', width=262); side.pack(side='left', fill='y'); side.pack_propagate(False)
+        side = self.side = ttk.Frame(self, style='Side.TFrame', width=262); side.pack(side='left', fill='y'); side.pack_propagate(False)
         tk.Frame(self, bg=LINE, width=1).pack(side='left', fill='y')
         brand = ttk.Frame(side, style='Side.TFrame'); brand.pack(fill='x', padx=18, pady=(20, 4))
         tk.Label(brand, text='●', bg=SIDE, fg=ACC, font=(UIB, 14)).pack(side='left')
@@ -429,6 +429,13 @@ class App(tk.Tk):
                            ('vault', 'Fix this node: swap in a node that worked before (tested again)'),
                            ('quick', 'Fix this node: quick swap to the fastest ping (configs only, not tested)')):
             self.menu.add_command(label=label, command=lambda how=how: self.replace_selected(how))
+
+    def fit(self):
+        """Tall enough for the whole sidebar (it grows with router features and backend files), never taller than the screen."""
+        self.side.pack_propagate(True); self.update_idletasks(); need = self.side.winfo_reqheight() + 24
+        self.side.pack_propagate(False); self.side.configure(width=262)
+        h = max(1040, min(need, self.winfo_screenheight() - 80))
+        self.geometry(f'{min(1440, self.winfo_screenwidth() - 40)}x{h}'); self.minsize(1180, min(need, self.winfo_screenheight() - 80))
 
     def show_core(self):
         """Under the name: the sing-box build on this PC and whether it is a stable release or a test build."""

@@ -18,6 +18,8 @@ new license.
   - **Fix: quick swap, untested**: puts the fastest-answering node into the configs only, without a test or a restart.
 
   These replace "Replace selected · configs only / tested".
+- **Window size:** the window opens tall enough for the whole sidebar, so the Settings button is no longer cut off
+  (never taller than the screen).
 - **Last 24 hours:** Rescue is purple now, so it no longer looks like PIA dropped (red). The legend is capitalised.
 
 ## 1.1.0 (2026-10-28)
