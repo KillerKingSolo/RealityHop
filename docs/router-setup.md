@@ -14,14 +14,16 @@ Settings > Router features, then Run setup again. This page explains what each s
 
 ## Step 1: connect (SSH key)
 
-RealityHop talks to the router over SSH with a key of its own. It never needs or stores the router password.
+Reality Hop talks to the router over SSH with a key of its own. It never needs or stores the router password.
 
 1. The router address is `192.168.8.1` by default on GL.iNet routers.
-2. Click **Add key to router**. RealityHop makes a key pair with Windows' own `ssh-keygen`
-   (`%LOCALAPPDATA%\RealityHop\router_ed25519`). A console window then opens and runs Windows' own `ssh`, which asks for
-   the router password. That is the admin password of the GL.iNet web panel. Type it there; RealityHop never sees it.
+2. Click **Add key to router**. Reality Hop makes a key pair with Windows' own `ssh-keygen`
+   (`router_ed25519` in the install folder, `C:\Program Files\RealityHop` by default). A console window then opens and runs Windows' own `ssh`, which asks for
+   the router password. That is the admin password of the GL.iNet web panel. Type it there; Reality Hop never sees it.
    The public key is added to `/etc/dropbear/authorized_keys` on the router.
 3. Click **Test connection**. It shows the model, firmware and sing-box version.
+
+![Router devices](images/devices.png)
 
 Already have a key that the router accepts? Use **Use my own key file...** instead.
 
@@ -51,9 +53,23 @@ Pick devices from the router's DHCP list, or type their addresses. Then click **
 **Change the list later** in the window: Router > **Devices**. Tick or untick devices, add an address by hand, then
 **Save and push**.
 
-**Give each chosen device a fixed address,** or it loses the tunnel when its address changes: GL.iNet web panel >
-**NETWORK > LAN > Address Reservation > Add**. On phones, turn off rotating private addresses for this Wi-Fi network
-(iPhone: Private Wi-Fi Address set to Off or Fixed; Android: use the device MAC).
+**Give each chosen device a fixed address,** or it loses the tunnel when its address changes. On phones, first turn
+off rotating private addresses for this Wi-Fi network (iPhone: Private Wi-Fi Address set to Off or Fixed; Android: use
+the device MAC). Then GL.iNet web panel > **CLIENTS**: turn on the **Reserved IP** slider next to the device.
+
+## Router only
+
+Answer **Router only** to the router question in the setup (or turn on Settings > **Router only**) when nothing should
+run on this PC's connection. The router then does all the tunnelling:
+
+- **Every device on the main network** (setup step 3, or Router > Devices) puts everything on the router's main Wi-Fi
+  and LAN through the tunnel, this PC included. Guest and IoT networks stay as they are. The main network's IPv6 is
+  refused, so devices use the tunnelled IPv4 and nothing goes around the tunnel.
+- Or tick single devices, as above.
+- Node tests run on the router, because this PC's own traffic may go through the tunnel and would skew them.
+- Your VPN app needs no proxy setting. Connect it as usual; OpenVPN over TCP 443 is the most reliable.
+
+![Router only](images/router-only.png)
 
 ## How the router side stays healthy
 
@@ -62,10 +78,12 @@ Pick devices from the router's DHCP list, or type their addresses. Then click **
   When the PC is off and every node fails twice, a minute apart, it swaps in the next 6 nodes from its vault. It keeps
   going until a set works, and logs to `/etc/sing-box/heal.log`.
 - If the sing-box service is disabled, the firewall include removes the diversion, so no device is ever cut off.
+- Nothing can connect to the router's port 7895 (where sing-box receives the diverted traffic) directly: the
+  firewall include drops it, so no device can make sing-box dial itself.
 
 ## Turn the router tunnel off
 
-- **Uninstall** RealityHop and answer yes to "Also switch the tunnel on the router off?". Or run this over SSH:
+- **Uninstall** Reality Hop and answer yes to "Also switch the tunnel on the router off?". Or run this over SSH:
 
   ```
   uci set sing-box.main.enabled=0; uci commit sing-box; /etc/init.d/sing-box stop

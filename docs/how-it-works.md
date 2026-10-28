@@ -43,8 +43,8 @@ row leaves it. **Rescue** tests the vault, and that works even when the node lis
 - With PIA, it follows `piactl monitor connectionstate`. That is PIA's own event feed: there is no polling and no
   network traffic. If PIA is still not connected a minute after a drop, the nodes are checked at once. If all of them
   are fine, the tunnel is restarted.
-- Once a day it checks for a new sing-box build on your channel (stable or test builds) and for a new RealityHop
-  release. sing-box updates do not depend on RealityHop releases. Switching the channel in Settings installs that
+- Once a day it checks for a new sing-box build on your channel (stable or test builds) and for a new Reality Hop
+  release. sing-box updates do not depend on Reality Hop releases. Switching the channel in Settings installs that
   channel's newest build at once, even if it is older. The window also does the daily sing-box check when the watcher is
   not running.
 - While the window is open, the window does the checks and the watcher waits.
@@ -56,22 +56,26 @@ It runs as your user in "do not store password" mode. Creating or removing the t
 
 ## Files
 
-| Path | What |
+Everything is in one folder: `C:\Program Files\RealityHop` unless you picked another one in the setup. The
+setup gives that folder to your Windows user alone (plus SYSTEM and administrators), because it holds the
+router key, the node keys and the API secret. Updates replace the exe there without a UAC prompt.
+
+| In the install folder | What |
 |---|---|
-| `C:\Program Files\RealityHop\RealityHop.exe` | the program; the install gives your Windows user modify rights on this one folder, so updates need no UAC prompt |
-| `%LOCALAPPDATA%\RealityHop\PC\pc-config.json` | PC tunnel config (its API secret is random per install) |
-| `%LOCALAPPDATA%\RealityHop\PC\rh-core.exe` | sing-box (official release, stable or test builds) |
-| `%LOCALAPPDATA%\RealityHop\Router\router-config.json` | router tunnel config |
-| `%LOCALAPPDATA%\RealityHop\Router\nft-devices.sh`, `heal.sh` | copies of the router scripts as last pushed |
-| `%LOCALAPPDATA%\RealityHop\logs\` | `window.log`, `watch.log` (1 MB plus one older copy each), `core.log` (sing-box warnings) |
-| `%LOCALAPPDATA%\RealityHop\anonymous-logs\` | problem reports made with Report a problem (the last 5) |
-| `%LOCALAPPDATA%\RealityHop\vault.json`, `nodes.txt` | known-good nodes, the last scan |
-| `%LOCALAPPDATA%\RealityHop\settings.json`, `this-pc.json` | settings, setup state |
-| `%LOCALAPPDATA%\RealityHop\router_ed25519` | SSH key for the router (only with router features) |
+| `RealityHop.exe` | the program |
+| `PC\pc-config.json` | PC tunnel config (its API secret is random per install) |
+| `PC\rh-core.exe` | sing-box (official release, stable or test builds) |
+| `Router\router-config.json` | router tunnel config |
+| `Router\nft-devices.sh`, `Router\heal.sh` | copies of the router scripts as last pushed |
+| `logs\` | `window.log`, `watch.log` (1 MB plus one older copy each), `core.log` (sing-box warnings) |
+| `anonymous-logs\` | problem reports made with Report a problem (the last 5) |
+| `vault.json`, `nodes.txt` | known-good nodes, the last scan |
+| `settings.json`, `this-pc.json` | settings, setup state |
+| `router_ed25519` | SSH key for the router (only with router features) |
 
 With **Show backend files** on (Settings or the last setup step), the window has buttons for these folders. You can
 read and edit the configs. **Restart tunnel** applies `pc-config.json`, and **Push to router** applies
-`router-config.json`. RealityHop rewrites the `vless-1` to `vless-6` entries whenever it replaces nodes.
+`router-config.json`. Reality Hop rewrites the `vless-1` to `vless-6` entries whenever it replaces nodes.
 
 ## Anonymous problem reports
 

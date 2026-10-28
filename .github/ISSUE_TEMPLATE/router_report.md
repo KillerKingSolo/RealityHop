@@ -1,6 +1,6 @@
 ---
 name: Router report
-about: RealityHop on a GL.iNet model (works or not)
+about: Reality Hop on a GL.iNet model (works or not)
 labels: router
 ---
 

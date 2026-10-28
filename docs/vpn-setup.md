@@ -1,6 +1,6 @@
 # VPN app setup
 
-RealityHop gives your VPN app a local SOCKS5 proxy:
+Reality Hop gives your VPN app a local SOCKS5 proxy:
 
 | Setting | Value |
 |---|---|
@@ -9,7 +9,7 @@ RealityHop gives your VPN app a local SOCKS5 proxy:
 | Port | `2080` |
 | Username / password | none |
 
-The VPN app sends its own encrypted connection through the proxy. RealityHop carries it inside the REALITY tunnel.
+The VPN app sends its own encrypted connection through the proxy. Reality Hop carries it inside the REALITY tunnel.
 
 **Use OpenVPN over TCP, port 443.** A SOCKS5 proxy carries TCP only, so UDP and WireGuard cannot go through it. 443
 is the normal HTTPS port, the least likely to be blocked.
@@ -26,8 +26,8 @@ is the normal HTTPS port, the least likely to be blocked.
 The setup wizard's **Check PIA** button reads PIA's settings file. It tells you whether the protocol (OpenVPN), the
 transport (TCP), the remote port (443) and the proxy are all set correctly.
 
-With PIA, RealityHop also follows PIA's own connection state (`piactl monitor`). When PIA drops and has not
-reconnected a minute later, RealityHop checks the nodes and fixes them at once.
+With PIA, Reality Hop also follows PIA's own connection state (`piactl monitor`). When PIA drops and has not
+reconnected a minute later, Reality Hop checks the nodes and fixes them at once.
 
 **Games and apps that should skip the VPN:** PIA > Settings > **Split Tunnel**.
 
@@ -44,10 +44,10 @@ remote vpn.example.com 443
 socks-proxy 127.0.0.1 2080
 ```
 
-Without PIA, RealityHop checks the nodes on its normal schedule (every 60 minutes by default, set in Settings). It does
+Without PIA, Reality Hop checks the nodes on its normal schedule (every 60 minutes by default, set in Settings). It does
 not get an instant signal when the VPN drops.
 
-## While RealityHop is stopped
+## While Reality Hop is stopped
 
 **Stop** in the window turns the tunnel off. While it is stopped, turn the VPN app's proxy off; in PIA, untick
 **Multi-hop and Obfuscation**. Otherwise the VPN has nothing to connect through. After **Start**, turn the proxy back on.

@@ -55,7 +55,9 @@
   "experimental": {
     "clash_api": {
       "external_controller": "127.0.0.1:9090",
-      "secret": "@SECRET@"
+      "secret": "@SECRET@",
+      "access_control_allow_origin": ["http://127.0.0.1:9090"],
+      "access_control_allow_private_network": false
     }
   }
 }

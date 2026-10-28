@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Logs are in `%LOCALAPPDATA%\RealityHop\logs`: `window.log` (the window and the setup), `watch.log` (the background
+Logs are in the `logs` folder of the install folder (`C:\Program Files\RealityHop\logs` by default): `window.log` (the window and the setup), `watch.log` (the background
 watcher) and `core.log` (sing-box warnings). Turn on Settings > **Show backend files** for buttons that open them.
 
 **To report a problem,** use **Report a problem** in the window. It makes an anonymous copy of the three logs, shows
@@ -53,9 +53,9 @@ check that the PC has internet at all. Then try **Show candidates > Test 40 fast
 
 ## A device on the router is not tunnelled
 
-Its address probably changed. Reserve a fixed address for it (GL.iNet web panel > NETWORK > LAN > Address
-Reservation), then update the device list (Run setup again > router steps).
+Its address probably changed. Reserve a fixed address for it (GL.iNet web panel > CLIENTS, turn on the Reserved IP
+slider next to the device), then update the device list (Router > Devices).
 
 ## Remove everything
 
-Settings > **Uninstall**, or Windows Settings > Apps > RealityHop. Then turn your VPN app's proxy off.
+Settings > **Uninstall**, or Windows Settings > Apps > Reality Hop. Then turn your VPN app's proxy off.

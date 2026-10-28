@@ -1,6 +1,6 @@
-# RealityHop
+# Reality Hop
 
-**Get your VPN through networks that block VPNs.** RealityHop wraps your VPN connection in a VLESS + REALITY tunnel
+**Get your VPN through networks that block VPNs.** Reality Hop wraps your VPN connection in a VLESS + REALITY tunnel
 ([sing-box](https://github.com/SagerNet/sing-box)). To the network it looks like ordinary HTTPS to a big website,
 such as apple.com, so school, work, hotel and dorm Wi-Fi, or a router with "VPN blocking", lets it through. It finds free
 public nodes from [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), tests them itself, keeps the fastest working ones in use and replaces dead
@@ -12,8 +12,8 @@ ones on its own.
 
 ```mermaid
 flowchart LR
-    vpn["VPN app<br/>PIA or another"] -- "SOCKS5<br/>127.0.0.1:2080" --> rh["RealityHop<br/>on your PC"]
-    phone["Phone, console, TV"] -. "optional" .-> router["GL.iNet router<br/>RealityHop's router tunnel"]
+    vpn["VPN app<br/>PIA or another"] -- "SOCKS5<br/>127.0.0.1:2080" --> rh["Reality Hop<br/>on your PC"]
+    phone["Phone, console, TV"] -. "optional" .-> router["GL.iNet router<br/>Reality Hop's router tunnel"]
     rh -- "looks like HTTPS<br/>to apple.com" --> node["REALITY node<br/>public, from FastNodes"]
     router -- "looks like HTTPS" --> node
     node --> server["VPN server"] --> net(("Internet"))
@@ -30,6 +30,8 @@ inside it the whole way.
 | **Main window:** every node tested through the live tunnel, the last 24 hours, the router tunnel. | **Candidates:** nodes from the public list, pinged and tested on your PC; put any of them in a slot. |
 | ![Node details](docs/images/node-details.png) | ![Report a problem](docs/images/report.png) |
 | **Node details:** where a node is, how it tests, its ping over 24 hours. | **Report a problem:** the logs with everything personal replaced, ready for a GitHub issue. |
+| ![Router devices](docs/images/devices.png) | ![Settings](docs/images/settings.png) |
+| **Router devices:** tick which devices use the router tunnel, and how to keep their address fixed. | **Settings:** checks, router features, updates, the sing-box channel, shortcuts. |
 
 ## Features
 
@@ -41,22 +43,26 @@ inside it the whole way.
   rescues from a vault of known-good nodes when all are down. With PIA, it reacts the moment the VPN drops.
 - **Tray icon shows the state.** The centre is the overall state. The ring has one segment per node: green working,
   amber slow, red dead.
-- **Start menu and Windows search.** Press the Windows key and type RealityHop. A desktop icon is optional.
+- **Start menu and Windows search.** Press the Windows key and type Reality Hop. A desktop icon is optional.
 - **Optional GL.iNet router support,** with a **Devices** window: tick or untick which devices use the tunnel, and how to
-  keep their address fixed (no changing MAC on the phone, an address reservation on the router).
+  keep their address fixed (no changing MAC on the phone, Reserved IP for it in the GL.iNet panel's Clients list).
 - **GL.iNet router:** Put a phone, console or TV through the tunnel too, with nothing installed on
   them. Turn it off and the router section disappears.
+- **Router only.** No tunnel on the PC: the router tunnels the devices you choose, or every device on its main
+  network, so all your traffic goes through the tunnel.
+- **Shows the sing-box build** in use (stable or test build) under the name in the window.
 - **Stop / Start for when you travel.** One button turns everything off, including the start at boot, until you press
   Start.
-- **Automatic updates.** RealityHop updates itself from this repo's Releases (SHA-256 checked).
+- **Automatic updates.** Reality Hop updates itself from this repo's Releases (SHA-256 checked).
 - **sing-box keeps itself current on its own**, daily, on the channel you choose: **stable** (default) or **test
-  builds** (beta, alpha). This does not wait for a RealityHop release.
+  builds** (beta, alpha). This does not wait for a Reality Hop release.
 - **See what runs behind the scenes.** Turn on *Show backend files* to get buttons for the `PC`, `Router` and `logs`
   folders: the live sing-box configs, the router scripts and the three logs.
 - **Anonymous problem reports.** *Report a problem* bundles the three logs with addresses, names, keys and secrets
   replaced by tokens. You read it first, then attach it to a GitHub issue. Nothing is sent automatically.
-- **Installs to `C:\Program Files\RealityHop`** with one UAC prompt, and updates itself there without asking again.
-  The program never runs as administrator. No telemetry.
+- **One folder for everything.** Installs to `C:\Program Files\RealityHop`, or a folder you pick in the setup, with
+  one UAC prompt. The program, the tunnel engine, the configs and the logs all stay there, readable by your Windows
+  user only. Updates install there without asking again. The program never runs as administrator. No telemetry.
 
 ## Install
 
@@ -65,10 +71,10 @@ inside it the whole way.
    antivirus programs flag PyInstaller apps by mistake; the source is all here, and you can
    [build it yourself](docs/building.md).
 3. Follow the setup wizard:
-   - **Install** copies RealityHop to `C:\Program Files\RealityHop` (one UAC prompt), downloads sing-box, finds the first nodes
+   - **Install** copies Reality Hop to `C:\Program Files\RealityHop` (one UAC prompt), downloads sing-box, finds the first nodes
      and starts the tunnel. This takes about a minute.
    - **Router?** answers whether you also want a GL.iNet router set up. If you answer yes, the wizard guides you
-     through it step by step ([details](docs/router-setup.md)). If you answer no, RealityHop shows only the PC part.
+     through it step by step ([details](docs/router-setup.md)). If you answer no, Reality Hop shows only the PC part.
    - **VPN app** shows how to point your VPN at the tunnel ([details](docs/vpn-setup.md)).
    - **Finish** sets the background start at logon, the start at boot, and automatic updates.
 
@@ -76,7 +82,7 @@ Requirements: Windows 10 or 11 (64-bit), and a VPN app that can use a SOCKS5 pro
 
 ## Set up your VPN app
 
-RealityHop listens on **SOCKS5 `127.0.0.1` port `2080`**, with no username or password.
+Reality Hop listens on **SOCKS5 `127.0.0.1` port `2080`**, with no username or password.
 
 Your VPN must use **OpenVPN over TCP, port 443**. A SOCKS5 proxy carries TCP only, and 443 is the normal HTTPS port.
 
@@ -105,12 +111,12 @@ OpenVPN config file, use `proto tcp`, the server's port `443`, and add `socks-pr
 | Files (optional) | **Open backend folder** (`PC`, `Router`, `logs`, `anonymous-logs`) and **Open logs folder**. |
 | **Settings** | Check interval, slow threshold, switching margin, router features on/off, sing-box stable or test builds, show backend files, updates, run setup again, uninstall. |
 
-**Uninstall:** use Settings > Uninstall, or Windows Settings > Apps > RealityHop.
+**Uninstall:** use Settings > Uninstall, or Windows Settings > Apps > Reality Hop.
 
 ## Where the nodes come from
 
 - **Node list:** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), file
-  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt). RealityHop
+  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt). Reality Hop
   keeps only VLESS + REALITY + XTLS-Vision nodes on port 443 that use a well-known front site. It then tests them
   itself; the list's own verification is not trusted.
 - **Tunnel engine:** [SagerNet/sing-box](https://github.com/SagerNet/sing-box), downloaded from its official GitHub
@@ -123,23 +129,35 @@ OpenVPN config file, use `proto tcp`, the server's port `443`, and add `socks-pr
 
 - **Public nodes are run by strangers.** Your VPN still encrypts everything end to end, so a node sees only
   encrypted VPN traffic and its destination, the VPN server. Keep the VPN on top. Do not send private traffic through
-  RealityHop without a VPN.
-- **What RealityHop contacts:**
-  - GitHub, for the node list, the sing-box releases and the RealityHop releases.
+  Reality Hop without a VPN.
+- **What Reality Hop contacts:**
+  - GitHub, for the node list, the sing-box releases and the Reality Hop releases.
   - `api.ipify.org`, fetched through each node when it is tested.
   - `www.gstatic.com/generate_204`, the latency test through the tunnel.
   - `ip-api.com`, for node locations, asked through the tunnel.
   - Quad9 DNS (`9.9.9.9`), through the tunnel.
 
   Nothing about you is sent anywhere, and there is no telemetry.
-- **What it keeps:** configs, the node vault, logs and settings in `%LOCALAPPDATA%\RealityHop` (folders `PC`,
-  `Router`, `logs`, `anonymous-logs`). The router key is
+- **What it keeps:** configs, the node vault, logs and settings in its install folder (folders `PC`, `Router`, `logs`,
+  `anonymous-logs`), which only your Windows user can open. The router key is
   an SSH key made on your PC. Your router password is typed into Windows' own `ssh` and is never seen or stored by
-  RealityHop.
+  Reality Hop.
 - Make sure you are allowed to use a VPN on the network you are on.
 
 See [SECURITY.md](SECURITY.md) for security problems. For anything else, use **Report a problem** in the window and
 attach the anonymous report to an issue. Never attach `pc-config.json`, `router-config.json` or `vault.json`.
+
+## Star history
+
+<a href="https://www.star-history.com/#KillerKingSolo/RealityHop&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=KillerKingSolo/RealityHop&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=KillerKingSolo/RealityHop&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=KillerKingSolo/RealityHop&type=Date" />
+ </picture>
+</a>
+
+Chart by [star-history](https://github.com/star-history/star-history).
 
 ## Documentation
 
@@ -158,9 +176,9 @@ python src/realityhop.pyw
 
 ## License
 
-[PolyForm Noncommercial 1.0.0](LICENSE). You may use, change and share RealityHop for any **noncommercial** purpose:
+[PolyForm Noncommercial 1.0.0](LICENSE). You may use, change and share Reality Hop for any **noncommercial** purpose:
 personal use, study, research, hobby projects, charities, schools and public bodies. **Selling it or using it for
 commercial purposes is not allowed.** This is a source-available license, not an OSI "open source" license.
 
-sing-box and the node list are separate projects under their own licenses. RealityHop downloads them at run time and
+sing-box and the node list are separate projects under their own licenses. Reality Hop downloads them at run time and
 does not ship them.

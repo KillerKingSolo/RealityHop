@@ -7,8 +7,8 @@ pip install -r requirements.txt
 python src/realityhop.pyw
 ```
 
-From source, RealityHop keeps its data in `%LOCALAPPDATA%\RealityHop`, like the exe does, but it does not install or
-update itself.
+From source, Reality Hop keeps its data in `%LOCALAPPDATA%\RealityHop` (the exe keeps it in its install folder), and it
+does not install or update itself.
 
 ## Build the exe
 

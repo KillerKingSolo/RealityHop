@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""engine.py  -  RealityHop engine and command line.
+"""engine.py  -  Reality Hop engine and command line.
 
-RealityHop puts your VPN inside a VLESS + REALITY tunnel (sing-box), so a network that blocks VPNs sees ordinary
+Reality Hop puts your VPN inside a VLESS + REALITY tunnel (sing-box), so a network that blocks VPNs sees ordinary
 HTTPS to a big website. It finds free public nodes, tests them, keeps the fastest working ones in use and replaces
 dead ones on its own.
 
@@ -14,49 +14,80 @@ dead ones on its own.
 PC tunnel: rh-core.exe (official sing-box) runs pc-config.json and listens on 127.0.0.1:2080 (SOCKS5); the VPN app
 connects through it. Router tunnel (optional, GL.iNet): sing-box on the router runs router-config.json and diverts the
 chosen LAN devices into it; resources/router/heal.sh repairs it while this PC is off. Everything this PC keeps is in
-%LOCALAPPDATA%\\RealityHop.
+its install folder (C:\\Program Files\\RealityHop by default), %LOCALAPPDATA%\\RealityHop when run from source.
 
 Nodes in use are tested through the live tunnel over sing-box's Clash API (127.0.0.1:9090, bearer secret in each
 config). Candidates get a real REALITY handshake plus an HTTPS fetch through a throwaway sing-box on this PC.
 """
-import argparse, datetime, glob, hashlib, json, os, re, secrets, shutil, socket, subprocess, sys, threading, time, urllib.error, urllib.request
+import argparse, datetime, glob, hashlib, ipaddress, json, os, re, secrets, shutil, socket, subprocess, sys, threading, time, urllib.error, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse, parse_qs
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import version
 VERSION = version.VERSION
 
-APP = 'RealityHop'
+APP = 'RealityHop'      # file, folder and repository name
+NAME = 'Reality Hop'    # the name people see
 REPO = 'KillerKingSolo/RealityHop'   # GitHub owner/repo: app updates come from its Releases
 FROZEN = getattr(sys, 'frozen', False)   # running as RealityHop.exe (PyInstaller)
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.join(getattr(sys, '_MEIPASS', HERE), 'resources')   # config templates and router scripts (inside the exe)
 _LOCAL = os.environ.get('LOCALAPPDATA') or os.path.expanduser('~')
-DATA = os.path.join(_LOCAL, APP)                                   # everything this PC keeps
-INSTALL_DIR = os.path.join(os.environ.get('ProgramW6432') or os.environ.get('ProgramFiles') or r'C:\Program Files', APP)
+OLD_DATA = os.path.join(_LOCAL, APP)        # the data folder of 1.0.x (and when run from source); moved on request
 LEGACY_DIR = os.path.join(_LOCAL, 'Programs', APP)               # where 1.0.0 and 1.0.1 installed; moved on update
-INSTALLED_EXE = os.path.join(INSTALL_DIR, APP + '.exe')
-PC_DIR, ROUTER_DIR = os.path.join(DATA, 'PC'), os.path.join(DATA, 'Router')   # the backend files, readable by the person
-PC_CFG, ROUTER_CFG = os.path.join(PC_DIR, 'pc-config.json'), os.path.join(ROUTER_DIR, 'router-config.json')
-REPORTS = os.path.join(DATA, 'anonymous-logs')   # problem reports with everything personal taken out
-NODES_TXT = os.path.join(DATA, 'nodes.txt')
-VAULT = os.path.join(DATA, 'vault.json')   # every node that ever passed a test; the rescue pool
-LOGS = os.path.join(DATA, 'logs')
+DEFAULT_DIR = os.path.join(os.environ.get('ProgramW6432') or os.environ.get('ProgramFiles') or r'C:\Program Files', APP)
+UNINSTALL_KEY = r'Software\Microsoft\Windows\CurrentVersion\Uninstall\RealityHop'   # the Apps & features entry
+
+
+def install_dir():
+    """The folder Reality Hop is installed in: chosen in the setup, C:\\Program Files\\RealityHop by default."""
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, UNINSTALL_KEY) as k:
+            loc = winreg.QueryValueEx(k, 'InstallLocation')[0]
+        return loc if os.path.isfile(os.path.join(loc, APP + '.exe')) else DEFAULT_DIR
+    except OSError:
+        return DEFAULT_DIR
+
+
+def data_dir():
+    """Everything Reality Hop keeps lives in its install folder, next to RealityHop.exe. Run from source, before the
+    setup has installed it, or installed by 1.0.x and not moved yet: %LOCALAPPDATA%\\RealityHop."""
+    moved = os.path.exists(os.path.join(INSTALL_DIR, 'settings.json')) or not os.path.exists(os.path.join(OLD_DATA, 'settings.json'))
+    return INSTALL_DIR if FROZEN and os.path.isfile(INSTALLED_EXE) and moved else OLD_DATA
+
+
+def set_paths(data):
+    """Point every data path at one folder (again after the setup has installed Reality Hop, or after a move)."""
+    global DATA, PC_DIR, ROUTER_DIR, PC_CFG, ROUTER_CFG, REPORTS, NODES_TXT, VAULT, LOGS, CORE, ROUTER_KEY, CORE_LOG
+    global THIS_PC, SETTINGS, HISTORY, LAST, TRAY_LAST
+    DATA = data                                                    # everything this PC keeps
+    PC_DIR, ROUTER_DIR = os.path.join(DATA, 'PC'), os.path.join(DATA, 'Router')   # the backend files, readable by the person
+    PC_CFG, ROUTER_CFG = os.path.join(PC_DIR, 'pc-config.json'), os.path.join(ROUTER_DIR, 'router-config.json')
+    REPORTS = os.path.join(DATA, 'anonymous-logs')   # problem reports with everything personal taken out
+    NODES_TXT = os.path.join(DATA, 'nodes.txt')
+    VAULT = os.path.join(DATA, 'vault.json')   # every node that ever passed a test; the rescue pool
+    LOGS = os.path.join(DATA, 'logs'); CORE_LOG = os.path.join(LOGS, 'core.log')
+    CORE = os.path.join(PC_DIR, 'rh-core.exe')              # the official sing-box, under its own name: runs the PC tunnel
+    ROUTER_KEY = os.path.join(DATA, 'router_ed25519')       # SSH key made by the setup wizard
+    THIS_PC, SETTINGS, HISTORY, LAST, TRAY_LAST = (os.path.join(DATA, f) for f in
+                                                   ('this-pc.json', 'settings.json', 'history.json', 'last.json', 'tray.json'))
+
+
+INSTALL_DIR = install_dir(); INSTALLED_EXE = os.path.join(INSTALL_DIR, APP + '.exe')
+set_paths(data_dir())
 HEAL_SH = os.path.join(RES, 'router', 'heal.sh')       # router self-repair, installed with every push
 NFT_SH = os.path.join(RES, 'router', 'nft-devices.sh')  # router firewall rule that diverts the chosen devices
-CORE = os.path.join(PC_DIR, 'rh-core.exe')              # the official sing-box, under its own name: runs the PC tunnel
-ROUTER_KEY = os.path.join(DATA, 'router_ed25519')       # SSH key made by the setup wizard
 WATCH_PORT, GUI_PORT = 47291, 47292                    # loopback ports used only as "is it running" locks
-THIS_PC, SETTINGS, HISTORY, LAST, TRAY_LAST = (os.path.join(DATA, f) for f in
-                                               ('this-pc.json', 'settings.json', 'history.json', 'last.json', 'tray.json'))
-CORE_LOG = os.path.join(LOGS, 'core.log')
-STARTUP_LNK = os.path.join(os.environ.get('APPDATA', ''), r'Microsoft\Windows\Start Menu\Programs\Startup\RealityHop.lnk')
+STARTUP_LNK = os.path.join(os.environ.get('APPDATA', ''), r'Microsoft\Windows\Start Menu\Programs\Startup', NAME + '.lnk')
 API = 'http://127.0.0.1:9090'
 TEST_URL = 'https://www.gstatic.com/generate_204'
 FEEDS = ('https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt',)   # github.com/rtwo2/FastNodes
 DEFAULTS = {'check_min': 60, 'slow_ms': 200, 'tolerance_ms': 25, 'top': 40, 'router': 0, 'router_host': '192.168.8.1',
             'router_key': '', 'devices': '', 'auto_update': 1, 'singbox': 'stable', 'backend_files': 0,
-            'start_menu': 1, 'desktop_icon': 0}
+            'start_menu': 1, 'desktop_icon': 0, 'pc_tunnel': 1}
+LIMITS = {'check_min': (15, 1440), 'slow_ms': (50, 5000), 'tolerance_ms': (0, 1000), 'top': (10, 120)}   # as in Settings
+FPS = {'chrome', 'firefox', 'safari', 'ios', 'android', 'edge', '360', 'qq', 'random', 'randomized'}   # uTLS fingerprints
 TOP = 40   # candidates tested per scan (settings)
 FRONTS = {'www.apple.com', 'swdist.apple.com', 'www.icloud.com', 'www.cloudflare.com', 'cloudflare.com', 'www.amazon.com',
           'amazon.com', 'yahoo.com', 'www.yahoo.com', 'cdnjs.com', 'www.microsoft.com', 'www.bing.com', 'www.python.org',
@@ -76,6 +107,8 @@ def settings_load():
             d[k] = type(v)(raw.get(k, v))
         except (TypeError, ValueError):
             d[k] = v
+    for k, (lo, hi) in LIMITS.items():   # a hand-edited 0 would mean a node check every 30 s
+        d[k] = min(max(d[k], lo), hi)
     global TOP, FULL_EVERY, SLOW
     TOP, FULL_EVERY, SLOW = int(d['top']), int(d['check_min']) * 60, int(d['slow_ms'])
     return d
@@ -85,7 +118,7 @@ def settings_save(d):
     """Save some or all settings; the switching margin also goes into both configs (next restart/push)."""
     cur = settings_load()
     cur.update({k: type(DEFAULTS[k])(v) for k, v in d.items() if k in DEFAULTS})
-    os.makedirs(DATA, exist_ok=True); json.dump(cur, open(SETTINGS, 'w'), indent=1); d = cur
+    jsave(SETTINGS, cur, indent=1); d = settings_load()   # read back: numbers out of range come back clamped
     for f in (PC_CFG, ROUTER_CFG):
         if not os.path.exists(f):
             continue
@@ -94,14 +127,17 @@ def settings_save(d):
             if o.get('type') == 'urltest' and o.get('tolerance') != d['tolerance_ms']:
                 o['tolerance'] = d['tolerance_ms']; changed = True
         if changed:
-            json.dump(c, open(f, 'w'), indent=2)
-    return settings_load()
+            jsave(f, c, indent=2)
+    return d
 
 
-def jsave(path, data):
+def jsave(path, data, indent=None):
     """Write JSON atomically (the window and the watcher both write these files)."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = f'{path}.{os.getpid()}.tmp'; json.dump(data, open(tmp, 'w')); os.replace(tmp, path)
+    tmp = f'{path}.{os.getpid()}-{threading.get_ident()}.tmp'
+    with open(tmp, 'w') as f:
+        json.dump(data, f, indent=indent)
+    os.replace(tmp, path)
 
 
 def hist_load():
@@ -180,6 +216,12 @@ def run(cmd, stdin=None, timeout=240, **kw):
     return subprocess.CompletedProcess(cmd, p.returncode, out.decode('utf-8', 'replace'), err.decode('utf-8', 'replace'))
 
 
+def psq(s):
+    """s as a PowerShell single-quoted string. Without this a ' in a path (a user called O'Brien, a renamed download)
+    ends the string early: the command fails, or worse, the rest of the name runs as a command."""
+    return "'" + str(s).replace("'", "''") + "'"
+
+
 def cancel():
     CANCEL.set()
     for p in list(_procs):
@@ -197,11 +239,50 @@ def file_log(name):
     return lambda *a: lg.info(' '.join(str(x) for x in a))
 
 
+def logs_close():
+    """Let go of the open log files (the data folder is about to move); file_log opens them again."""
+    import logging
+    for name in ('window', 'watch'):
+        lg = logging.getLogger(name)
+        for h in lg.handlers[:]:
+            lg.removeHandler(h); h.close()
+
+
+def move_data(dst):
+    """Move what 1.0.x (or the setup, before it had installed Reality Hop) kept in %LOCALAPPDATA%\\RealityHop into dst,
+    the install folder, and use dst from now on. rh-core runs from there, so it is stopped; the caller starts it again."""
+    import logging
+    if os.path.isdir(OLD_DATA) and os.path.normcase(os.path.abspath(OLD_DATA)) != os.path.normcase(os.path.abspath(dst)):
+        if core_running():
+            core_stop()
+        open_logs = [n for n in ('window', 'watch') if logging.getLogger(n).handlers]; logs_close()
+        os.makedirs(dst, exist_ok=True)
+        for name in os.listdir(OLD_DATA):
+            s, d = os.path.join(OLD_DATA, name), os.path.join(dst, name)
+            if os.path.isdir(s) and os.path.isdir(d):
+                shutil.copytree(s, d, dirs_exist_ok=True); shutil.rmtree(s, ignore_errors=True)
+            else:
+                if os.path.isfile(d):
+                    os.remove(d)
+                shutil.move(s, d)
+        shutil.rmtree(OLD_DATA, ignore_errors=True)
+        set_paths(dst)
+        for n in open_logs:
+            file_log(n)
+        try:   # rh-core writes its log by full path
+            c = json.load(open(PC_CFG)); c['log']['output'] = CORE_LOG; jsave(PC_CFG, c, indent=2)
+        except (OSError, ValueError, KeyError):
+            pass
+        say(f'data moved to {dst}')
+    else:
+        set_paths(dst)
+
+
 def notify(msg):
     """Windows toast, so the background watcher can tell you what it did."""
     ps = ("[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null;"
           "$t = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02);"
-          "$x = $t.GetElementsByTagName('text'); $x.Item(0).AppendChild($t.CreateTextNode('RealityHop')) > $null;"
+          "$x = $t.GetElementsByTagName('text'); $x.Item(0).AppendChild($t.CreateTextNode('Reality Hop')) > $null;"
           "$x.Item(1).AppendChild($t.CreateTextNode($env:NM_MSG)) > $null;"
           "[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("
           "'{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\\WindowsPowerShell\\v1.0\\powershell.exe').Show([Windows.UI.Notifications.ToastNotification]::new($t))")
@@ -234,6 +315,25 @@ def ssh(cmd, stdin=None, timeout=240):
 _feed = [0, None]
 
 
+def public_ip(h):
+    """A plain IPv4 internet address. A node list must never point the tunnel or the pings at this PC or the LAN."""
+    try:
+        return re.fullmatch(r'\d+\.\d+\.\d+\.\d+', h) is not None and ipaddress.IPv4Address(h).is_global
+    except ValueError:
+        return False
+
+
+LAN_NETS = tuple(ipaddress.ip_network(n) for n in ('10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'))
+
+
+def lan_ip(x):
+    """A valid address of a device on the local network (what the router tunnel goes by)."""
+    try:
+        return any(ipaddress.IPv4Address(x) in n for n in LAN_NETS)
+    except ValueError:
+        return False
+
+
 def feed():
     """Candidates from the public node lists (FEEDS), merged, one per server; the download is reused for 15 minutes."""
     if _feed[1] is None or time.time() - _feed[0] > 900:
@@ -252,17 +352,17 @@ def feed():
     for l in _feed[1].splitlines():
         if not l.startswith('vless://') or 'reality' not in l or 'vision' not in l:
             continue
-        try:
-            u = urlparse(l.strip()); q = {k: v[0] for k, v in parse_qs(u.query).items()}
-        except Exception:
+        try:   # one broken line (a port like 99999) must not stop the whole scan
+            u = urlparse(l.strip()); q = {k: v[0] for k, v in parse_qs(u.query).items()}; h, port = u.hostname or '', u.port
+        except ValueError:
             continue
-        h = u.hostname or ''
-        if (q.get('security') != 'reality' or u.port != 443 or q.get('flow') != 'xtls-rprx-vision' or not q.get('pbk')
-                or q.get('sni') not in FRONTS or not re.match(r'^\d+\.\d+\.\d+\.\d+$', h) or h in seen
+        if (q.get('security') != 'reality' or port != 443 or q.get('flow') != 'xtls-rprx-vision' or not q.get('pbk')
+                or q.get('sni') not in FRONTS or not public_ip(h) or h in seen
                 or not re.fullmatch(r'[A-Za-z0-9_-]{43}', q['pbk']) or not re.fullmatch(r'([0-9a-fA-F]{2}){0,8}', q.get('sid', ''))
                 or not re.fullmatch(r'[0-9a-fA-F-]{36}', u.username or '')):
             continue
-        seen[h] = dict(server=h, uuid=u.username, pbk=q['pbk'], sid=q.get('sid', ''), sni=q['sni'], fp=q.get('fp') or 'chrome')
+        seen[h] = dict(server=h, uuid=u.username, pbk=q['pbk'], sid=q.get('sid', ''), sni=q['sni'],
+                       fp=q.get('fp') if q.get('fp') in FPS else 'chrome')
     return list(seen.values())
 
 
@@ -316,7 +416,7 @@ def known_where(full=False):
     """server -> location (or {'where','isp'} with full=True) from the last nodes.txt; no network needed."""
     out = {}
     try:
-        for l in open(NODES_TXT):
+        for l in open(NODES_TXT, encoding='utf-8', errors='replace'):
             m = re.match(r'\s+(?:vless-\d+\s+)?(\d+\.\d+\.\d+\.\d+)\s+\S+\s+(?:\d+ms|\?)\s+(.*)', l)
             if m:
                 parts = re.split(r'\s{2,}', m.group(2).strip()) + ['?']
@@ -331,7 +431,7 @@ def known_failed():
     """Servers in the FAILED section of the last nodes.txt: they failed the test, do not pick them blind."""
     out, failed = set(), False
     try:
-        for l in open(NODES_TXT):
+        for l in open(NODES_TXT, encoding='utf-8', errors='replace'):
             failed = failed or l.startswith('FAILED')
             m = failed and re.match(r'\s+(\d+\.\d+\.\d+\.\d+)\s', l)
             if m:
@@ -358,15 +458,17 @@ def geolocate(nodes):
         return nodes
     body = '[' + ','.join('{"query":"%s","fields":"query,city,regionName,countryCode,isp"}' % n['server'] for n in todo[:100]) + ']'
     try:
-        r = run([CURL, '-s', '--socks5-hostname', '127.0.0.1:2080', '-m', '20', '-H', 'Content-Type: application/json',
+        via = [] if router_only() else ['--socks5-hostname', '127.0.0.1:2080']   # router-only: the router tunnels this PC
+        r = run([CURL, '-s', *via, '-m', '20', '-H', 'Content-Type: application/json',
                  '--data-binary', '@-', 'http://ip-api.com/batch'], body, timeout=30)
         geo = {g['query']: g for g in json.loads(r.stdout)}
     except Exception:
         geo = {}
+    clean = lambda s, k: re.sub(r'[\s\x00-\x1f\x7f]+', ' ', str(s or '')).strip()[:k] or '?'   # the answer crossed a public node
     for n in todo:
         g = geo.get(n['server'], {})
-        n['where'] = f"{g.get('city', '?')}, {g.get('regionName', '?')}" if g.get('city') else '?'
-        n['isp'] = (g.get('isp') or '?')[:22]
+        n['where'] = f"{clean(g.get('city'), 30)}, {clean(g.get('regionName'), 30)}" if g.get('city') else '?'
+        n['isp'] = clean(g.get('isp'), 22)
     return nodes
 
 
@@ -423,15 +525,22 @@ def handshake(nodes):
     return nodes
 
 
+def node_test(nodes):
+    """The handshake test, where it measures the real path: on THIS PC with rh-core, or on the router in router-only mode
+    (and when rh-core is missing). The router has little RAM, so it tests 20 nodes per run."""
+    if router_only() or not (os.path.exists(CORE) or pc_only()):
+        for i in range(0, len(nodes), 20):
+            handshake(nodes[i:i + 20])
+    else:
+        local_test(nodes)
+    return nodes
+
+
 def router_test(nodes):
-    """The node test, run on THIS PC with rh-core (the router has little RAM, so it only runs its own tunnel).
-    Falls back to the old router-side test only when rh-core is missing. Geolocation runs alongside."""
+    """The node test (node_test) with geolocation alongside; the results go into the vault."""
     with ThreadPoolExecutor(2) as ex:
         g = ex.submit(geolocate, nodes)
-        if os.path.exists(CORE) or pc_only():
-            local_test(nodes)
-        else:
-            handshake(nodes)
+        node_test(nodes)
         g.result()
     vault_record(nodes)
     return nodes
@@ -442,6 +551,18 @@ def this_pc():
         return json.load(open(THIS_PC))
     except (OSError, ValueError):
         return {}
+
+
+def router_only():
+    """True when only the router tunnels (Settings or the setup): no tunnel on this PC. Node tests then run on the router,
+    since this PC's own traffic may go through the router tunnel and would skew them."""
+    s = settings_load()
+    return bool(s['router']) and not s['pc_tunnel']
+
+
+def all_devices():
+    """True when the router tunnels every device on its main network (this PC too) instead of chosen ones."""
+    return settings_load()['devices'].strip().lower() == 'all'
 
 
 def pc_only():
@@ -521,7 +642,7 @@ def vault_seed():
     """First run: build the vault from the nodes listed in nodes.txt (in use + spares)."""
     v, meta, cur = {}, known_where(full=True), None
     try:
-        for l in open(NODES_TXT):
+        for l in open(NODES_TXT, encoding='utf-8', errors='replace'):
             if l.startswith('FAILED'):
                 break
             m = re.match(r'\s+(?:vless-\d+\s+)?(\d+\.\d+\.\d+\.\d+)\s+(\S+)\s+(?:(\d+)ms|\?)', l)
@@ -538,7 +659,7 @@ def vault_seed():
     for n in inuse():
         v.setdefault(n['server'], dict({k: n.get(k) for k in KEYS}, last_ok=str(datetime.date.today()), passes=1, fail_streak=0))
     if v:
-        os.makedirs(DATA, exist_ok=True); json.dump(v, open(VAULT, 'w'), indent=1)
+        jsave(VAULT, v, indent=1)
     return v
 
 
@@ -557,7 +678,7 @@ def vault_record(nodes):
             if e['fail_streak'] >= 3:
                 del v[n['server']]
     v = dict(sorted(v.items(), key=lambda kv: kv[1].get('last_ok', ''), reverse=True)[:200])
-    json.dump(v, open(VAULT, 'w'), indent=1)
+    jsave(VAULT, v, indent=1)
 
 
 def vault_nodes(exclude=()):
@@ -607,6 +728,8 @@ def router_ping(nodes):
 
 def probe(nodes):
     """443 ping from this PC; if nothing at all answers (this PC is offline), ping from the router instead."""
+    if router_only():   # this PC's traffic may go through the router tunnel: ping from the router itself
+        return router_ping(nodes)
     live = tcp_probe(nodes)
     if live or len(nodes) < 5 or pc_only():
         return live
@@ -754,7 +877,7 @@ def write_txt(nodes, best):
         ms = f"{n['ms']:5}ms" if n.get('ms') else '      ?'
         return [f"  {tag:8} {n['server']:16} {n['sni']:20} {ms}  {n.get('where', '?'):26}  {n.get('isp', '?')}",
                 f"           uuid={n['uuid']}  pbk={n['pbk']}  sid={n['sid'] or '(empty)'}"]
-    L = [f'VERIFIED REALITY NODES  -  tested {datetime.date.today()} by RealityHop (REALITY handshake + HTTPS fetch)', '',
+    L = [f'VERIFIED REALITY NODES  -  tested {datetime.date.today()} by Reality Hop (REALITY handshake + HTTPS fetch)', '',
          'tunnel ms = full HTTPS fetch through the node. TCP-open alone proves nothing:',
          'a rejected key is silently forwarded to the front site and looks like a healthy host.', '',
          'IN USE  (both configs, urltest group "auto")']
@@ -766,8 +889,8 @@ def write_txt(nodes, best):
         L += row(n)
     L += ['', 'FAILED  (do not retest until the feed changes their key)']
     L += [f"  {n['server']:16} {n['sni']:20} {n.get('why', '')}" for n in nodes if not n.get('ok')]
-    L += ['', 'WORKFLOW: RealityHop window     python engine.py --check (health)     python engine.py (find + rank + apply)']
-    open(NODES_TXT, 'w').write('\n'.join(L) + '\n')
+    L += ['', 'WORKFLOW: Reality Hop window     python engine.py --check (health)     python engine.py (find + rank + apply)']
+    open(NODES_TXT, 'w', encoding='utf-8').write('\n'.join(L) + '\n')   # city names such as Łódź
     say(f'updated {os.path.basename(NODES_TXT)}')
 
 
@@ -780,7 +903,7 @@ def write_configs(best):
         if o.get('type') == 'urltest':
             o['outbounds'] = [v['tag'] for v in vl]
     r['outbounds'] = vl + rest
-    json.dump(r, open(ROUTER_CFG, 'w'), indent=2)
+    jsave(ROUTER_CFG, r, indent=2)
     pc = json.load(open(PC_CFG))
     pv = [outbound19(n, f'vless-{i}') for i, n in enumerate(best, 1)]
     prest = [o for o in pc['outbounds'] if o.get('type') != 'vless' and not o.get('tag', '').startswith('set-')]
@@ -788,7 +911,7 @@ def write_configs(best):
         if o.get('type') == 'urltest':
             o['outbounds'] = [v['tag'] for v in pv]
     pc['outbounds'] = pv + prest + [{'type': 'direct', 'tag': set_mark(best)}]
-    json.dump(pc, open(PC_CFG, 'w'), indent=2)
+    jsave(PC_CFG, pc, indent=2)
 
 
 PUSH_SH = r"""for pid in $(pgrep -f 'sb-test[.]json'); do kill $pid; done; sleep 1
@@ -808,13 +931,17 @@ ip rule list | grep -q 'fwmark 0x1' && echo 'policy route: ok' || echo 'policy r
 
 def devices():
     """The LAN addresses that go through the router tunnel (Settings / setup wizard)."""
-    return [x for x in re.split(r'[\s,;]+', settings_load()['devices']) if re.fullmatch(r'\d{1,3}(\.\d{1,3}){3}', x)]
+    return [x for x in re.split(r'[\s,;]+', settings_load()['devices']) if lan_ip(x)]
 
 
 def nft_script():
-    ips = devices()
     body = open(NFT_SH, encoding='utf-8').read().replace('\r', '')
-    return body.replace('@ELEMENTS@', f"elements = {{ {', '.join(ips)} }}" if ips else '')
+    if all_devices():   # every device on the main network (br-lan); its IPv6 is refused so nothing goes around the tunnel
+        return (body.replace('@ELEMENTS@', '').replace('@WHO@', 'iifname "br-lan" meta nfproto ipv4')
+                .replace('@V6@', '    iifname "br-lan" oifname != "br-lan" meta nfproto ipv6 counter reject'))
+    ips = devices()
+    return (body.replace('@ELEMENTS@', f"elements = {{ {', '.join(ips)} }}" if ips else '').replace('@WHO@', 'ip saddr @tunneled')
+            .replace('@V6@', ''))
 
 
 def push():
@@ -911,6 +1038,8 @@ def core_up(wait=15):
 def core_restart():
     """Plain sing-box runs the PC tunnel: restart it on pc-config.json. No UAC.
     If the task-started copy does not come up, a direct start is the fallback, so the tunnel is never left down."""
+    if router_only():
+        say('router-only mode: no tunnel on this PC'); return True
     if not core_stop():
         say('an old rh-core would not stop; trying anyway')
     how = core_start()
@@ -975,7 +1104,7 @@ def core_release():
 
 
 def core_update(force=False):
-    """Keep sing-box current on the chosen channel, also when RealityHop itself has no new release (the watcher and the
+    """Keep sing-box current on the chosen channel, also when Reality Hop itself has no new release (the watcher and the
     window check daily; switching the channel installs that channel's build at once, newer or older).
     SHA-256 checked against GitHub's digest, then the new build must accept the PC config before it replaces the old one."""
     import tempfile, zipfile
@@ -1037,8 +1166,8 @@ def core_update_due():
 
 def core_ensure():
     """Core mode: start the PC tunnel only if it is really not running: no rh-core process and port 2080 closed
-    on three tries 5 s apart. Only local checks, no traffic. Never while RealityHop is stopped."""
-    if stopped() or core_running():
+    on three tries 5 s apart. Only local checks, no traffic. Never while Reality Hop is stopped."""
+    if stopped() or router_only() or core_running():
         return True
     for _ in range(3):
         if port_open(2080):
@@ -1057,14 +1186,8 @@ def boot_task_exists():
 def boot_task(on):
     """Windows starts rh-core at boot, before logon and before the VPN app, as this user ("do not store password" mode),
     so the user-level watcher can still restart it. Creating or removing the task needs one UAC prompt."""
-    user = f"{os.environ.get('USERDOMAIN', '')}\\{os.environ.get('USERNAME', '')}".lstrip('\\')
     if on:
-        ps = (f"$a = New-ScheduledTaskAction -Execute '{CORE}' -Argument 'run -c \"{PC_CFG}\"' -WorkingDirectory '{os.path.dirname(CORE)}'; "
-              "$t = New-ScheduledTaskTrigger -AtStartup; "
-              f"$p = New-ScheduledTaskPrincipal -UserId '{user}' -LogonType S4U -RunLevel Limited; "
-              "$s = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 5 "
-              "-RestartInterval (New-TimeSpan -Minutes 1) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable; "
-              f"Register-ScheduledTask -TaskName '{BOOT_TASK}' -Action $a -Trigger $t -Principal $p -Settings $s -Force | Out-Null")
+        ps = boot_task_ps(CORE, PC_CFG)
     else:
         ps = f"Unregister-ScheduledTask -TaskName '{BOOT_TASK}' -Confirm:$false"
     say(('adding' if on else 'removing') + ' the boot-time start of rh-core; answer the UAC prompt...')
@@ -1072,6 +1195,21 @@ def boot_task(on):
     ok = boot_task_exists() == on
     say(('rh-core now starts at boot, before the VPN app' if on else 'boot-time start removed') if ok else 'not changed (UAC declined or failed)')
     return ok
+
+
+def boot_task_ps(core, cfg):
+    """PowerShell (needs admin) that creates the boot task, or points it at a new rh-core; a task switched off by Stop
+    stays off."""
+    user = f"{os.environ.get('USERDOMAIN', '')}\\{os.environ.get('USERNAME', '')}".lstrip('\\')
+    exe_, args, wd = psq(core), psq(f'run -c "{cfg}"'), psq(os.path.dirname(core))
+    return (f"$was = (Get-ScheduledTask -TaskName '{BOOT_TASK}' -ErrorAction SilentlyContinue).State; "
+            f"$a = New-ScheduledTaskAction -Execute {exe_} -Argument {args} -WorkingDirectory {wd}; "
+            "$t = New-ScheduledTaskTrigger -AtStartup; "
+            f"$p = New-ScheduledTaskPrincipal -UserId {psq(user)} -LogonType S4U -RunLevel Limited; "
+            "$s = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 5 "
+            "-RestartInterval (New-TimeSpan -Minutes 1) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable; "
+            f"Register-ScheduledTask -TaskName '{BOOT_TASK}' -Action $a -Trigger $t -Principal $p -Settings $s -Force | Out-Null; "
+            f"if ($was -eq 'Disabled') {{ Disable-ScheduledTask -TaskName '{BOOT_TASK}' | Out-Null }}")
 
 
 def elevated(ps):
@@ -1089,7 +1227,7 @@ def stopped():
 
 
 def set_stopped(on):
-    d = this_pc(); d['stopped'] = bool(on); os.makedirs(DATA, exist_ok=True); json.dump(d, open(THIS_PC, 'w'))
+    set_this_pc(stopped=bool(on))
 
 
 def task_state():
@@ -1108,7 +1246,8 @@ def manager_stop():
                    'boot start: NOT switched off (UAC declined); rh-core will still start at boot')
     startup(False); out.append('background watcher: stopped, no longer starts at logon')
     core_stop(); out.append('PC tunnel: stopped' if not core_running() else 'PC tunnel: could not be stopped')
-    out.append('VPN app: turn its proxy off now (PIA: Settings > Multi-Hop, untick "Multi-hop and Obfuscation"), or it cannot connect')
+    if not router_only():
+        out.append('VPN app: turn its proxy off now (PIA: Settings > Multi-Hop, untick "Multi-hop and Obfuscation"), or it cannot connect')
     for l in out:
         say(l)
     return out
@@ -1120,9 +1259,11 @@ def manager_start():
     if boot_task_exists() and task_state() == 'Disabled':
         elevated(f"schtasks /change /tn '{BOOT_TASK}' /enable")
         out.append('boot start: on' if task_state() != 'Disabled' else 'boot start: still OFF (UAC declined)')
-    out.append('PC tunnel: running' if core_restart() else 'PC tunnel: did not come up, see the log')
+    if not router_only():
+        out.append('PC tunnel: running' if core_restart() else 'PC tunnel: did not come up, see the log')
     startup(True); out.append('background watcher: running, starts at every logon')
-    out.append('VPN app: turn its proxy back on (PIA: Settings > Multi-Hop, tick "Multi-hop and Obfuscation", SOCKS5 127.0.0.1:2080)')
+    if not router_only():
+        out.append('VPN app: turn its proxy back on (PIA: Settings > Multi-Hop, tick "Multi-hop and Obfuscation", SOCKS5 127.0.0.1:2080)')
     for l in out:
         say(l)
     return out
@@ -1130,7 +1271,7 @@ def manager_start():
 
 def core_fast_start():
     """Logon fast path: if rh-core exists and nothing is on 2080, start it now; no checks, no waiting."""
-    if os.path.exists(CORE) and not stopped() and not core_running() and not port_open(2080):
+    if os.path.exists(CORE) and not stopped() and not router_only() and not core_running() and not port_open(2080):
         if boot_task_exists() and run(['schtasks', '/run', '/tn', BOOT_TASK], timeout=20).returncode == 0:
             return True
         core_direct(); return True
@@ -1138,7 +1279,9 @@ def core_fast_start():
 
 
 def pc_push():
-    """pc-config.json -> the running PC tunnel (rh-core restart, about 2 s)."""
+    """pc-config.json -> the running PC tunnel (rh-core restart, about 2 s). Nothing in router-only mode."""
+    if router_only():
+        return True
     if not core_mode():
         say('rh-core.exe is missing; run the setup again'); return False
     return core_restart()
@@ -1208,8 +1351,8 @@ def replace(slots, top=None):
         say(f"vless-{i + 1}: {cur[i]['server']} -> {s['server']}  ({s['ms']}ms, {s.get('where', '?')})")
         swaps.append((f'vless-{i + 1}', cur[i]['server'], s)); cur[i] = s
     kept = [n for n in cur if n.get('ms') is None]
-    if kept and os.path.exists(CORE):
-        local_test(kept)   # same test as the spares got, so the order below compares like with like
+    if kept and (os.path.exists(CORE) or router_only()):
+        node_test(kept)   # same test as the spares got, so the order below compares like with like
     for n in geolocate(cur):
         n['ok'] = True
     cur.sort(key=lambda n: n.get('ms') or 9e9)   # fastest first: vless-1 is the lowest ping
@@ -1222,7 +1365,10 @@ def swap_files(pairs):
     """Configs only, nothing deployed: each (slot index, node) goes into both configs. Returns [(tag, old server, node)]."""
     cur, meta, out = inuse(), known_where(full=True), []
     for i, node in pairs:
-        out.append((f'vless-{i + 1}', cur[i]['server'], node)); cur[i] = node
+        if i < len(cur):
+            out.append((f'vless-{i + 1}', cur[i]['server'], node)); cur[i] = node
+        else:   # a set of fewer than 6: the node fills the next free slot
+            out.append((f'vless-{len(cur) + 1}', '(empty)', node)); cur.append(node)
     for n in cur:
         n.setdefault('ok', True); n.setdefault('ms', n.get('phone_ms'))
         for k, v in meta.get(n['server'], {}).items():
@@ -1335,7 +1481,7 @@ def watch_cycle(st, background=True):
     every node dead -> rescue. The router's live tunnel is the judge when it answers, else the PC tunnel.
     Returns a sentence when something changed, else None."""
     if stopped():
-        say('RealityHop is stopped; no check'); return None
+        say('Reality Hop is stopped; no check'); return None
     if core_mode():
         core_ensure()
     cur = inuse()
@@ -1372,8 +1518,8 @@ def watch_cycle(st, background=True):
     if dead:
         say('re-checking in 30 s so one dropped probe does not cost a node...'); time.sleep(30)
         res = test(); dead = [t for t, ms in res.items() if ms is None]
-    if dead and os.path.exists(CORE):   # second opinion: a fresh test instance on this PC, not the running tunnel
-        again = [dict(n) for n in cur if n['tag'] in dead]; local_test(again)
+    if dead and (os.path.exists(CORE) or router_only()):   # second opinion: a fresh test instance, not the running tunnel
+        again = [dict(n) for n in cur if n['tag'] in dead]; node_test(again)
         fine = [n['tag'] for n in again if n['ok']]
         if fine:
             say(f"independent test: {', '.join(fine)} work after all; not replacing them")
@@ -1403,7 +1549,7 @@ def watch_cycle(st, background=True):
 
 
 def gui_open():
-    """Start the RealityHop window (or do nothing if it is already open)."""
+    """Start the Reality Hop window (or do nothing if it is already open)."""
     if not port_taken(GUI_PORT):
         cmd = [exe()] if FROZEN else [pythonw(), os.path.join(HERE, 'realityhop.pyw')]
         subprocess.Popen(cmd, cwd=DATA, env=own_env(), creationflags=subprocess.DETACHED_PROCESS)
@@ -1449,12 +1595,14 @@ def watch():
             time.sleep(2)
     if stopped():
         return   # stopped from the window: stay off until Start
+    lnk_migrate(STARTUP_LNK); api_lockdown()
     started = core_fast_start()   # before anything else, so PIA finds the proxy when it connects
     try:
         run(KILL_FEEDS, timeout=30)
     except Exception:
         pass
-    say = file_log('watch'); say('rh-core started at logon' if started else 'rh-core already running'); started_at = time.time()
+    say = file_log('watch'); started_at = time.time()
+    say('router-only mode: no tunnel on this PC' if router_only() else 'rh-core started at logon' if started else 'rh-core already running')
     settings_load()
     say(f'watcher started: node check every {FULL_EVERY // 60} min, PIA state feed {"on" if os.path.exists(PIACTL) else "not available (PIA not installed)"}, {"core" if core_mode() else "NO rh-core"} mode')
     st, last_full, last_fix = {}, 0, 0   # first node check as soon as the tunnel answers
@@ -1495,7 +1643,7 @@ def watch():
         drops = len(pia['drops'])
         if 'last' in st:
             jsave(TRAY_LAST, {'last': list(st['last']), 'segs': list(st.get('segs', ()))})
-        tray.update(state, f"RealityHop  ·  {text}" + (f'  ·  {at}' if at else '')
+        tray.update(state, f"Reality Hop  ·  {text}" + (f'  ·  {at}' if at else '')
                     + (f"  ·  PIA dropped {drops}x in the last hour" if drops else '')
                     + ('' if core_mode() else '  ·  rh-core missing'), st.get('segs', ()))
     pia_feed(on_pia); show()
@@ -1516,17 +1664,17 @@ def watch():
                     import install
                     rel = install.check_update()
                     if rel and settings_load()['auto_update'] and not port_taken(GUI_PORT):
-                        say(f"installing RealityHop {rel['ver']}"); install.apply_update(rel)
+                        say(f"installing Reality Hop {rel['ver']}"); install.apply_update(rel)
                         tray.remove(); lock.close(); install.start_watcher(); os._exit(0)
                     elif rel:
-                        notify(f"RealityHop {rel['ver']} is available; open RealityHop to install it.")
+                        notify(f"Reality Hop {rel['ver']} is available; open Reality Hop to install it.")
                 except Exception as e:
                     say(f'app update check failed: {e}')
             pia_bad = pia['bad_since'] is not None
             if 'restart' in want:
                 want.discard('restart'); say('restart requested from the tray')
                 ok = core_restart(); hist_add(event=('restart', 'PC tunnel restarted from the tray'))
-                notify('PC tunnel restarted.' if ok else 'PC tunnel did not come back; open RealityHop.')
+                notify('PC tunnel restarted.' if ok else 'PC tunnel did not come back; open Reality Hop.')
             elif 'rescue' in want:
                 want.discard('rescue'); out = rescue(); say(out); notify(out); hist_add(event=('rescue', out)); last_full = now
             elif 'check' in want:
@@ -1581,26 +1729,47 @@ def prepare():
         open(os.path.join(d, 'README.txt'), 'w', encoding='utf-8').write(text)
     if not os.path.exists(CORE):
         core_update(force=True)
+    api_lockdown()
 
 
-PC_README = '''RealityHop: PC tunnel files
+API_ORIGIN = ['http://127.0.0.1:9090']   # web pages allowed to call the PC tunnel's control API: none
+
+
+def api_lockdown():
+    """Configs made before 1.1.0 let a script on any web page reach the control API (it still needed the secret).
+    Allow no web page at all. rh-core checks the change first; it applies from the next tunnel restart."""
+    try:
+        c = json.load(open(PC_CFG)); api = c['experimental']['clash_api']
+        if api.get('access_control_allow_origin') == API_ORIGIN or not os.path.exists(CORE):
+            return
+        api.update(access_control_allow_origin=API_ORIGIN, access_control_allow_private_network=False)
+        tmp = PC_CFG + '.check.json'; jsave(tmp, c, indent=2)
+        if run([CORE, 'check', '-c', tmp], timeout=30, cwd=os.path.dirname(CORE)).returncode == 0:
+            os.replace(tmp, PC_CFG); say('control API: closed to web pages (from the next tunnel restart)')
+        else:
+            os.remove(tmp)
+    except (OSError, ValueError, KeyError, RuntimeError):
+        pass
+
+
+PC_README = '''Reality Hop: PC tunnel files
 
 pc-config.json   the sing-box config of the PC tunnel: the 6 nodes (vless-1 to vless-6), the SOCKS5 proxy on
                  127.0.0.1:2080, DNS (Quad9 through the tunnel) and the local control API on 127.0.0.1:9090
-rh-core.exe      sing-box from its official releases (github.com/SagerNet/sing-box), under RealityHop's own name
+rh-core.exe      sing-box from its official releases (github.com/SagerNet/sing-box), under Reality Hop's own name
 
-You can read and edit pc-config.json; press Restart tunnel in the RealityHop window to apply it. RealityHop rewrites
+You can read and edit pc-config.json; press Restart tunnel in the Reality Hop window to apply it. Reality Hop rewrites
 the vless-1 to vless-6 entries whenever it replaces nodes. The logs are in ..\\logs.
 Do not share pc-config.json: it holds node keys and the local API secret. For a problem report use
 Report a problem in the window; it takes everything personal out.
 '''
-ROUTER_README = '''RealityHop: router tunnel files (GL.iNet, only used with router features on)
+ROUTER_README = '''Reality Hop: router tunnel files (GL.iNet, only used with router features on)
 
 router-config.json   the sing-box config that Push to router sends to the router (/etc/sing-box/config.json)
 nft-devices.sh       the firewall rule sent to the router: it diverts only the chosen devices into sing-box
 heal.sh              the router's self-repair, run there by cron every 30 minutes
 
-Press Push to router in the RealityHop window to apply changes. Do not share router-config.json: it holds node keys
+Press Push to router in the Reality Hop window to apply changes. Do not share router-config.json: it holds node keys
 and the router's local API secret.
 '''
 
@@ -1641,12 +1810,15 @@ def setup_pc():
         res.append(f"nodes: the {len(best)} fastest working ones are in use (best {best[0]['ms']} ms)")
     else:
         res.append(f'nodes: {len(nodes_of(PC_CFG))} already in use, kept')
-    owner = port_owner(2080)
-    if owner and owner != os.path.basename(CORE):
+    owner = None if router_only() else port_owner(2080)
+    if router_only():
+        res.append('PC tunnel: off (router-only mode: the router tunnels your devices)')
+    elif owner and owner != os.path.basename(CORE):
         res.append(f'PC tunnel: NOT started, {owner} already uses port 2080; close it and run the setup again')
     else:
         res.append('PC tunnel: running on 127.0.0.1:2080' if core_restart() else 'PC tunnel: rh-core did not come up, see logs/core.log')
-    res.append(vpn_check())
+    if not router_only():
+        res.append(vpn_check())
     for l in res:
         say(l)
     return res
@@ -1697,16 +1869,16 @@ def make_key():
 
 def add_key_console(host):
     """Opens a console that adds this PC's key to the router. The person types the router password into ssh there;
-    RealityHop never sees it."""
+    Reality Hop never sees it."""
     pub, kh = make_key(), os.path.join(DATA, 'known_hosts')
     k = pub.split()[1]
     remote = (f"mkdir -p /etc/dropbear; touch /etc/dropbear/authorized_keys; grep -q {k} /etc/dropbear/authorized_keys "
               f"|| echo {pub} >> /etc/dropbear/authorized_keys; chmod 600 /etc/dropbear/authorized_keys; echo; echo Key added. Close this window.")
-    bat = os.path.join(DATA, 'add-router-key.cmd')
-    open(bat, 'w').write('@echo off\r\ntitle RealityHop: add key to router\r\n'
+    bat, esc = os.path.join(DATA, 'add-router-key.cmd'), lambda p: p.replace('%', '%%')   # % is special in a .cmd
+    open(bat, 'w', encoding='utf-8').write('@echo off\r\nchcp 65001 >nul\r\ntitle Reality Hop: add key to router\r\n'
                          'echo Type the router admin password (the one for the GL.iNet web panel) and press Enter.\r\n'
-                         'echo Nothing shows while you type. RealityHop never sees it.\r\necho.\r\n'
-                         f'"{ssh_exe()}" -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile="{kh}" root@{host} "{remote}"\r\n'
+                         'echo Nothing shows while you type. Reality Hop never sees it.\r\necho.\r\n'
+                         f'"{esc(ssh_exe())}" -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile="{esc(kh)}" root@{host} "{remote}"\r\n'
                          'echo.\r\npause\r\n')
     subprocess.Popen(['cmd', '/c', bat], creationflags=subprocess.CREATE_NEW_CONSOLE)
 
@@ -1725,24 +1897,36 @@ def startup(on):
     It runs on the newest installed Python (or RealityHop.exe when frozen)."""
     cmd = self_cmd('--watch')
     if on:
-        os.makedirs(DATA, exist_ok=True)
-        ps = (f"$s = (New-Object -ComObject WScript.Shell).CreateShortcut('{STARTUP_LNK}'); $s.TargetPath = '{cmd[0]}'; "
-              f"$s.Arguments = '{' '.join(chr(34) + a + chr(34) if ' ' in a else a for a in cmd[1:])}'; $s.WorkingDirectory = '{DATA}'; $s.Save()")
+        os.makedirs(DATA, exist_ok=True); lnk_migrate(STARTUP_LNK)
+        args = ' '.join(f'"{a}"' if ' ' in a else a for a in cmd[1:])
+        ps = (f"$s = (New-Object -ComObject WScript.Shell).CreateShortcut({psq(STARTUP_LNK)}); $s.TargetPath = {psq(cmd[0])}; "
+              f"$s.Arguments = {psq(args)}; $s.WorkingDirectory = {psq(DATA)}; $s.Save()")
         run(['powershell', '-NoProfile', '-Command', ps], timeout=30)
         if not port_taken(WATCH_PORT):
             subprocess.Popen(cmd, cwd=DATA, env=own_env(), creationflags=subprocess.DETACHED_PROCESS)
         say('background watcher: on, starts at every logon')
     else:
+        lnk_migrate(STARTUP_LNK)
         if os.path.exists(STARTUP_LNK):
             os.remove(STARTUP_LNK)
         watcher_kill()
         say('background watcher: off')
 
 
+def lnk_migrate(path):
+    """Up to 1.0.4 the shortcuts were called RealityHop.lnk; now they carry the name people see (Windows search too)."""
+    old = os.path.join(os.path.dirname(path), APP + '.lnk')
+    try:
+        if os.path.exists(old):
+            os.remove(old) if os.path.exists(path) else os.replace(old, path)
+    except OSError:
+        pass
+
+
 # ---- tray icon for the watcher (Windows notification area), plain Win32 through ctypes, no extra packages
 def tray_icon_file(state, segs=()):
     """Tray icon: the centre shows the overall state, the outer ring one segment per node (green working,
-    amber slow, red dead, grey not checked yet). Drawn at 256 px and scaled down; cached in %LOCALAPPDATA%\\RealityHop."""
+    amber slow, red dead, grey not checked yet). Drawn at 256 px and scaled down; cached in the data folder."""
     from PIL import Image, ImageDraw
     col = {'ok': (95, 211, 141), 'warn': (245, 165, 36), 'bad': (255, 77, 79)}
     segs = list(segs) or ['unk'] * 6
@@ -1761,15 +1945,16 @@ def tray_icon_file(state, segs=()):
 
 
 def tray_promote():
-    """Windows 11 puts a new tray icon in the hidden overflow (^). Show RealityHop's on the taskbar once, unless the
+    """Windows 11 puts a new tray icon in the hidden overflow (^). Show Reality Hop's on the taskbar once, unless the
     person already chose (Windows Settings > Personalization > Taskbar > Other system tray icons); their choice wins."""
     try:
         import winreg
+        tail = '\\' + '\\'.join(os.path.normcase(sys.executable).split(os.sep)[-2:])   # \\<install folder>\\realityhop.exe
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Control Panel\NotifyIconSettings') as root:
             for i in range(winreg.QueryInfoKey(root)[0]):
                 with winreg.OpenKey(root, winreg.EnumKey(root, i), 0, winreg.KEY_READ | winreg.KEY_SET_VALUE) as k:
                     try:
-                        if not winreg.QueryValueEx(k, 'ExecutablePath')[0].lower().endswith('\\realityhop\\realityhop.exe'):
+                        if not os.path.normcase(winreg.QueryValueEx(k, 'ExecutablePath')[0]).endswith(tail):
                             continue
                     except OSError:
                         continue
@@ -1782,9 +1967,9 @@ def tray_promote():
 
 
 class Tray:
-    """Notification-area icon. Double-click opens RealityHop; right-click menu: open, restart, check now, rescue, quit."""
+    """Notification-area icon. Double-click opens Reality Hop; right-click menu: open, restart, check now, rescue, quit."""
     def __init__(self, actions):
-        self.actions, self.hwnd, self.state, self.tip, self.segs = actions, None, 'unk', 'RealityHop', ()
+        self.actions, self.hwnd, self.state, self.tip, self.segs = actions, None, 'unk', 'Reality Hop', ()
         threading.Thread(target=self.loop, daemon=True).start()
 
     def loop(self):
@@ -1818,7 +2003,7 @@ class Tray:
                         ('szInfo', W.WCHAR * 256), ('uVersion', W.UINT), ('szInfoTitle', W.WCHAR * 64), ('dwInfoFlags', W.DWORD),
                         ('guidItem', GUID), ('hBalloonIcon', W.HICON)]
         s32.Shell_NotifyIconW.argtypes = [W.DWORD, ctypes.POINTER(NID)]
-        CB, MENU = 0x8001, [(1, 'Open RealityHop'), (4, 'Restart PC tunnel'), (2, 'Check now'), (3, 'Rescue from verified vault'), (0, None), (9, 'Quit background watcher')]
+        CB, MENU = 0x8001, [(1, 'Open Reality Hop'), (4, 'Restart PC tunnel'), (2, 'Check now'), (3, 'Rescue from verified vault'), (0, None), (9, 'Quit background watcher')]
         created = u32.RegisterWindowMessageW('TaskbarCreated')
         self.nid = NID(); self.nid.cbSize = ctypes.sizeof(NID); self.nid.uID = 1; self.nid.uFlags = 0x1 | 0x2 | 0x4; self.nid.uCallbackMessage = CB
 
@@ -1851,7 +2036,7 @@ class Tray:
         self._proc = WNDPROC(proc)   # keep a reference, or the callback is garbage-collected
         wc = WNDCLASSW(); wc.lpfnWndProc = self._proc; wc.lpszClassName = 'RealityHopTray'; wc.hInstance = k32.GetModuleHandleW(None)
         u32.RegisterClassW(ctypes.byref(wc))
-        self.hwnd = u32.CreateWindowExW(0, 'RealityHopTray', 'RealityHop', 0, 0, 0, 0, 0, None, None, wc.hInstance, None)
+        self.hwnd = u32.CreateWindowExW(0, 'RealityHopTray', 'Reality Hop', 0, 0, 0, 0, 0, None, None, wc.hInstance, None)
         self.nid.hWnd = self.hwnd; self.nid.hIcon = icon(self.state, self.segs); self.nid.szTip = self.tip
         s32.Shell_NotifyIconW(0, ctypes.byref(self.nid))   # NIM_ADD
         self._remove = lambda: s32.Shell_NotifyIconW(2, ctypes.byref(self.nid))
@@ -1890,7 +2075,7 @@ if __name__ == '__main__':
             status_table(nodes, *check_all(nodes))
             dead = [n['tag'] for n in nodes if n['phone_ms'] is None]
             if dead:
-                say(f"\ndead on the router side: {', '.join(dead)}  ->  replace them in the RealityHop window")
+                say(f"\ndead on the router side: {', '.join(dead)}  ->  replace them in the Reality Hop window")
             sys.exit(0)
         nodes = scan(args.top)
         ok = [n for n in nodes if n['ok']]

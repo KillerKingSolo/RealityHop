@@ -1,5 +1,5 @@
 #!/bin/sh
-# Router self-repair, run by cron every 30 minutes (installed by RealityHop on every push to the router).
+# Router self-repair, run by cron every 30 minutes (installed by Reality Hop on every push to the router).
 # If no vless node in the running config can fetch a page, now and again a minute later, swap in the next 6 nodes from
 # vault.json (verified nodes pushed from the PC), restart sing-box, and keep going until a set works.
 # Log: /etc/sing-box/heal.log (last 200 lines).  Off: remove the heal.sh line from /etc/crontabs/root.
