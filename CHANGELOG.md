@@ -3,6 +3,24 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.3.0 (2026-10-29)
+
+**Why update:** router steps only run on your own router's network, updates show what changed in a clear window, and
+every button explains itself.
+
+- **Your router only.** Before every router step (Push, Test on router, Check now, the background repairs), Reality Hop
+  checks that this PC is on its own router's network: the router's address must answer, with the hardware address it
+  had when it was set up. Away from home the router steps are skipped at once, instead of waiting for timeouts, and
+  nothing is sent to another network's router. The PC tunnel keeps working.
+- **Change router** in Settings: for a new or reset router. It forgets the old one and opens the router steps of the
+  setup.
+- **Update window.** A new release opens a window at launch with what changed in every version since yours, and
+  **Install update** or **Later**. The Update button stays at the top.
+- **Hover help.** Every button shows what it does when you hold the mouse over it.
+- **Test PC tunnel** in Candidates: after you put nodes in the slots and restart, test the PC tunnel without going
+  back to the main window.
+- Menu paths in the app use arrows (Settings → Multi-Hop).
+
 ## 1.2.0 (2026-10-28)
 
 **Why update:** Reality Hop is now built with the newest Python and build tools, and every release is checked for that

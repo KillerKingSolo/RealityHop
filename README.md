@@ -107,7 +107,7 @@ OpenVPN config file, use `proto tcp`, the server's port `443`, and add `socks-pr
 | **Check&nbsp;now** | Tests every node through the running tunnel. |
 | **Restart&nbsp;tunnel** | Restarts the tunnel on the current nodes (about 2 seconds). |
 | **Stop&nbsp;/&nbsp;Start** | Turns everything off, including the start at boot, for when you are away. Turn the VPN app's proxy off while stopped. |
-| Nodes&nbsp;→&nbsp;**Show&nbsp;candidates** | Lists nodes from the public list; test them and put any of them in a slot. |
+| Nodes&nbsp;→&nbsp;**Show&nbsp;candidates** | Lists nodes from the public list; test them and put any of them in a slot, then restart and test the PC tunnel from the same window. |
 | Nodes&nbsp;→&nbsp;**Rescue** | Use when every node is dead. Tests the vault of known-good nodes and puts the best 6 in. |
 | Help&nbsp;→&nbsp;**Report&nbsp;a&nbsp;problem** | Makes a redacted report of the logs and opens a GitHub issue for you to attach it to. |
 | Files&nbsp;(optional) | **Open backend folder** (`PC`, `Router`, `logs`, `anonymous-logs`) and **Open logs folder**. |

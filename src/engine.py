@@ -309,10 +309,59 @@ def ssh_base():
 
 
 def ssh(cmd, stdin=None, timeout=240):
+    ok, why = router_here()
+    if not ok:
+        raise RuntimeError(why)
     r = run(ssh_base() + [cmd], stdin, timeout=timeout)
     if r.returncode == 255:
+        if 'IDENTIFICATION HAS CHANGED' in (r.stderr or ''):
+            raise RuntimeError(f"a different router answers at {settings_load()['router_host']}, not the one Reality Hop "
+                               'was set up with; nothing was sent. On a new or reset router, use Settings → Change router.')
         raise RuntimeError('router unreachable over ssh')
+    if _here[2] and not this_pc().get('router_mac'):
+        set_this_pc(router_mac=_here[2])   # learned only after the pinned host key and our key let us in
     return r.stdout
+
+
+_here = [0, None, '']
+
+
+def router_mac(host):
+    """The MAC address this PC sees for the router's address: None when port 22 does not answer, '' when it answers but
+    is not on this PC's own network (no ARP entry)."""
+    try:
+        socket.create_connection((host, 22), timeout=2).close()
+    except OSError:
+        return None
+    m = re.search(r'\b([0-9a-f]{2}(?:-[0-9a-f]{2}){5})\b', run(['arp', '-a', host], timeout=10).stdout.lower())
+    return m.group(1) if m else ''
+
+
+def router_here():
+    """(True, '') when this PC is on the network of its own router: the router's address answers, with the MAC address
+    it had when it was first reached. Checked before every SSH command (kept 30 seconds), so nothing goes to another
+    network's router, and a PC away from home does not wait for timeouts. The pinned SSH host key checks it again."""
+    if time.time() - _here[0] < 30:
+        return _here[1]
+    host = settings_load()['router_host']; mac = router_mac(host); saved = this_pc().get('router_mac')
+    if mac is None:
+        res = (False, f"not on your router's network: {host} does not answer; router steps skipped")
+    elif mac and saved and mac != saved:
+        res = (False, f'a different router answers at {host}, not the one Reality Hop was set up with; router steps '
+                      'skipped. On a new or reset router, use Settings → Change router.')
+    else:
+        res = (True, '')
+    _here[:] = [time.time(), res, mac or '']
+    return res
+
+
+def router_forget():
+    """Setting up a router (again): forget the old router's MAC address and SSH host key, so a new router is accepted."""
+    set_this_pc(router_mac=''); _here[0] = 0
+    try:
+        run([ssh_exe('ssh-keygen'), '-R', settings_load()['router_host'], '-f', os.path.join(DATA, 'known_hosts')], timeout=20)
+    except Exception:
+        pass   # no known_hosts yet
 
 
 _feed = [0, None]

@@ -203,7 +203,21 @@ def check_update():
     if not N.FROZEN:
         return None
     rel = latest()
-    return rel if rel and vtuple(rel['ver']) > vtuple(N.VERSION) else None
+    if not rel or vtuple(rel['ver']) <= vtuple(N.VERSION):
+        return None
+    try:
+        rel['changes'] = changes(N.VERSION)
+    except Exception:
+        rel['changes'] = [(rel['ver'], '', rel['notes'])]
+    return rel
+
+
+def changes(since):
+    """[(version, date, notes)] of every release newer than `since`, newest first, so a skipped version is not missed."""
+    req = urllib.request.Request(f'https://api.github.com/repos/{N.REPO}/releases?per_page=30', headers={'Accept': 'application/vnd.github+json'})
+    out = [(r['tag_name'].lstrip('v'), (r.get('published_at') or '')[:10], (r.get('body') or '').split('\n---')[0].strip())
+           for r in json.loads(N.gh_get(req, 20)) if not r.get('draft') and not r.get('prerelease')]
+    return sorted((c for c in out if vtuple(c[0]) > vtuple(since)), key=lambda c: vtuple(c[0]), reverse=True)
 
 
 def apply_update(rel):

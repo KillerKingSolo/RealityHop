@@ -79,6 +79,11 @@ looked (another PC pushed, or the router repaired itself). If so, it takes the r
 own configs instead of pushing its older set over them. A push replaces the 6 nodes on the router; nothing is added
 twice. Set the device list once on any PC, and include every device the router should tunnel.
 
+**A new or reset router?** Settings → **Change router** forgets the old one and opens these router steps again.
+
+Before every router step, Reality Hop checks that this PC is on its own router's network, so nothing is sent to another
+network's router; away from home the router steps are skipped at once.
+
 ## How the router side stays healthy
 
 - Your PC checks the router tunnel with **Test on router** and pushes new nodes whenever it replaces some.

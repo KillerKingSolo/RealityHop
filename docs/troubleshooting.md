@@ -55,6 +55,16 @@ check that the PC has internet at all. Then try **Show candidates → Test 40 fa
   router's keys.
 - Check the router's log: `logread | grep sing-box` over SSH.
 
+## "not on your router's network" or "a different router answers"
+
+Before every router step, Reality Hop checks that this PC is on the network of its own router: the router's address
+must answer, with the same hardware (MAC) address it had when it was set up. Away from home, the router steps are
+skipped at once and nothing is sent to another network's router. The PC tunnel keeps working. Back home, press
+**Test on router**; if this PC changed nodes meanwhile, the router tile asks you to push them.
+
+With a new or reset router, press Settings → **Change router**. It forgets the old router and opens the router steps of the
+setup, where you connect the new one.
+
 ## A device on the router is not tunnelled
 
 Its address probably changed. Reserve a fixed address for it (GL.iNet web panel → CLIENTS, turn on the Reserved IP

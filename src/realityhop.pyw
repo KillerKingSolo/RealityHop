@@ -62,6 +62,9 @@ def theme(root):
     fams = set(tkf.families(root))
     UI = UI if UI in fams else 'Segoe UI'; UIB = UIB if UIB in fams else 'Segoe UI Semibold'
     ICONS = next((f for f in ('Segoe Fluent Icons', 'Segoe MDL2 Assets') if f in fams), None)   # Windows 11, Windows 10
+    root.bind_class('TButton', '<Enter>', lambda e: Tip.enter(e.widget, str(e.widget.cget('text'))), add='+')
+    for ev in ('<Leave>', '<ButtonPress>'):
+        root.bind_class('TButton', ev, Tip.leave, add='+')
     s = ttk.Style(root); s.theme_use('clam')
     s.configure('.', background=BG, foreground=FG, font=(UI, 10), borderwidth=0, focuscolor=BG, lightcolor=BG, darkcolor=BG)
     for name, bg in (('TFrame', BG), ('Card.TFrame', CARD), ('Side.TFrame', SIDE)):
@@ -129,6 +132,128 @@ def table(parent, cols, height=None, stretch=None, mode='browse'):
     return t
 
 
+TIPS = {
+    # sidebar
+    'Show candidates': 'Opens the nodes from the public node list that could replace yours. Ping and test them, then put them in slots.',
+    'Fix: test online nodes': 'Replaces the selected node with the best node from the online list that passes a test.',
+    'Fix: nodes that worked before': 'Replaces the selected node with the best node from the vault of nodes that worked before.',
+    'Fix: quick swap, untested': 'Replaces the selected node at once with the next fastest node, without a test.',
+    'Replace all with best 6': 'Tests the fastest nodes from the online list and your current ones, then puts the best 6 in. About a minute.',
+    'Rescue from verified vault': 'For when every node is dead. Tests the vault of nodes that worked before and puts the best 6 in.',
+    'Restart PC tunnel': 'Restarts the PC tunnel on the nodes in your slots. About 2 seconds.',
+    'Run setup again': 'Opens the setup wizard again, to add a router or redo the VPN step or the background start. Your nodes are kept.',
+    'Test on router': "The router's tunnel tests every node. If another PC changed the router, its nodes are taken first.",
+    'Devices': 'Choose which devices on the router use the tunnel.',
+    'Push to router': 'Sends the router config and the device list to the router and restarts its tunnel (a few seconds).',
+    'Report a problem': 'Makes a redacted report of the logs to attach to a GitHub issue. Nothing is sent.',
+    'Open backend folder': 'Opens the install folder with the PC, Router and logs folders.',
+    'Open logs folder': 'Opens the folder with window.log, watch.log and core.log.',
+    'Settings': 'Check interval, thresholds, router features, updates, the sing-box channel, uninstall.',
+    # overview
+    'Check now': 'Tests every node through the running PC tunnel. If another PC changed the router, its nodes are taken first.',
+    'Restart tunnel': 'Restarts the PC tunnel on the nodes in your slots. About 2 seconds.',
+    'Cancel': 'Stops the action that is running.',
+    'Stop': "Turns everything off, including the start at boot, until you press Start. Turn the VPN app's proxy off while stopped.",
+    'Start': 'Turns the PC tunnel and the background watcher on again, now and at every boot.',
+    'Update': 'Installs the new Reality Hop release. The tunnel keeps running.',
+    'Install update': 'Installs the new release now. The window restarts; the tunnel keeps running.',
+    'Later': 'Closes this window. The Update button at the top stays until you update.',
+    'Hide': 'Hides the activity log.',
+    'Show': 'Shows the activity log.',
+    # candidates
+    'Ping again from this PC': 'Downloads the node list again and pings port 443 of each candidate from this PC.',
+    'Test fastest': 'Tests the fastest candidates with a separate copy of sing-box: a real handshake and download through each. '
+                    'Shows which ones work before you put them in.',
+    'Replace all 6 with the best 6': 'Writes the best 6 candidates into your slots, tested working ones first. Nothing restarts yet.',
+    'Put picked in slots': 'Writes the candidates you picked into the slots, in the order you clicked them. Nothing restarts yet.',
+    'Test PC tunnel': 'Tests the nodes in your slots through the running PC tunnel, as Check now does. Restart first after a change.',
+    # settings
+    'Check for updates': 'Asks GitHub for a newer Reality Hop release now.',
+    'Uninstall': 'Removes Reality Hop from this PC. You can also switch the router tunnel off.',
+    'Change router': 'For a new or reset router: forgets the old one and opens the router steps of the setup.',
+    'Save': 'Saves the settings.',
+    'Defaults': 'Puts the default values back in the boxes. Press Save to keep them.',
+    # devices
+    'Add': 'Adds the address you typed to the list.',
+    'Refresh list': "Reads the router's list of devices again.",
+    'Save and push': 'Saves the device list and sends it to the router.',
+    # report
+    'Open GitHub issue': 'Opens a new GitHub issue with the summary filled in. Drag the report file into it.',
+    'Open folder': 'Opens the folder with the reports.',
+    'Copy': 'Copies the report to the clipboard.',
+    'Close': 'Closes this window.',
+    # setup
+    'Next': 'Goes to the next step.',
+    'Finish': 'Saves the choices on this page and closes the setup.',
+    'Back': 'Goes back one step.',
+    'Change...': 'Picks another install folder.',
+    'Install': 'Installs Reality Hop, downloads sing-box, finds the first nodes and starts the tunnel. One UAC prompt, about a minute.',
+    'Install again (repair)': 'Installs everything again over the current install, to repair it.',
+    'Yes, this PC and my router': 'Sets up the tunnel on this PC and on your GL.iNet router.',
+    'Router only': 'Only the router tunnels. Nothing runs on this PC\'s connection.',
+    'No, only this PC': 'Sets up the tunnel on this PC only.',
+    'Add key to router': "Makes an SSH key and adds it to the router. Windows' ssh asks for the router password; Reality Hop never sees it.",
+    'Test connection': 'Connects to the router with the key and shows its model, firmware and sing-box version.',
+    'Use my own key file...': 'Uses an SSH key file the router already accepts.',
+    'Check again': 'Checks again whether sing-box is installed on the router.',
+    'Install sing-box on the router': 'Installs sing-box, jq and curl on the router over SSH.',
+    'Check PIA': 'Checks that PIA uses OpenVPN over TCP 443 through the SOCKS5 proxy 127.0.0.1:2080.',
+}
+
+
+def tip_text(text):
+    m = re.fullmatch(r'vless-(\d)', text)
+    if m:
+        return f'Puts the selected candidate into slot vless-{m.group(1)}. Nothing restarts yet.'
+    return TIPS.get('Test fastest' if re.fullmatch(r'Test \d+ fastest', text) else text)
+
+
+class Tip:
+    """Hover help for every button: shows after half a second, goes on leave or click."""
+    win = job = owner = None
+
+    @classmethod
+    def enter(cls, w, text):
+        if cls.owner is w:
+            return
+        cls.leave(); t = tip_text(text)
+        if t:
+            cls.owner, cls.job = w, w.after(500, cls.show, w, t)
+
+    @classmethod
+    def show(cls, w, t):
+        cls.job = None
+        if not w.winfo_exists():
+            return
+        cls.win = tk.Toplevel(w); cls.win.overrideredirect(True); cls.win.attributes('-topmost', True)
+        tk.Label(cls.win, text=t, bg=CARD, fg=FG, font=(UI, 9), justify='left', wraplength=340, padx=10, pady=6,
+                 highlightthickness=1, highlightbackground=LINE).pack()
+        cls.win.update_idletasks()
+        x = min(w.winfo_rootx(), w.winfo_screenwidth() - cls.win.winfo_width() - 8)
+        y = w.winfo_rooty() + w.winfo_height() + 4
+        if y + cls.win.winfo_height() > w.winfo_screenheight() - 48:
+            y = w.winfo_rooty() - cls.win.winfo_height() - 4
+        cls.win.geometry(f'+{x}+{y}')
+
+    @classmethod
+    def leave(cls, e=None):
+        if e is not None and e.type == tk.EventType.Leave and cls.owner is not None:
+            under = e.widget.winfo_containing(e.x_root, e.y_root)
+            if under is not None and str(under).startswith(str(cls.owner)):
+                return   # moved onto a part of the same button
+        if cls.job and cls.owner is not None:
+            try:
+                cls.owner.after_cancel(cls.job)
+            except tk.TclError:
+                pass
+        if cls.win is not None:
+            try:
+                cls.win.destroy()
+            except tk.TclError:
+                pass
+        cls.win = cls.job = cls.owner = None
+
+
 class NavButton(tk.Frame):
     """Sidebar entry: hover shows a red edge, works with .state([...]) and ['text'] like a ttk button."""
     def __init__(self, parent, text, command, icon='›'):
@@ -138,8 +263,9 @@ class NavButton(tk.Frame):
         self.ico = tk.Label(self, text=icon, bg=SIDE, fg=DIM, font=(UIB, 11), padx=10); self.ico.pack(side='left')
         self.lab = tk.Label(self, text=text, bg=SIDE, fg=FG, font=(UI, 10), anchor='w', pady=7); self.lab.pack(side='left', fill='x', expand=True)
         for w in (self, self.ico, self.lab):
-            w.bind('<Enter>', lambda e: self.hover(True)); w.bind('<Leave>', lambda e: self.hover(False))
-            w.bind('<Button-1>', lambda e: None if self.disabled else self.command())
+            w.bind('<Enter>', lambda e: (self.hover(True), Tip.enter(self, self.text)))
+            w.bind('<Leave>', lambda e: (self.hover(False), Tip.leave(e)))
+            w.bind('<Button-1>', lambda e: (Tip.leave(), None if self.disabled else self.command()))
 
     def hover(self, on):
         bg = HOVER if on and not self.disabled else SIDE
@@ -216,6 +342,34 @@ def menu(parent):
     return tk.Menu(parent, tearoff=0, bg=CARD, fg=FG, activebackground=SEL, activeforeground=FG, relief='flat', bd=0, font=(UI, 10))
 
 
+def md_blocks(text):
+    """Release notes (Markdown) as [('p' or 'li', text)]: continuation lines joined, the checksum footer left out."""
+    blocks = []
+    for line in text.replace('\r', '').split('\n'):
+        s = line.strip()
+        if not s or s == '---':
+            blocks.append(None); continue
+        if s.startswith(('- ', '* ')):
+            blocks.append(['li', s[2:]])
+        elif blocks and blocks[-1] is not None:
+            blocks[-1][1] += ' ' + s
+        else:
+            blocks.append(['p', s.lstrip('#').strip()])
+    return [tuple(b) for b in blocks if b]
+
+
+def md_insert(t, text, tags):
+    """One line of Markdown into a Text widget: **bold**, `code`, [text](link) shown as its text."""
+    text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
+    for part in re.split(r'(\*\*[^*]+\*\*|`[^`]+`)', text):
+        if part.startswith('**') and part.endswith('**') and len(part) > 4:
+            t.insert('end', part[2:-2], tags + ('b',))
+        elif part.startswith('`') and part.endswith('`') and len(part) > 2:
+            t.insert('end', part[1:-1], tags + ('code',))
+        elif part:
+            t.insert('end', part, tags)
+
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -224,7 +378,7 @@ class App(tk.Tk):
         self.lists, self.pcs, self.router = {'pc': [], 'phone': []}, None, None
         self.pc_pending, self.want_restart, self.pending, self.router_stale = False, False, None, False
         self.status_text, self.status_state = 'Reading the configs and testing from this PC...', 'unk'
-        self.update_rel = None
+        self.update_rel = self.upd_win = None
         N.say = self.say; self.flog = N.file_log('window'); self.wstate, self.started = {}, 0
         self.lock = socket.socket()
         try:
@@ -277,12 +431,11 @@ class App(tk.Tk):
         if rel:
             self.update_rel = rel
             self.after(0, lambda: (self.update_btn.configure(text=f"Update to {rel['ver']}"), self.update_btn.pack(side='right', padx=(0, 8))))
+            self.after(1500, self.do_update)   # tell at launch, not only with the button
 
     def do_update(self):
-        rel = self.update_rel
-        if rel and messagebox.askyesno('Update Reality Hop', f"Install Reality Hop {rel['ver']}? (you have {N.VERSION})\n\n"
-                                       f"{rel['notes'][:700]}\n\nThe window and the background watcher restart; the tunnel keeps running."):
-            self.work(self.apply_update, rel)
+        if self.update_rel and not (self.upd_win and self.upd_win.winfo_exists()):
+            self.upd_win = UpdateDialog(self, self.update_rel)
 
     def apply_update(self, rel):
         install.apply_update(rel); N.watcher_kill()
@@ -871,14 +1024,14 @@ class App(tk.Tk):
             if messagebox.askyesno('Start Reality Hop', 'Start everything again on this PC?\n\n'
                                    '- the PC tunnel (rh-core) starts now and at every boot (one UAC prompt)\n'
                                    '- the background watcher and tray icon start now and at every logon\n\n'
-                                   'Afterwards turn the VPN app\'s proxy back on (PIA: Settings > Multi-Hop, tick '
+                                   'Afterwards turn the VPN app\'s proxy back on (PIA: Settings → Multi-Hop, tick '
                                    '"Multi-hop and Obfuscation", SOCKS5 127.0.0.1:2080).'):
                 self.work(self.do_power, False)
         elif messagebox.askyesno('Stop Reality Hop', 'Stop everything on this PC, for when you are somewhere else?\n\n'
                                  '- the PC tunnel (rh-core) stops and no longer starts at boot (one UAC prompt)\n'
                                  '- the background watcher and tray icon stop and no longer start at logon\n'
                                  '- the router and your configs are not touched\n\n'
-                                 'Afterwards turn the VPN app\'s proxy off (PIA: Settings > Multi-Hop, untick "Multi-hop and '
+                                 'Afterwards turn the VPN app\'s proxy off (PIA: Settings → Multi-Hop, untick "Multi-hop and '
                                  'Obfuscation"), or it cannot connect. Press Start to undo.'):
             self.work(self.do_power, True)
 
@@ -1005,12 +1158,18 @@ class SettingsDialog(tk.Toplevel):
             link(c2, text, url).pack(anchor='w', padx=16)
         row2 = tk.Frame(c2, bg=CARD); row2.pack(fill='x', padx=16, pady=(4, 14))
         for text, cmd in (('Check for updates', self.check_updates), ('Run setup again', lambda: (self.destroy(), app.rerun_setup())),
-                          ('Uninstall', self.uninstall)):
+                          *((('Change router', self.change_router),) if ROUTER else ()), ('Uninstall', self.uninstall)):
             ttk.Button(row2, text=text, style='Ghost.TButton', command=cmd).pack(side='left', padx=(0, 8))
         row = tk.Frame(self, bg=BG); row.pack(fill='x', padx=22, pady=16)
         ttk.Button(row, text='Save', style='Accent.TButton', command=self.save).pack(side='right')
         ttk.Button(row, text='Defaults', command=lambda: [v.set(N.DEFAULTS[k]) for k, v in self.vars.items()]).pack(side='right', padx=8)
         dark_titlebar(self)
+
+    def change_router(self):
+        if messagebox.askyesno('Change router', 'For a new router, a reset router or a new router address.\n\nReality Hop '
+                               'forgets the old router and opens the router steps of the setup, where you connect the new one. '
+                               'This window closes; the PC tunnel keeps running.', parent=self):
+            N.router_forget(); restart_window(['--setup', '--router'])
 
     def check_updates(self):
         try:
@@ -1050,7 +1209,7 @@ class SettingsDialog(tk.Toplevel):
                 if N.boot_task_exists():   # nothing to start at boot any more (one admin prompt)
                     N.boot_task(False)
                 messagebox.showinfo('Router only', 'The tunnel on this PC is off now. If your VPN app uses the SOCKS5 proxy '
-                                    '127.0.0.1:2080, turn that off (PIA: Settings > Multi-Hop, untick "Multi-hop and '
+                                    '127.0.0.1:2080, turn that off (PIA: Settings → Multi-Hop, untick "Multi-hop and '
                                     'Obfuscation"). To tunnel this PC through the router, tick it in Router > Devices, or '
                                     'choose every device.', parent=self)
             else:
@@ -1109,7 +1268,9 @@ class Candidates(tk.Toplevel):
         bar2 = ttk.Frame(self); bar2.pack(fill='x', pady=(8, 0), **pad)
         btn(bar2, 'Replace all 6 with the best 6', self.put_best, True)
         btn(bar2, 'Put picked in slots', self.put_all, True)
-        btn(bar2, 'Restart PC tunnel', lambda: self.app.work(self.app.pc_restart))
+        if not RONLY:
+            btn(bar2, 'Restart PC tunnel', lambda: self.app.work(self.app.pc_restart))
+            btn(bar2, 'Test PC tunnel', lambda: self.app.work(self.test_tunnel))
         if ROUTER:
             btn(bar2, 'Push to router', self.app.push_phone)
         bar3 = ttk.Frame(self); bar3.pack(fill='x', pady=(8, 0), **pad)
@@ -1166,6 +1327,18 @@ class Candidates(tk.Toplevel):
         self.nodes.sort(key=lambda n: (n.get('ok') is not True, n['ms'] if n.get('ok') else 9e9, n['tcp_ms']))
         self.msg = (f'{len(ok)} of {len(top)} tested candidates work.'
                     + (f" Best: {ok[0]['server']} at {ok[0]['ms']} ms ({ok[0].get('where', '?')})." if ok else ' Ping again later or widen the test.'))
+
+    def test_tunnel(self):
+        """The running PC tunnel fetches through each node in its slots, as Check now does."""
+        self.app.check_local('pc'); nodes = self.app.lists['pc']
+        dead = [n['tag'] for n in nodes if n.get('pc_ms') is None]
+        if not (self.app.pcs or {}).get('api'):
+            self.msg = 'The PC tunnel is not running. Press Restart PC tunnel, then test again.'
+        elif self.app.pc_pending:
+            self.msg = 'The PC tunnel still runs the previous nodes. Press Restart PC tunnel, then test again.'
+        else:
+            self.msg = (f'PC tunnel: {len(nodes) - len(dead)} of {len(nodes)} nodes work'
+                        + (f"; not working: {', '.join(dead)}." if dead else '.'))
 
     def render(self):
         if not self.winfo_exists():
@@ -1262,8 +1435,8 @@ class DevicesDialog(tk.Toplevel):
         info = card(self, fill='x', padx=22, pady=(14, 0))
         tk.Label(info, text='KEEP EACH DEVICE ON THE SAME ADDRESS', bg=CARD, fg=DIM, font=(UIB, 8)).pack(anchor='w', padx=16, pady=(12, 4))
         for i, t in enumerate(('On the phone, turn off the changing ("private" or "random") Wi-Fi address for this network, so it '
-                               'keeps one MAC address. iPhone: Settings > Wi-Fi > (i) next to the network > Private Wi-Fi Address: '
-                               'Off (or Fixed). Android: Wi-Fi > the network > Privacy > Use device MAC. Names vary by phone.',
+                               'keeps one MAC address. iPhone: Settings → Wi-Fi → (i) next to the network → Private Wi-Fi Address: '
+                               'Off (or Fixed). Android: Wi-Fi → the network → Privacy → Use device MAC. Names vary by phone.',
                                'Then reserve its address on the router: GL.iNet web panel > CLIENTS, then turn on the Reserved IP '
                                'slider next to the device.'), 1):
             tk.Label(info, text=f'{i}.  {t}', bg=CARD, fg=FG, font=(UI, 10), wraplength=820, justify='left').pack(anchor='w', padx=16, pady=(0, 6))
@@ -1333,13 +1506,54 @@ class DevicesDialog(tk.Toplevel):
                                                        self.load()))
 
 
+class UpdateDialog(tk.Toplevel):
+    """A new release: what changed in every version since this one, then install now or later."""
+    def __init__(self, app, rel):
+        super().__init__(app); self.app, self.rel = app, rel
+        self.configure(bg=BG); self.title('Update available'); self.geometry('760x620'); self.minsize(600, 440); self.transient(app)
+        tk.Label(self, text=f"Reality Hop {rel['ver']} is ready", bg=BG, fg=FG, font=(UIB, 17)).pack(anchor='w', padx=26, pady=(22, 2))
+        tk.Label(self, text=f"You have {N.VERSION}. The update takes a few seconds, and the tunnel keeps running.",
+                 bg=BG, fg=MUTED, font=(UI, 10)).pack(anchor='w', padx=26)
+        row = tk.Frame(self, bg=BG); row.pack(side='bottom', fill='x', padx=26, pady=18)   # first, so it always shows
+        c = card(self, fill='both', expand=True, padx=26, pady=(16, 0))
+        t = tk.Text(c, wrap='word', height=1, bg=CARD, fg=FG, font=(UI, 10), relief='flat', highlightthickness=0, padx=20, pady=16,
+                    spacing1=2, spacing3=2, cursor='arrow')
+        sb = ttk.Scrollbar(c, command=t.yview); t.configure(yscrollcommand=sb.set)
+        sb.pack(side='right', fill='y'); t.pack(fill='both', expand=True)
+        t.tag_configure('ver', font=(UIB, 13), foreground=FG, spacing1=10)
+        t.tag_configure('date', font=(UI, 9), foreground=MUTED)
+        t.tag_configure('p', spacing3=8)
+        t.tag_configure('li', lmargin1=6, lmargin2=19, spacing3=6)
+        t.tag_configure('dot', foreground=ACC, font=(UIB, 10))
+        t.tag_configure('b', font=(UIB, 10))
+        t.tag_configure('code', font=('Consolas', 9), background=ROW2)
+        for i, (ver, date, notes) in enumerate(rel.get('changes') or [(rel['ver'], '', rel['notes'])]):
+            if i:
+                t.insert('end', '\n')
+            t.insert('end', f'Version {ver}', ('ver',)); t.insert('end', f'   {date}' if date else '', ('ver', 'date')); t.insert('end', '\n')
+            for kind, text in md_blocks(notes):
+                if kind == 'li':
+                    t.insert('end', '•  ', ('li', 'dot')); md_insert(t, text, ('li',))
+                else:
+                    md_insert(t, text, ('p',))
+                t.insert('end', '\n', (kind,))
+        t.configure(state='disabled')
+        ttk.Button(row, text='Install update', style='Accent.TButton', command=self.install).pack(side='left')
+        ttk.Button(row, text='Later', command=self.destroy).pack(side='left', padx=8)
+        link(row, 'All changes on GitHub', f'https://github.com/{N.REPO}/blob/main/CHANGELOG.md', bg=BG).pack(side='right')
+        dark_titlebar(self); self.lift(); self.focus_force()
+
+    def install(self):
+        self.destroy(); self.app.work(self.app.apply_update, self.rel)
+
+
 class ReportDialog(tk.Toplevel):
     """Report a problem: an anonymous copy of the three logs plus a short summary, shown before anything leaves this PC."""
     def __init__(self, app):
         super().__init__(app); self.configure(bg=BG); self.title('Report a problem'); self.geometry('1000x740')
         self.path = self.text = None
         tk.Label(self, text='Report a problem', bg=BG, fg=FG, font=(UIB, 16)).pack(anchor='w', padx=22, pady=(18, 4))
-        tk.Label(self, text='This makes an anonymous report from the three logs (window, watch, core) and a short summary of your '
+        tk.Label(self, text='This makes a redacted report from the three logs (window, watch, core) and a short summary of your '
                  'setup. Addresses, MAC addresses, your user and computer name, folder paths, e-mail addresses, keys and secrets '
                  'are redacted. Nothing is sent: read it, then attach the file to a GitHub issue.',
                  bg=BG, fg=MUTED, font=(UI, 10), wraplength=940, justify='left').pack(anchor='w', padx=22)
@@ -1663,7 +1877,8 @@ class Wizard(tk.Tk):
 
     def add_key(self):
         try:
-            N.add_key_console(self.save_host()); self.note('Type the router password in the black window, then click Test connection.')
+            host = self.save_host(); N.router_forget()   # this is the router now, also when it is a new one
+            N.add_key_console(host); self.note('Type the router password in the black window, then click Test connection.')
         except Exception as e:
             self.note(f'Something failed: {e}', 'bad')
 
@@ -1673,7 +1888,7 @@ class Wizard(tk.Tk):
             N.settings_save({'router_key': f}); self.note(f'Using {os.path.basename(f)}. Click Test connection.')
 
     def test_ssh(self, host):
-        self.save_host(host)
+        self.save_host(host); N.router_forget()
         if N.ssh('echo up', timeout=30).strip() != 'up':
             raise RuntimeError('the router did not answer over SSH; add the key first, and check the address')
         i = N.router_info()
@@ -1682,7 +1897,7 @@ class Wizard(tk.Tk):
     def page_box(self):
         self.h('Router step 2 of 3: sing-box on the router')
         self.p('The router runs its own copy of sing-box for the devices you choose. Reality Hop can install it from the router\'s '
-               'package list, or you can do it yourself: GL.iNet web panel > APPLICATIONS > Plug-ins > Update, then search for '
+               'package list, or you can do it yourself: GL.iNet web panel → APPLICATIONS → Plug-ins → Update, then search for '
                '"sing-box" and install it, and also "jq" and "curl" (used by the router\'s self-repair).')
         self.buttons(('Check again', lambda: self.work(self.check_box), False),
                      ('Install sing-box on the router', lambda: self.work(self.box_install), True))
@@ -1768,7 +1983,7 @@ class Wizard(tk.Tk):
             self.p('In router-only mode your VPN app needs no proxy setting: the router puts the traffic of the chosen devices '
                    'through the tunnel. Connect the VPN app as usual. OpenVPN over TCP port 443 is the most reliable through the '
                    'tunnel.')
-            self.p('If PIA on this PC still uses the SOCKS5 proxy 127.0.0.1:2080, turn it off: Settings > Multi-Hop, untick '
+            self.p('If PIA on this PC still uses the SOCKS5 proxy 127.0.0.1:2080, turn it off: Settings → Multi-Hop, untick '
                    '"Multi-hop and Obfuscation".', muted=True)
             return
         self.h('Point your VPN app at the tunnel')
@@ -1777,8 +1992,8 @@ class Wizard(tk.Tk):
         cols = tk.Frame(self.body, bg=BG); cols.pack(fill='both', expand=True)
         left = tk.Frame(cols, bg=BG, width=330); left.pack(side='left', fill='y', anchor='n'); left.pack_propagate(False)
         self.p('Private Internet Access (PIA)', bold=True, parent=left)
-        self.items(['PIA > Settings > Protocols: Protocol OpenVPN, Transport TCP, Remote Port 443.',
-                    'Settings > Multi-Hop: tick "Multi-hop and Obfuscation" and choose SOCKS5 Proxy.',
+        self.items(['PIA → Settings → Protocols: Protocol OpenVPN, Transport TCP, Remote Port 443.',
+                    'Settings → Multi-Hop: tick "Multi-hop and Obfuscation" and choose SOCKS5 Proxy.',
                     'Click EDIT: host 127.0.0.1, port 2080. Leave username and password empty. Save.',
                     'Connect.'], parent=left, wrap=280, numbered=True)
         row = tk.Frame(left, bg=BG); row.pack(fill='x', pady=(6, 4))
@@ -1787,7 +2002,7 @@ class Wizard(tk.Tk):
         self.p('Any VPN app with a SOCKS5 proxy setting works the same way; set it to OpenVPN over TCP, port 443. In an '
                'OpenVPN config file: "proto tcp", the server on port 443, and the line "socks-proxy 127.0.0.1 2080".',
                parent=left, wrap=310)
-        self.p('Games or apps that should skip the VPN: use your VPN app\'s split tunnel (PIA: Settings > Split Tunnel).',
+        self.p('Games or apps that should skip the VPN: use your VPN app\'s split tunnel (PIA: Settings → Split Tunnel).',
                muted=True, parent=left, wrap=310)
         try:
             self.img = tk.PhotoImage(file=os.path.join(N.RES, 'pia-multihop.png')).subsample(2)
