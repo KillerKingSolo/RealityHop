@@ -17,28 +17,23 @@ ones on its own.
 
 ![Setup wizard](docs/images/setup-welcome.png)
 
-```mermaid
-flowchart LR
-    vpn["VPN app<br/>PIA or another"] -- "SOCKS5<br/>127.0.0.1:2080" --> rh["Reality Hop<br/>on your PC"]
-    phone["Phone, console, TV"] -. "optional" .-> router["GL.iNet router<br/>Reality Hop's router tunnel"]
-    rh -- "looks like HTTPS<br/>to apple.com" --> node["REALITY node<br/>public, from FastNodes"]
-    router -- "looks like HTTPS" --> node
-    node --> server["VPN server"] --> net(("Internet"))
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/flow-dark.png">
+  <img alt="VPN app to Reality Hop on your PC over SOCKS5 127.0.0.1:2080, then to a public REALITY node, looking like HTTPS to cloudflare.com, then to the VPN server and the internet. Optionally a phone, console or TV goes through the GL.iNet router tunnel to the same node." src="docs/images/flow-light.png">
+</picture>
 
 The network in between only sees an ordinary encrypted connection to a big website. Your VPN's own encryption stays
 inside it the whole way.
 
 ## Screenshots
 
-| | |
-|---|---|
 | ![Main window](docs/images/main-window.png) | ![Candidates](docs/images/candidates.png) |
+|---|---|
 | **Main window:** every node tested through the live tunnel, the last 24 hours, the router tunnel. | **Candidates:** nodes from the public list, pinged and tested on your PC; put any of them in a slot. |
 | ![Node details](docs/images/node-details.png) | ![Report a problem](docs/images/report.png) |
-| **Node details:** where a node is, how it tests, its ping over 24 hours. | **Report a problem:** the logs with everything personal replaced, ready for a GitHub issue. |
+| **Node details:** where a node is, how it tests, its ping over 24 hours. | **Report a problem:** the logs with everything personal redacted, ready for a GitHub issue. |
 | ![Router devices](docs/images/devices.png) | ![Settings](docs/images/settings.png) |
-| **Router devices:** tick which devices use the router tunnel, and how to keep their address fixed. | **Settings:** checks, router features, updates, the sing-box channel, shortcuts. |
+| **Router devices:** choose which devices use the router tunnel, and how to keep their address fixed. | **Settings:** checks, router features, updates, the sing-box channel, shortcuts. |
 
 ## Features
 
@@ -48,7 +43,7 @@ inside it the whole way.
   fetch through each candidate, and keeps the 6 fastest that work.
 - **Repairs itself.** A background watcher with a tray icon checks the nodes every hour. It replaces a dead node and
   rescues from a vault of known-good nodes when all are down. With PIA, it reacts the moment the VPN drops.
-- **Tray icon shows the state.** The centre is the overall state. The ring has one segment per node: green working,
+- **Tray icon shows the state.** The center is the overall state. The ring has one segment per node: green working,
   amber slow, red dead.
 - **Start menu and Windows search.** Press the Windows key and type Reality Hop. A desktop icon is optional.
 - **Optional GL.iNet router support,** with a **Devices** window: tick or untick which devices use the tunnel, and how to
@@ -74,7 +69,7 @@ inside it the whole way.
 ## Install
 
 1. Download **`RealityHop.exe`** from [Releases](../../releases/latest).
-2. Run it. Windows SmartScreen may warn because the exe is not code-signed: click **More info > Run anyway**. Some
+2. Run it. Windows SmartScreen may warn because the exe is not code-signed: click **More info → Run anyway**. Some
    antivirus programs flag PyInstaller apps by mistake; the source is all here, and you can
    [build it yourself](docs/building.md).
 3. Follow the setup wizard:
@@ -94,7 +89,7 @@ Reality Hop listens on **SOCKS5 `127.0.0.1` port `2080`**, with no username or p
 Your VPN must use **OpenVPN over TCP, port 443**. A SOCKS5 proxy carries TCP only, and 443 is the normal HTTPS port.
 
 **Private Internet Access (PIA):**
-Settings > Protocols: Protocol **OpenVPN**, Transport **TCP**, Remote Port **443**. Then Settings > Multi-Hop: tick
+Settings → Protocols: Protocol **OpenVPN**, Transport **TCP**, Remote Port **443**. Then Settings → Multi-Hop: tick
 **Multi-hop and Obfuscation**, choose **SOCKS5 Proxy**, click **EDIT**, enter host `127.0.0.1` and port `2080`, and
 save.
 
@@ -104,21 +99,21 @@ save.
 OpenVPN config file, use `proto tcp`, the server's port `443`, and add `socks-proxy 127.0.0.1 2080`. See
 [docs/vpn-setup.md](docs/vpn-setup.md).
 
-## Day to day
+## Controls
 
 | Where | What |
 |---|---|
-| Tray icon | Double-click opens the window. Right-click: Restart tunnel, Check now, Rescue, Quit. |
-| **Check now** | Tests every node through the running tunnel. |
-| **Restart tunnel** | Restarts the tunnel on the current nodes (about 2 seconds). |
-| **Stop / Start** | Turns everything off, including the start at boot, for when you are away. Turn the VPN app's proxy off while stopped. |
-| Nodes > **Show candidates** | Lists nodes from the public list; test them and put any of them in a slot. |
-| Nodes > **Rescue** | Use when every node is dead. Tests the vault of known-good nodes and puts the best 6 in. |
-| Help > **Report a problem** | Makes an anonymous report of the logs and opens a GitHub issue for you to attach it to. |
-| Files (optional) | **Open backend folder** (`PC`, `Router`, `logs`, `anonymous-logs`) and **Open logs folder**. |
+| Tray&nbsp;icon | Double-click opens the window. Right-click: Restart tunnel, Check now, Rescue, Quit. |
+| **Check&nbsp;now** | Tests every node through the running tunnel. |
+| **Restart&nbsp;tunnel** | Restarts the tunnel on the current nodes (about 2 seconds). |
+| **Stop&nbsp;/&nbsp;Start** | Turns everything off, including the start at boot, for when you are away. Turn the VPN app's proxy off while stopped. |
+| Nodes&nbsp;→&nbsp;**Show&nbsp;candidates** | Lists nodes from the public list; test them and put any of them in a slot. |
+| Nodes&nbsp;→&nbsp;**Rescue** | Use when every node is dead. Tests the vault of known-good nodes and puts the best 6 in. |
+| Help&nbsp;→&nbsp;**Report&nbsp;a&nbsp;problem** | Makes a redacted report of the logs and opens a GitHub issue for you to attach it to. |
+| Files&nbsp;(optional) | **Open backend folder** (`PC`, `Router`, `logs`, `anonymous-logs`) and **Open logs folder**. |
 | **Settings** | Check interval, slow threshold, switching margin, router features on/off, sing-box stable or test builds, show backend files, updates, run setup again, uninstall. |
 
-**Uninstall:** use Settings > Uninstall, or Windows Settings > Apps > Reality Hop.
+**Uninstall:** use Settings → Uninstall, or Windows Settings → Apps → Reality Hop.
 
 ## Where the nodes come from
 
@@ -166,8 +161,6 @@ using it, help others find it, and keep me motivated to fix problems and add new
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=KillerKingSolo/RealityHop&type=Date" />
  </picture>
 </a>
-
-Chart by [star-history](https://github.com/star-history/star-history).
 
 ## Documentation
 
