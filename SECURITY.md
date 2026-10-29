@@ -3,7 +3,7 @@
 ## Reporting a problem
 
 Please report security problems privately through GitHub's **Report a vulnerability** button
-(Security > Advisories) on this repository, not in a public issue.
+(Security → Advisories) on this repository, not in a public issue.
 
 ## What Reality Hop does and does not do
 

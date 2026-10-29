@@ -16,8 +16,8 @@ is the normal HTTPS port, the least likely to be blocked.
 
 ## Private Internet Access (PIA)
 
-1. PIA > **Settings > Protocols**: Protocol **OpenVPN**, Transport **TCP**, Remote Port **443**.
-2. **Settings > Multi-Hop**: tick **Multi-hop and Obfuscation** and choose **SOCKS5 Proxy**.
+1. PIA → **Settings → Protocols**: Protocol **OpenVPN**, Transport **TCP**, Remote Port **443**.
+2. **Settings → Multi-Hop**: tick **Multi-hop and Obfuscation** and choose **SOCKS5 Proxy**.
 3. Click **EDIT**, enter host `127.0.0.1` and port `2080`, leave the username and password empty, and save.
 4. Connect.
 
@@ -29,7 +29,7 @@ transport (TCP), the remote port (443) and the proxy are all set correctly.
 With PIA, Reality Hop also follows PIA's own connection state (`piactl monitor`). When PIA drops and has not
 reconnected a minute later, Reality Hop checks the nodes and fixes them at once.
 
-**Games and apps that should skip the VPN:** PIA > Settings > **Split Tunnel**.
+**Games and apps that should skip the VPN:** PIA → Settings → **Split Tunnel**.
 
 ## Other VPN apps
 

@@ -77,7 +77,7 @@ public node list can no longer stop every scan, and several crashes and wrong in
 
 - **One folder for everything.** The settings, configs, node vault, logs and the tunnel engine (`rh-core.exe`) now live
   in the install folder with `RealityHop.exe` (`C:\Program Files\RealityHop` by default), not in
-  `%LOCALAPPDATA%\RealityHop`. The setup can install to **another folder** (Install step > Change...). After updating,
+  `%LOCALAPPDATA%\RealityHop`. The setup can install to **another folder** (Install step → Change...). After updating,
   the window offers to move an existing install there once (one admin prompt; the tunnel stops for a few seconds and the
   boot start follows the move).
 - **The install folder is yours alone.** Only your Windows user, SYSTEM and administrators can open it, because it holds
@@ -87,7 +87,7 @@ public node list can no longer stop every scan, and several crashes and wrong in
   File and folder names stay `RealityHop` (`RealityHop.exe`, the install folder, the GitHub repository).
 - **Router only (new):** the setup's router question has a third answer, **Router only**, also in Settings. Nothing then
   runs on this PC's connection: the router tunnels the devices you tick, or, with the new **Every device on the main
-  network** switch (setup and Router > Devices), every device on the router's main Wi-Fi and LAN, this PC included. Guest
+  network** switch (setup and Router → Devices), every device on the router's main Wi-Fi and LAN, this PC included. Guest
   and IoT networks stay as they are. In this mode the node tests run on the router, because this PC's own traffic may go
   through the tunnel, and the main network's IPv6 is refused so nothing goes around the tunnel.
 - **sing-box version in the window:** under the name, for example `sing-box 1.13.2 Â· stable` or
@@ -99,7 +99,7 @@ public node list can no longer stop every scan, and several crashes and wrong in
  Nodes (globe), PC tunnel (computer), Router (router) and Help (question mark) use Windows' own
   icon font instead of a diamond, square, triangle and dot.
 - **Scroll bars:** the slider turns fully red under the pointer, without the grey grip lines in the middle.
-- **Router > Devices and the setup:** the address reservation steps were wrong. It is GL.iNet web panel > **CLIENTS**,
+- **Router → Devices and the setup:** the address reservation steps were wrong. It is GL.iNet web panel → **CLIENTS**,
   then the **Reserved IP** slider next to the device.
 - **Fixed:** one malformed line in the node list (a port like 99999) stopped every scan, replace and rescue.
 - **Fixed:** a node location with letters outside Western European ones (such as ÅÃ³dÅº) stopped a replace halfway, with
@@ -129,10 +129,10 @@ tunnel without running the setup again.
 
 - **Tray icon visible:** Windows 11 hides every new tray icon behind the `^` arrow, and moving Reality Hop to Program
   Files in 1.0.2 counted as new, so the icon seemed to be missing. Reality Hop now shows its icon on the taskbar the first
-  time it runs. If you hide it yourself later (Windows Settings > Personalization > Taskbar > Other system tray icons),
+  time it runs. If you hide it yourself later (Windows Settings → Personalization → Taskbar → Other system tray icons),
   your choice is kept.
 
-- **Router > Devices** (new window): every device the router knows, with the ones in the tunnel ticked. Tick to add,
+- **Router → Devices** (new window): every device the router knows, with the ones in the tunnel ticked. Tick to add,
   untick to remove, or type an address. **Save and push** sends the list to the router.
 - The same window explains how to keep a device on one address, which is what the router goes by. Turn off the
   changing ("private" or "random") Wi-Fi MAC address on the phone for your network, then reserve its address in the
@@ -169,7 +169,7 @@ directory". This release fixes that, and moves Reality Hop to Program Files.
 - **Moving from 1.0.0 or 1.0.1:** the first time you open the window after this update, Reality Hop offers to move itself to
   Program Files (one UAC prompt). It also updates the Start menu entry, the logon start and the Apps list, and removes the
   old folder. Your settings, nodes and the running tunnel are kept. If the update to 1.0.2 came through the background
-  watcher, restart Reality Hop once (tray > Quit, then open it from the Start menu) so the fixed version takes over cleanly.
+  watcher, restart Reality Hop once (tray → Quit, then open it from the Start menu) so the fixed version takes over cleanly.
 - **Release page:** the SHA-256 checksum of `RealityHop.exe` is now printed in the release notes. It replaces the
   separate `RealityHop.exe.sha256` download. GitHub also shows the checksum next to the download, and the built-in
   updater checks it before it installs anything, so updating works exactly as before.

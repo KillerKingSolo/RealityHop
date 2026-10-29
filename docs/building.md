@@ -30,8 +30,8 @@ Releases are built by GitHub Actions ([`.github/workflows/release.yml`](../.gith
    `git config core.hooksPath .githooks`).
 3. Tag and push:
    ```
-   git tag v1.0.1
-   git push origin v1.0.1
+   git tag v1.2.1
+   git push origin v1.2.1
    ```
 4. The workflow writes the version from the tag into `src/version.py` and builds `RealityHop.exe` on Windows. It then
    publishes a release with `RealityHop.exe`. The release notes are the CHANGELOG section for that version, plus the
@@ -48,7 +48,7 @@ The update source is the `REPO` constant in `src/engine.py`. If you fork the pro
 src/realityhop.pyw          window, setup wizard, entry point (--watch, --setup, --uninstall)
 src/engine.py               nodes, tests, tunnel control, router, watcher, tray icon
 src/install.py              install, update, uninstall
-src/report.py               anonymous problem reports
+src/report.py               redacted problem reports
 tools/check-backend.py      refuses a release while the build backend is out of date
 src/version.py              version (set by the release workflow)
 src/resources/              config templates, router scripts, icon, PIA screenshot

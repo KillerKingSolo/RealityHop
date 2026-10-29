@@ -46,7 +46,7 @@ inside it the whole way.
 - **Tray icon shows the state.** The center is the overall state. The ring has one segment per node: green working,
   amber slow, red dead.
 - **Start menu and Windows search.** Press the Windows key and type Reality Hop. A desktop icon is optional.
-- **Optional GL.iNet router support,** with a **Devices** window: tick or untick which devices use the tunnel, and how to
+- **Optional GL.iNet router support,** with a **Devices** window: choose which devices use the tunnel, and how to
   keep their address fixed (no changing MAC on the phone, Reserved IP for it in the GL.iNet panel's Clients list).
 - **GL.iNet router:** Put a phone, console or TV through the tunnel too, with nothing installed on
   them. Turn it off and the router section disappears.

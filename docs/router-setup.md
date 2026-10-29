@@ -8,7 +8,7 @@ itself, stays as it is.
 OpenWrt base and should work the same way, but they are untested. Reports are welcome in Issues.
 
 The setup wizard does every step below. Answer **Yes** to "Do you have a GL.iNet router?", or later use
-Settings > Router features, then Run setup again. This page explains what each step does, and how to do it by hand.
+Settings → Router features, then Run setup again. This page explains what each step does, and how to do it by hand.
 
 ![Router step 1](images/setup-router-connect.png)
 
@@ -27,7 +27,7 @@ Reality Hop talks to the router over SSH with a key of its own. It never needs o
 
 Already have a key that the router accepts? Use **Use my own key file...** instead.
 
-By hand: GL.iNet web panel > SYSTEM > Advanced Settings opens LuCI. In LuCI, go to System > Administration >
+By hand: GL.iNet web panel → SYSTEM → Advanced Settings opens LuCI. In LuCI, go to System → Administration >
 SSH-Keys and paste the contents of `router_ed25519.pub`.
 
 ## Step 2: sing-box on the router
@@ -35,7 +35,7 @@ SSH-Keys and paste the contents of `router_ed25519.pub`.
 The router needs `sing-box`, plus `jq` and `curl` for its self-repair. **Install sing-box on the router** runs
 `opkg update; opkg install sing-box jq curl` over SSH.
 
-By hand: GL.iNet web panel > **APPLICATIONS > Plug-ins**. Click **Update**, then search for and install `sing-box`,
+By hand: GL.iNet web panel → **APPLICATIONS → Plug-ins**. Click **Update**, then search for and install `sing-box`,
 `jq` and `curl`.
 
 The router config is written for sing-box 1.9 to 1.12. The wizard warns you if the router has 1.13 or newer.
@@ -50,26 +50,34 @@ Pick devices from the router's DHCP list, or type their addresses. Then click **
 - enables and restarts the router's sing-box service;
 - installs the self-repair (`/etc/sing-box/heal.sh`, run by cron every 30 minutes) with a vault of known-good nodes.
 
-**Change the list later** in the window: Router > **Devices**. Tick or untick devices, add an address by hand, then
+**Change the list later** in the window: Router → **Devices**. Choose the devices, add an address by hand, then
 **Save and push**.
 
 **Give each chosen device a fixed address,** or it loses the tunnel when its address changes. On phones, first turn
 off rotating private addresses for this Wi-Fi network (iPhone: Private Wi-Fi Address set to Off or Fixed; Android: use
-the device MAC). Then GL.iNet web panel > **CLIENTS**: turn on the **Reserved IP** slider next to the device.
+the device MAC). Then GL.iNet web panel → **CLIENTS**: turn on the **Reserved IP** slider next to the device.
 
 ## Router only
 
-Answer **Router only** to the router question in the setup (or turn on Settings > **Router only**) when nothing should
+Answer **Router only** to the router question in the setup (or turn on Settings → **Router only**) when nothing should
 run on this PC's connection. The router then does all the tunnelling:
 
-- **Every device on the main network** (setup step 3, or Router > Devices) puts everything on the router's main Wi-Fi
+- **Every device on the main network** (setup step 3, or Router → Devices) puts everything on the router's main Wi-Fi
   and LAN through the tunnel, this PC included. Guest and IoT networks stay as they are. The main network's IPv6 is
   refused, so devices use the tunnelled IPv4 and nothing goes around the tunnel.
-- Or tick single devices, as above.
+- Or choose single devices, as above.
 - Node tests run on the router, because this PC's own traffic may go through the tunnel and would skew them.
 - Your VPN app needs no proxy setting. Connect it as usual; OpenVPN over TCP 443 is the most reliable.
 
 ![Router only](images/router-only.png)
+
+## Several PCs, one router
+
+Any number of PCs with Reality Hop can share one router. The router holds the node set and the device list that run,
+and the last push wins. Before a PC pushes or tests the router, it checks whether the router changed since it last
+looked (another PC pushed, or the router repaired itself). If so, it takes the router's nodes and device list into its
+own configs instead of pushing its older set over them. A push replaces the 6 nodes on the router; nothing is added
+twice. Set the device list once on any PC, and include every device the router should tunnel.
 
 ## How the router side stays healthy
 
@@ -89,4 +97,4 @@ run on this PC's connection. The router then does all the tunnelling:
   uci set sing-box.main.enabled=0; uci commit sing-box; /etc/init.d/sing-box stop
   sed -i '/heal.sh/d' /etc/crontabs/root; /etc/init.d/cron restart; fw4 reload
   ```
-- Settings > Router features **off** only hides the router section on the PC. The router keeps running as it is.
+- Settings → Router features **off** only hides the router section on the PC. The router keeps running as it is.

@@ -2,13 +2,15 @@
 
 ## The tunnel
 
-```mermaid
-flowchart LR
-    vpn["VPN app"] -- "SOCKS5 127.0.0.1:2080" --> core["rh-core.exe<br/>sing-box"]
-    core -- "VLESS + REALITY<br/>TLS with the SNI of a big website" --> node["node"] --> server["VPN server"]
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/flow-dark.png">
+  <img alt="VPN app to Reality Hop on your PC over SOCKS5 127.0.0.1:2080, then to a public REALITY node, looking like HTTPS to cloudflare.com, then to the VPN server and the internet. Optionally a phone, console or TV goes through the GL.iNet router tunnel to the same node." src="images/flow-light.png">
+</picture>
 
-- **REALITY** makes the node answer like the real front site (www.apple.com, www.microsoft.com, ...) to anyone who
+On the PC, the tunnel is sing-box running as `rh-core.exe`. It speaks VLESS + REALITY to the node: TLS with the SNI of
+a big website.
+
+- **REALITY** makes the node answer like the real front site (www.cloudflare.com, www.microsoft.com, ...) to anyone who
   probes it, and lets only clients with the right key through. To the network it is a normal TLS 1.3 connection to a
   well-known site.
 - **XTLS-Vision** removes the tell-tale "TLS inside TLS" pattern of tunnelling an encrypted VPN.
@@ -19,7 +21,9 @@ flowchart LR
 ## Finding nodes
 
 1. Download the public list ([rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), `sub/verified_tls.txt`). The
-   download is reused for 15 minutes.
+   download is reused for 15 minutes. If GitHub is blocked, Reality Hop tries, in order: GitHub through the PC tunnel,
+   the jsDelivr CDN mirrors, the router (when router features are on), and last the copy it kept from the previous good
+   download (`feed-cache.txt`).
 2. Keep only VLESS + REALITY + XTLS-Vision, port 443, a numeric address, a well-formed key, and a front site from a
    short list of big websites.
 3. Ping port 443 of each from this PC and sort by connect time.
@@ -68,7 +72,8 @@ router key, the node keys and the API secret. Updates replace the exe there with
 | `Router\router-config.json` | router tunnel config |
 | `Router\nft-devices.sh`, `Router\heal.sh` | copies of the router scripts as last pushed |
 | `logs\` | `window.log`, `watch.log` (1 MB plus one older copy each), `core.log` (sing-box warnings) |
-| `anonymous-logs\` | problem reports made with Report a problem (the last 5) |
+| `anonymous-logs\` | redacted problem reports made with Report a problem (the last 5) |
+| `feed-cache.txt` | the last good node list, used when no source can be reached |
 | `vault.json`, `nodes.txt` | known-good nodes, the last scan |
 | `settings.json`, `this-pc.json` | settings, setup state |
 | `router_ed25519` | SSH key for the router (only with router features) |
@@ -77,13 +82,20 @@ With **Show backend files** on (Settings or the last setup step), the window has
 read and edit the configs. **Restart tunnel** applies `pc-config.json`, and **Push to router** applies
 `router-config.json`. Reality Hop rewrites the `vless-1` to `vless-6` entries whenever it replaces nodes.
 
-## Anonymous problem reports
+## Redacted problem reports
 
-**Report a problem** writes `anonymous-logs\report-<date>.txt`. It holds a short summary (versions, settings, router
-model) and the last 400 lines of each log. Every IP and MAC address becomes a token: `node-N` for a public node,
-`lan-N` for an address on your network, `ip-N` for any other address. The same token always means the same
-address. Your user and computer name, folder paths, e-mail addresses, keys, IDs and secrets are replaced as well.
-The report is shown before anything else happens. **Open GitHub issue** opens a new issue with the summary filled
+**Report a problem** writes `anonymous-logs\report-<date>.txt`, in sections:
+
+1. **Setup:** versions, settings, state and router model, as a table.
+2. **Problems found:** every dead node, failure and error line from the window and watcher logs, oldest first.
+3. **Watcher log** and **Window log:** the last 400 lines of each.
+4. **Tunnel engine log:** the last 400 lines of `core.log`, with each repeated error shown once, with a count and the
+   time it first appeared. Connection IDs and local port numbers are left out.
+5. **Redaction key:** what each token means.
+
+Every IP and MAC address is redacted to a token: `node-N` for a public node, `lan-N` for an address on your network,
+`ip-N` for any other address. The same token always means the same address. Your user and computer name, folder
+paths, e-mail addresses, keys, IDs and secrets are redacted as well. The report is shown before anything else happens. **Open GitHub issue** opens a new issue with the summary filled
 in, and you attach the file yourself.
 
 ## Command line (from source)
