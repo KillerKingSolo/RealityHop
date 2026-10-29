@@ -9,7 +9,14 @@
 
 **Get your VPN through networks that block VPNs.** Reality Hop wraps your VPN connection in a VLESS + REALITY tunnel
 ([sing-box](https://github.com/SagerNet/sing-box)). To the network it looks like ordinary HTTPS to a big website,
-such as apple.com, so school, work, hotel and dorm Wi-Fi, or a router with "VPN blocking", lets it through. It finds free
+such as cloudflare.com. It is made for networks that block VPNs:
+
+- school, work, hotel and dorm Wi-Fi
+- public Wi-Fi in airports, cafés, trains and libraries
+- routers with "VPN blocking", and internet providers that throttle or block VPN traffic
+- countries that filter the internet, such as China's Great Firewall, Russia, Iran, Turkmenistan and the UAE
+
+It finds free
 public nodes from [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), tests them itself, keeps the fastest working ones in use and replaces dead
 ones on its own.
 
@@ -144,7 +151,8 @@ OpenVPN config file, use `proto tcp`, the server's port `443`, and add `socks-pr
   `anonymous-logs`), which only your Windows user can open. The router key is
   an SSH key made on your PC. Your router password is typed into Windows' own `ssh` and is never seen or stored by
   Reality Hop.
-- Make sure you are allowed to use a VPN on the network you are on.
+- Make sure you are allowed to use a VPN on the network you are on, and in the country you are in. Some countries
+  restrict or ban VPNs; Reality Hop does not change the law where you are.
 
 See [SECURITY.md](SECURITY.md) for security problems. For anything else, use **Report a problem** in the window and
 attach the anonymous report to an issue. Never attach `pc-config.json`, `router-config.json` or `vault.json`.

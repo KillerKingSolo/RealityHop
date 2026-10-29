@@ -3,6 +3,14 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.3.1 (2026-10-29)
+
+**Why update:** the setup's welcome page explains better where Reality Hop helps.
+
+- The welcome page names more places that block VPNs: public Wi-Fi, and countries that filter the internet, such as
+  China, Russia or Iran. Its example front site is cloudflare.com.
+- It also reminds you to check that a VPN is allowed in the country you are in.
+
 ## 1.3.0 (2026-10-29)
 
 **Why update:** router steps only run on your own router's network, updates show what changed in a clear window, and

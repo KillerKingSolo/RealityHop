@@ -1750,9 +1750,9 @@ class Wizard(tk.Tk):
     # ---- pages
     def page_welcome(self):
         self.h('Welcome to Reality Hop')
-        self.p('Reality Hop hides your VPN inside a disguised connection. Networks that block VPNs (school, work, hotel or dorm '
-               'Wi-Fi, a router with "VPN blocking") see only ordinary HTTPS to a big website such as apple.com, so your VPN '
-               'connects anyway.')
+        self.p('Reality Hop hides your VPN inside a disguised connection. Networks that block VPNs (school, work, hotel, dorm '
+               'and public Wi-Fi, routers with "VPN blocking", and countries that filter the internet, such as China, Russia or '
+               'Iran) see only ordinary HTTPS to a big website such as cloudflare.com, so your VPN connects anyway.')
         self.p('It runs sing-box with VLESS + REALITY, takes free public nodes from the FastNodes list, tests them from this PC, '
                'keeps the 6 fastest that work and replaces dead ones on its own.')
         row = tk.Frame(self.body, bg=BG); row.pack(fill='x', pady=(0, 10))
@@ -1765,7 +1765,8 @@ class Wizard(tk.Tk):
                     'A VPN app that can use a SOCKS5 proxy. Private Internet Access (PIA) works out of the box; the VPN step shows how.',
                     'Optional: a GL.iNet router (firmware 4.x) to put other devices, such as a phone or a console, through the tunnel too.'])
         self.p('Public nodes are run by strangers. Your VPN still encrypts everything end to end, so a node only sees encrypted VPN '
-               'traffic. Always keep the VPN on top. Make sure you are allowed to use a VPN on the network you are on.', muted=True)
+               'traffic. Always keep the VPN on top. Make sure you are allowed to use a VPN on the network you are on, and in the country '
+               'you are in.', muted=True)
 
     def page_install(self):
         self.h('Install')
