@@ -1,10 +1,10 @@
 # Reality Hop
 
 <p align="center">
-  <a href="../../stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/KillerKingSolo/RealityHop?style=flat-square&label=Stars&color=blue"></a>
-  <a href="../../releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/KillerKingSolo/RealityHop/total?style=flat-square&label=Downloads&color=blue"></a>
+  <a href="../../stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/KillerKingSolo/RealityHop?style=flat-square&label=Stars&color=F5C518&logo=github"></a>
+  <a href="../../releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/KillerKingSolo/RealityHop/total?style=flat-square&label=Downloads&color=brightgreen"></a>
   <a href="../../releases/latest"><img alt="Version" src="https://img.shields.io/github/v/release/KillerKingSolo/RealityHop?style=flat-square&label=Version&color=blue"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-blue?style=flat-square"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-orange?style=flat-square"></a>
 </p>
 
 **Get your VPN through networks that block VPNs.** Reality Hop wraps your VPN connection in a VLESS + REALITY tunnel
