@@ -108,7 +108,7 @@ def dark_titlebar(win):
         import ctypes; win.update()
         hwnd = ctypes.windll.user32.GetParent(win.winfo_id())
         ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, ctypes.byref(ctypes.c_int(1)), 4)
-        ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 35, ctypes.byref(ctypes.c_int(0x000e0c0c)), 4)   # caption colour (Win 11)
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 35, ctypes.byref(ctypes.c_int(0x000e0c0c)), 4)   # caption color (Win 11)
         win.withdraw(); win.deiconify()
     except Exception:
         pass
@@ -747,7 +747,7 @@ class App(tk.Tk):
 
     def set_icon(self):
         """Window and taskbar icon: the same ring as the tray, one segment per node (PC tunnel, or the router's in
-        router-only mode), centre = overall state."""
+        router-only mode), center = overall state."""
         segs, key = [], 'phone' if RONLY else 'pc'
         for n in self.lists[key]:
             st = self.verdict(key, n)[0]
@@ -1341,7 +1341,7 @@ class ReportDialog(tk.Toplevel):
         tk.Label(self, text='Report a problem', bg=BG, fg=FG, font=(UIB, 16)).pack(anchor='w', padx=22, pady=(18, 4))
         tk.Label(self, text='This makes an anonymous report from the three logs (window, watch, core) and a short summary of your '
                  'setup. Addresses, MAC addresses, your user and computer name, folder paths, e-mail addresses, keys and secrets '
-                 'are replaced by neutral tokens. Nothing is sent: read it, then attach the file to a GitHub issue.',
+                 'are redacted. Nothing is sent: read it, then attach the file to a GitHub issue.',
                  bg=BG, fg=MUTED, font=(UI, 10), wraplength=940, justify='left').pack(anchor='w', padx=22)
         c = card(self, fill='both', expand=True, padx=22, pady=(12, 0))
         self.txt = tk.Text(c, wrap='none', font=('Consolas', 9), bg=CARD, fg=FG, relief='flat', highlightthickness=0, padx=12, pady=8)

@@ -84,47 +84,81 @@ def tail(path, n=LINES):
         return []
 
 
+PROBLEM = re.compile(r'(?i)\b(dead|fail|failed|error|did not|could not|cannot|not reachable|timed? ?out|blocked|missing|refused)\b')
+
+
 def summary():
-    """Plain facts about the setup; nothing personal (the scrubber runs over this too)."""
+    """Plain facts about the setup as (label, value); nothing personal (the scrubber runs over this too)."""
     s, t = N.settings_load(), N.this_pc()
     try:
         tray = json.load(open(N.TRAY_LAST))['last']
     except Exception:
         tray = None
-    lines = [f'Reality Hop {N.VERSION} ({"installed" if N.FROZEN else "from source"})',
-             f'Windows: {platform.platform()}',
-             f"sing-box on the PC: {N.core_version() or 'missing'} (channel: {s['singbox']})",
-             N.vpn_check(),
-             f"nodes in use: {len(N.nodes_of(N.PC_CFG)) if os.path.exists(N.PC_CFG) else 0}"
-             + (f'; last check: {tray[1]} at {tray[2]} ({tray[0]})' if tray else ''),
-             f"settings: check every {s['check_min']} min, slow above {s['slow_ms']} ms, switch margin {s['tolerance_ms']} ms, "
-             f"{s['top']} candidates per scan, app auto-update {'on' if s['auto_update'] else 'off'}",
-             f"state: {'stopped' if t.get('stopped') else 'running'}, setup {'done' if t.get('setup_done') else 'not finished'}, "
-             f"boot start {N.task_state() or 'off'}, background at logon {'on' if os.path.exists(N.STARTUP_LNK) else 'off'}",
-             f"router features: {'on' if s['router'] else 'off'}" + (', router only (no PC tunnel)' if N.router_only() else '')
-             + ((', every device on the main network' if N.all_devices() else f', {len(N.devices())} device(s) chosen') if s['router'] else '')]
+    rows = [('Reality Hop', f'{N.VERSION} ({"installed" if N.FROZEN else "from source"})'),
+            ('Windows', platform.platform()),
+            ('sing-box', f"{N.core_version() or 'missing'} (channel: {s['singbox']})"),
+            ('VPN app', N.vpn_check().split(': ', 1)[-1]),
+            ('Nodes', f"{len(N.nodes_of(N.PC_CFG)) if os.path.exists(N.PC_CFG) else 0} in use"
+             + (f'; last check {tray[1]} at {tray[2]} ({tray[0]})' if tray else '')),
+            ('Settings', f"check every {s['check_min']} min, slow above {s['slow_ms']} ms, switch margin {s['tolerance_ms']} ms, "
+             f"{s['top']} candidates per scan, auto-update {'on' if s['auto_update'] else 'off'}"),
+            ('State', f"{'stopped' if t.get('stopped') else 'running'}, setup {'done' if t.get('setup_done') else 'not finished'}, "
+             f"boot start {N.task_state() or 'off'}, background at logon {'on' if os.path.exists(N.STARTUP_LNK) else 'off'}"),
+            ('Router features', ('on' if s['router'] else 'off') + (', router only (no PC tunnel)' if N.router_only() else '')
+             + ((', every device on the main network' if N.all_devices() else f', {len(N.devices())} device(s) chosen') if s['router'] else ''))]
     if s['router']:
         try:
             i = N.router_info()
-            lines.append(f"router: {i['model']}, firmware {i['firmware']}, sing-box {i['singbox'] or 'not installed'}")
+            rows.append(('Router', f"{i['model']}, firmware {i['firmware']}, sing-box {i['singbox'] or 'not installed'}"))
         except Exception as e:
-            lines.append(f'router: not reachable ({e})')
-    return lines
+            rows.append(('Router', f'not reachable ({e})'))
+    return rows
+
+
+def core_lines(lines):
+    """sing-box repeats the same error many times: drop connection IDs and local ports, then show each message once,
+    newest last, with how often and since when."""
+    seen = {}
+    for l in lines:
+        m = re.match(r'(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d) (.*)', l)
+        if not m:
+            continue
+        msg = re.sub(r'\[\d+ [\d.]+(?:[mµn]?s|m\d+(?:\.\d+)?s)+\] ', '', m.group(3))
+        msg = re.sub(r':\d{2,5}->', '->', msg)
+        first, _, n = seen.pop(msg, (f'{m.group(1)} {m.group(2)}', None, 0))
+        seen[msg] = (first, f'{m.group(1)} {m.group(2)}', n + 1)
+    return [f'{last}  {msg}' + (f'   (x{n}, first {first[11:]})' if n > 1 else '') for msg, (first, last, n) in seen.items()]
+
+
+def section(title, lines):
+    return ['', title, '-' * len(title)] + (lines or ['(nothing)'])
 
 
 def make():
     """Write a new anonymous report and return (path, text). Keeps the last 5 reports."""
     sc = Scrubber()
-    out = ['REALITY HOP PROBLEM REPORT (anonymous)', f"made {time.strftime('%Y-%m-%d %H:%M')}", '']
-    out += [sc(l) for l in summary()]
-    for name in ('window', 'watch', 'core'):
-        out += ['', f'==== {name}.log (last {LINES} lines) ====']
-        out += [sc(l.rstrip('\n')) for l in tail(os.path.join(N.LOGS, f'{name}.log'))] or ['(empty)']
-    out += ['', '==== what the tokens mean ====',
-            'node-N = a public node from the node list    lan-N = an address on your own network    ip-N = another internet address',
-            'host-N = a website the tunnel connected to    ipv6-N, mac-N = an IPv6 or MAC address',
-            '<user>, <pc> = your Windows user and computer name    <key>, <secret>, <uuid> = keys and IDs',
-            'The same token always means the same address within this report. Nothing was sent anywhere.']
+    logs = {n: [sc(l.rstrip('\n')) for l in tail(os.path.join(N.LOGS, f'{n}.log'))] for n in ('window', 'watch', 'core')}
+    rows = [(k, sc(v)) for k, v in summary()]
+    w = max(len(k) for k, _ in rows)
+    problems = [f'{n:<6}  {l}' for n in ('window', 'watch') for l in logs[n] if PROBLEM.search(l)]
+    problems.sort(key=lambda l: l[8:27])
+    out = ['Reality Hop problem report', f"Made {time.strftime('%Y-%m-%d %H:%M')}. Personal data is redacted (see Redaction key at the end)."]
+    out += section('Setup', [f'{k:<{w}}  {v}' for k, v in rows])
+    out += section('Problems found in the window and watcher logs (newest last)', problems[-40:])
+    out += section(f'Watcher log (watch.log, last {LINES} lines)', logs['watch'])
+    out += section(f'Window log (window.log, last {LINES} lines)', logs['window'])
+    out += section(f'Tunnel engine log (core.log, last {LINES} lines, repeats grouped)', core_lines(logs['core']))
+    out += section('Redaction key', [
+        'node-N    a public node from the node list',
+        'lan-N     an address on your own network',
+        'ip-N      another internet address',
+        'host-N    a website the tunnel connected to',
+        'ipv6-N    an IPv6 address',
+        'mac-N     a MAC address',
+        '<user>    your Windows user name',
+        '<pc>      your computer name',
+        '<key>, <secret>, <uuid>, <email>    keys, IDs and e-mail addresses',
+        'The same token always means the same thing within this report. Nothing was sent anywhere.'])
     text = '\n'.join(out) + '\n'
     os.makedirs(N.REPORTS, exist_ok=True)
     path = os.path.join(N.REPORTS, f"report-{time.strftime('%Y%m%d-%H%M%S')}.txt")
@@ -139,7 +173,7 @@ def make():
 
 def issue_url(path, text):
     """A new GitHub issue with the summary filled in; the person attaches the report file."""
-    head = text.split('\n==== ', 1)[0].strip()
-    body = ('**What happened**\n\n\n**What you expected**\n\n\n**Summary (anonymous)**\n```\n' + head[:3000] + '\n```\n\n'
+    head = text.split('\nWatcher log (', 1)[0].strip()
+    body = ('**What happened**\n\n\n**What you expected**\n\n\n**Summary (redacted)**\n```\n' + head[:3000] + '\n```\n\n'
             f'**Report:** drag `{os.path.basename(path)}` from the anonymous-logs folder into this box.\n')
     return f'https://github.com/{N.REPO}/issues/new?' + urllib.parse.urlencode({'labels': 'bug', 'title': 'Problem: ', 'body': body})

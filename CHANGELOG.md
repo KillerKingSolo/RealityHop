@@ -1,7 +1,17 @@
 # Changelog
 
-Each release explains what changed and why it matters to you. Installed copies update themselves (Settings > Install
+Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
+
+## 1.1.4 (2026-10-28)
+
+**Why update:** problem reports are easier to read, for you and for whoever looks at the issue.
+
+- **Report a problem** is laid out in clear sections: a setup table, then every problem found in the logs in time
+  order, then the watcher, window and tunnel engine logs, and a redaction key at the end.
+- The tunnel engine log shows each repeated error once, with how often it happened and since when, instead of many
+  near-identical lines. Connection IDs and local port numbers are left out.
+- The report window says "redacted" for the personal data it takes out.
 
 ## 1.1.3 (2026-10-28)
 

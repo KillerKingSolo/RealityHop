@@ -2070,7 +2070,7 @@ def lnk_migrate(path):
 
 # ---- tray icon for the watcher (Windows notification area), plain Win32 through ctypes, no extra packages
 def tray_icon_file(state, segs=()):
-    """Tray icon: the centre shows the overall state, the outer ring one segment per node (green working,
+    """Tray icon: the center shows the overall state, the outer ring one segment per node (green working,
     amber slow, red dead, grey not checked yet). Drawn at 256 px and scaled down; cached in the data folder."""
     from PIL import Image, ImageDraw
     col = {'ok': (95, 211, 141), 'warn': (245, 165, 36), 'bad': (255, 77, 79)}
