@@ -156,6 +156,10 @@ attach the anonymous report to an issue. Never attach `pc-config.json`, `router-
 
 ## Star history
 
+**If Reality Hop helps you, please give it a star.** It is free and takes one click (the **Star** button at the top
+of this page). Stars show me that people are using it, help others find it, and keep me motivated to fix problems and
+add new features.
+
 <a href="https://www.star-history.com/#KillerKingSolo/RealityHop&Date">
  <picture>
    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=KillerKingSolo/RealityHop&type=Date&theme=dark" />
