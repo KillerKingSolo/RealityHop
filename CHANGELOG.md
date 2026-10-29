@@ -3,6 +3,13 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.3.2 (2026-10-29)
+
+**Why update:** the main window can now be made smaller.
+
+- The window shrinks down to 1000x560. When it is shorter than its content, the sidebar and the main area scroll, each on
+  its own, with the mouse wheel or a scrollbar.
+
 ## 1.3.1 (2026-10-29)
 
 **Why update:** the setup's welcome page explains better where Reality Hop helps.

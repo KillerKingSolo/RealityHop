@@ -36,6 +36,7 @@ ACC, ACC_HI, ACC_LO, SEL = '#e5383b', '#f25457', '#b3262a', '#3b1416'
 STATE = {'ok': '#5fd38d', 'bad': '#ff4d4f', 'warn': '#f5a524', 'unk': MUTED}
 ROWFG = {'ok': '#5fd38d', 'bad': '#ff6b6d', 'warn': '#f5b84a', 'unk': MUTED, 'broken': '#ffd0d0'}
 HOVER = '#1d1d23'
+MIN_W, MIN_H = 1000, 560   # smallest main window; shorter than the content, it scrolls
 PILL = {'ok': '#123222', 'bad': '#3a1214', 'warn': '#3a2a0c', 'unk': '#1f1f25'}
 COLS = (('slot', 70), ('server', 135), ('where', 190), ('tcp', 90), ('tunnel', 95), ('verdict', 420))
 HEAD = {'slot': 'SLOT', 'server': 'SERVER', 'front': 'FRONT', 'where': 'LOCATION', 'tcp': '443 PING', 'tunnel': 'TUNNEL',
@@ -307,6 +308,39 @@ class Toggle(tk.Frame):
             self.command()
 
 
+class Scroll(tk.Frame):
+    """Holds .inner; once the window is shorter than the content, it scrolls and a bar shows. width= keeps it that wide."""
+    def __init__(self, parent, bg, width=None):
+        super().__init__(parent, bg=bg, width=width or 0); self.w = width
+        if width:
+            self.pack_propagate(False)
+        self.cv = tk.Canvas(self, bg=bg, highlightthickness=0, bd=0, width=0, height=0)
+        self.bar = ttk.Scrollbar(self, command=self.cv.yview); self.cv.configure(yscrollcommand=self.bar.set)
+        self.inner = tk.Frame(self.cv, bg=bg); self.item = self.cv.create_window(0, 0, window=self.inner, anchor='nw')
+        self.cv.pack(side='left', fill='both', expand=True)
+        self.inner.bind('<Configure>', lambda e: self.sync()); self.cv.bind('<Configure>', lambda e: self.sync())
+        self.bind_all('<MouseWheel>', self.wheel, add='+')
+
+    def sync(self):
+        need, h = self.inner.winfo_reqheight(), self.cv.winfo_height()
+        self.cv.itemconfigure(self.item, width=self.cv.winfo_width(), height=max(need, h))
+        self.cv.configure(scrollregion=(0, 0, 0, max(need, h)))
+        if need > h + 1 and not self.bar.winfo_ismapped():
+            self.bar.pack(side='right', fill='y', before=self.cv)
+        elif need <= h and self.bar.winfo_ismapped():
+            self.bar.pack_forget(); self.cv.yview_moveto(0)
+        if self.w:   # the bar adds to the width instead of squeezing the content
+            self.configure(width=self.w + (self.bar.winfo_reqwidth() if self.bar.winfo_ismapped() else 0))
+
+    def wheel(self, e):
+        w = e.widget
+        if not self.bar.winfo_ismapped() or not str(w).startswith(str(self) + '.'):
+            return
+        if isinstance(w, (tk.Text, ttk.Treeview)) and w.yview() != (0.0, 1.0):
+            return   # a list or log that scrolls on its own
+        self.cv.yview_scroll(-1 if e.delta > 0 else 1, 'units')
+
+
 def card(parent, **pack):
     """A panel with a 1 px border."""
     outer = tk.Frame(parent, bg=LINE); outer.pack(**pack)
@@ -373,7 +407,7 @@ def md_insert(t, text, tags):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title('Reality Hop'); self.geometry('1440x1040'); self.minsize(1180, 800); self.configure(bg=BG)
+        self.title('Reality Hop'); self.geometry('1440x1040'); self.minsize(MIN_W, MIN_H); self.configure(bg=BG)
         self.q, self.busy, self.streak, self.sel, self.cand = queue.Queue(), False, {}, None, None
         self.lists, self.pcs, self.router = {'pc': [], 'phone': []}, None, None
         self.pc_pending, self.want_restart, self.pending, self.router_stale = False, False, None, False
@@ -449,7 +483,7 @@ class App(tk.Tk):
         self.bg_on = tk.BooleanVar(value=os.path.exists(N.STARTUP_LNK))
 
         # sidebar: every action, grouped
-        side = self.side = ttk.Frame(self, style='Side.TFrame', width=262); side.pack(side='left', fill='y'); side.pack_propagate(False)
+        self.side_sc = Scroll(self, SIDE, width=262); self.side_sc.pack(side='left', fill='y'); side = self.side = self.side_sc.inner
         tk.Frame(self, bg=LINE, width=1).pack(side='left', fill='y')
         brand = ttk.Frame(side, style='Side.TFrame'); brand.pack(fill='x', padx=18, pady=(20, 4))
         tk.Label(brand, text='●', bg=SIDE, fg=ACC, font=(UIB, 14)).pack(side='left')
@@ -510,7 +544,7 @@ class App(tk.Tk):
         self.auto_min.set(N.settings_load()['check_min'])
 
         # main area
-        main = ttk.Frame(self); main.pack(side='left', fill='both', expand=True)
+        self.main_sc = Scroll(self, BG); self.main_sc.pack(side='left', fill='both', expand=True); main = self.main_sc.inner
         slot = tk.Frame(main, bg=BG, height=3); slot.pack(fill='x'); slot.pack_propagate(False)
         self.prog = ttk.Progressbar(slot, mode='indeterminate', style='Busy.Horizontal.TProgressbar')
         pad = dict(padx=24)
@@ -571,7 +605,7 @@ class App(tk.Tk):
         lhead = ttk.Frame(main); lhead.pack(fill='x', pady=(14, 4), **pad)
         ttk.Label(lhead, text='ACTIVITY', style='Muted.TLabel', font=(UIB, 8)).pack(side='left')
         self.log_box = card(main, fill='both', expand=True, pady=(0, 18), **pad)
-        self.log = tk.Text(self.log_box, height=7, state='disabled', wrap='none', font=('Cascadia Mono', 9) if 'Cascadia Mono' in
+        self.log = tk.Text(self.log_box, height=4, state='disabled', wrap='none', font=('Cascadia Mono', 9) if 'Cascadia Mono' in
                            __import__('tkinter.font').font.families(self) else ('Consolas', 9), bg=CARD, fg=MUTED,
                            relief='flat', highlightthickness=0, padx=14, pady=10, insertbackground=FG, selectbackground=SEL)
         sb = ttk.Scrollbar(self.log_box, command=self.log.yview); self.log.configure(yscrollcommand=sb.set)
@@ -587,10 +621,9 @@ class App(tk.Tk):
 
     def fit(self):
         """Tall enough for the whole sidebar (it grows with router features and backend files), never taller than the screen."""
-        self.side.pack_propagate(True); self.update_idletasks(); need = self.side.winfo_reqheight() + 24
-        self.side.pack_propagate(False); self.side.configure(width=262)
+        self.update_idletasks(); need = self.side.winfo_reqheight() + 24
         h = max(1040, min(need, self.winfo_screenheight() - 80))
-        self.geometry(f'{min(1440, self.winfo_screenwidth() - 40)}x{h}'); self.minsize(1180, min(need, self.winfo_screenheight() - 80))
+        self.geometry(f'{min(1440, self.winfo_screenwidth() - 40)}x{h}'); self.minsize(MIN_W, MIN_H)   # smaller scrolls
 
     def show_core(self):
         """Under the name: the sing-box build on this PC and whether it is a stable release or a test build."""
