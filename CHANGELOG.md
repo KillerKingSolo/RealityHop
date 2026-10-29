@@ -3,6 +3,15 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.2.0 (2026-10-28)
+
+**Why update:** Reality Hop is now built with the newest Python and build tools, and every release is checked for that
+before it goes out.
+
+- Built with Python 3.15 (was 3.14), the newest PyInstaller and Pillow, and the newest GitHub Actions (Node.js 24).
+- A release can no longer go out on an outdated backend: a check of the build tools runs first in the release workflow
+  and before a version tag is pushed, and stops the release until they are updated.
+
 ## 1.1.4 (2026-10-28)
 
 **Why update:** problem reports are easier to read, for you and for whoever looks at the issue.
