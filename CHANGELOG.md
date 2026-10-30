@@ -3,6 +3,17 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.3.3 (2026-10-30)
+
+**Why update:** resizing the window is smooth, and nothing gets cut off when it is narrow.
+
+- Resizing no longer stutters. The content settles into place when you pause the drag.
+- In a narrow window, tile hints wrap, node tables keep the status readable, and the 24-hour counters move to their own
+  line. The status pill hides when the header buttons need the room. The smallest window width is now 1060.
+- The Update button has an RGB snake around it and a shine passing over it.
+- A darker red throughout the app. Links and error states keep their brighter colors, so they stay easy to read.
+- The Update button shows its tooltip again.
+
 ## 1.3.2 (2026-10-29)
 
 **Why update:** the main window can now be made smaller.

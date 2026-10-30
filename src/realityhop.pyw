@@ -25,20 +25,22 @@ on this PC. Everything lives in the install folder (C:\\Program Files\\RealityHo
   python realityhop.pyw --once prints one local check and exits
 """
 from concurrent.futures import ThreadPoolExecutor
-import hashlib, json, os, queue, re, socket, subprocess, sys, threading, time, tkinter as tk
+import colorsys, hashlib, json, os, queue, re, socket, subprocess, sys, threading, time, tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); sys.dont_write_bytecode = True   # no __pycache__ clutter
 import engine as N
 import install, report
 
 BG, SIDE, CARD, ROW2, LINE, BTN, FG, MUTED, DIM = '#0c0c0e', '#111114', '#16161a', '#1a1a1f', '#26262d', '#202026', '#ececf0', '#8d8d97', '#5c5c66'
-ACC, ACC_HI, ACC_LO, SEL = '#e5383b', '#f25457', '#b3262a', '#3b1416'
+ACC, ACC_HI, ACC_LO, SEL = '#a82428', '#bd2c30', '#8a1d21', '#3b1416'
+LINK = '#f25457'   # red text: the dark red is too hard to read on the dark background
 STATE = {'ok': '#5fd38d', 'bad': '#ff4d4f', 'warn': '#f5a524', 'unk': MUTED}
 ROWFG = {'ok': '#5fd38d', 'bad': '#ff6b6d', 'warn': '#f5b84a', 'unk': MUTED, 'broken': '#ffd0d0'}
 HOVER = '#1d1d23'
-MIN_W, MIN_H = 1000, 560   # smallest main window; shorter than the content, it scrolls
+MIN_W, MIN_H = 1060, 560   # smallest main window; shorter than the content, it scrolls
 PILL = {'ok': '#123222', 'bad': '#3a1214', 'warn': '#3a2a0c', 'unk': '#1f1f25'}
 COLS = (('slot', 70), ('server', 135), ('where', 190), ('tcp', 90), ('tunnel', 95), ('verdict', 420))
+COL_MIN = {'slot': 60, 'server': 115, 'where': 150, 'tcp': 75, 'tunnel': 75}   # node table columns when the window is narrow
 HEAD = {'slot': 'SLOT', 'server': 'SERVER', 'front': 'FRONT', 'where': 'LOCATION', 'tcp': '443 PING', 'tunnel': 'TUNNEL',
         'verdict': 'STATUS', 'num': '#', 'result': 'RESULT'}
 EVENTS = {'drop': ('#ff4d4f', 'PIA Dropped'), 'back': ('#5fd38d', 'PIA Back'), 'replace': ('#f5a524', 'Node Replaced'),
@@ -83,7 +85,7 @@ def theme(root):
     s.map('Accent.TButton', background=[('disabled', '#3d1c1e'), ('pressed', ACC_LO), ('active', ACC_HI)], foreground=[('disabled', DIM)])
     s.configure('Side.TButton', background=SIDE, foreground=FG, anchor='w', padding=(16, 8), bordercolor=SIDE, lightcolor=SIDE, darkcolor=SIDE)
     s.map('Side.TButton', background=[('disabled', SIDE), ('pressed', '#26262d'), ('active', '#1d1d22')], foreground=[('disabled', DIM)])
-    s.configure('SideAccent.TButton', background=SIDE, foreground=ACC_HI, anchor='w', padding=(16, 8), bordercolor=SIDE,
+    s.configure('SideAccent.TButton', background=SIDE, foreground=LINK, anchor='w', padding=(16, 8), bordercolor=SIDE,
                 lightcolor=SIDE, darkcolor=SIDE, font=(UIB, 10))
     s.map('SideAccent.TButton', background=[('disabled', SIDE), ('pressed', '#2a1517'), ('active', '#22141a')], foreground=[('disabled', DIM)])
     s.configure('Ghost.TButton', background=CARD, foreground=FG, padding=(12, 6), bordercolor=LINE, lightcolor=CARD, darkcolor=CARD)
@@ -107,6 +109,18 @@ def theme(root):
     s.configure('Busy.Horizontal.TProgressbar', background=ACC, troughcolor=BG, bordercolor=BG, lightcolor=ACC, darkcolor=ACC, thickness=3)
 
 
+def smooth_resize(win):
+    """Windows repaints every widget on each resize step unless these class flags are off (60 ms a step down to 6 ms)."""
+    try:
+        import ctypes; u = ctypes.windll.user32; win.update_idletasks()
+        u.GetClassLongPtrW.restype = u.SetClassLongPtrW.restype = ctypes.c_ssize_t
+        u.GetClassLongPtrW.argtypes = (ctypes.c_void_p, ctypes.c_int); u.SetClassLongPtrW.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_ssize_t)
+        for h in (int(win.wm_frame(), 16), win.winfo_id()):
+            u.SetClassLongPtrW(h, -26, u.GetClassLongPtrW(h, -26) & ~3)   # GCL_STYLE, no CS_HREDRAW or CS_VREDRAW
+    except Exception:
+        pass
+
+
 def dark_titlebar(win):
     try:
         import ctypes; win.update()
@@ -120,6 +134,15 @@ def dark_titlebar(win):
 
 def ms(v, none='-'):
     return f'{v} ms' if v is not None else none
+
+
+def fit_cols(t, w):
+    """Node table: the fixed columns give up width first, so the status column stays readable."""
+    base = dict(COLS); low = sum(COL_MIN.values()); room = sum(base[k] - COL_MIN[k] for k in COL_MIN)
+    spare = max(0, min(w - low - 225, room)); used = 0
+    for k, m in COL_MIN.items():
+        c = m + spare * (base[k] - m) // room; t.column(k, width=c); used += c
+    t.column('verdict', width=max(60, w - used))
 
 
 def table(parent, cols, height=None, stretch=None, mode='browse'):
@@ -318,10 +341,18 @@ class Scroll(tk.Frame):
         self.bar = ttk.Scrollbar(self, command=self.cv.yview); self.cv.configure(yscrollcommand=self.bar.set)
         self.inner = tk.Frame(self.cv, bg=bg); self.item = self.cv.create_window(0, 0, window=self.inner, anchor='nw')
         self.cv.pack(side='left', fill='both', expand=True)
-        self.inner.bind('<Configure>', lambda e: self.sync()); self.cv.bind('<Configure>', lambda e: self.sync())
+        self.job, self.shown = None, False
+        self.inner.bind('<Configure>', self.later); self.cv.bind('<Configure>', self.later)
         self.bind_all('<MouseWheel>', self.wheel, add='+')
 
+    def later(self, e=None):
+        """Lays the content out when a window drag pauses: doing it on every step is what makes resizing stutter."""
+        if self.job:
+            self.after_cancel(self.job)
+        self.job = self.after(70 if self.shown else 0, self.sync)
+
     def sync(self):
+        self.job = None; self.shown = self.cv.winfo_width() > 1
         need, h = self.inner.winfo_reqheight(), self.cv.winfo_height()
         self.cv.itemconfigure(self.item, width=self.cv.winfo_width(), height=max(need, h))
         self.cv.configure(scrollregion=(0, 0, 0, max(need, h)))
@@ -340,6 +371,69 @@ class Scroll(tk.Frame):
             return   # a list or log that scrolls on its own
         self.cv.yview_scroll(-1 if e.delta > 0 else 1, 'units')
 
+
+class Snake(tk.Canvas):
+    """The Update button: an RGB snake around it and a shine passing over it. It only draws while it can be seen."""
+    M, STEP, LAP, LEN = 3, 2, 2.8, 0.55   # ring width, px per segment, seconds per lap, share of the ring it covers
+    SWEEP, EVERY, BAND, SLANT = 0.9, 3.2, 20, 12   # shine: seconds to cross, seconds between starts, half width, lean in px
+    BASE, LIT, WHITE = (0xa8, 0x24, 0x28), (0xbd, 0x2c, 0x30), (255, 255, 255)
+
+    def __init__(self, parent, bg, text, command):
+        super().__init__(parent, bg=bg, highlightthickness=0, bd=0, cursor='hand2')
+        self.bg_rgb = tuple(v // 256 for v in self.winfo_rgb(bg)); self.text, self.base, self.on = text, self.BASE, False
+        self.segs, self.cols, self.last, self.last_col = [], [], [], []
+        self.hues = [tuple(int(v * 255) for v in colorsys.hsv_to_rgb(i / 256, 1, 1)) for i in range(256)]
+        self.bind('<Enter>', lambda e: (self.hover(self.LIT), Tip.enter(self, 'Update')))
+        self.bind('<Leave>', lambda e: (self.hover(self.BASE), Tip.leave(e)))
+        self.bind('<Button-1>', lambda e: (Tip.leave(), command()))
+        self.build()
+
+    def hover(self, rgb):
+        self.base = rgb; self.last_col = [None] * len(self.cols)
+
+    def set_text(self, text):
+        self.text = text; self.build()
+
+    def build(self):
+        import tkinter.font as tkf
+        M, s = self.M, self.STEP; w, h = tkf.Font(font=(UIB, 10)).measure(self.text) + 30 + 2 * M, 33 + 2 * M; m = M // 2; r, b = w - 1 - m, h - 1 - m
+        self.configure(width=w, height=h); self.delete('all'); pts = []; self.w = w
+        self.cols = [(x + self.SLANT / 2, self.create_line(x + self.SLANT, M, x, h - M, width=2, fill='#%02x%02x%02x' % self.base))
+                     for x in range(M - self.SLANT, w - M)]
+        for (x0, y0), (x1, y1) in (((m, m), (r, m)), ((r, m), (r, b)), ((r, b), (m, b)), ((m, b), (m, m))):
+            n = max(abs(x1 - x0), abs(y1 - y0)) // s
+            pts += [(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n) for i in range(n)]
+        self.segs = [self.create_line(*a, *pts[(i + 1) % len(pts)], width=M, capstyle='projecting', fill=self['bg']) for i, a in enumerate(pts)]
+        self.create_text(w / 2, h / 2, text=self.text, fill='#ffffff', font=(UIB, 10))
+        self.last, self.last_col = [None] * len(self.segs), [None] * len(self.cols)
+
+    def start(self):
+        if not self.on:
+            self.on = True; self.tick()
+
+    def tick(self):
+        if not self.winfo_exists():
+            return
+        if not self.winfo_viewable():
+            return self.after(250, self.tick)
+        now, n, br = time.perf_counter(), len(self.segs), self.bg_rgb; head = (now / self.LAP % 1) * n; body = self.LEN * n
+        for i, seg in enumerate(self.segs):
+            d = (head - i) % n
+            if d >= body:
+                col = None
+            else:
+                a = (1 - d / body) ** 0.7; rgb = self.hues[int((i / n + now * 0.12) * 256) % 256]
+                col = '#%02x%02x%02x' % tuple(int(b + (c - b) * a) for c, b in zip(rgb, br))
+            if col != self.last[i]:
+                self.last[i] = col; self.itemconfigure(seg, fill=col or self['bg'])
+        p = now % self.EVERY / self.SWEEP; c = -self.BAND + (self.w + 2 * self.BAND) * p; base = self.base
+        for i, (x, item) in enumerate(self.cols):
+            d = abs(x - c) / self.BAND
+            a = 0.38 * (1 - d * d) ** 2 if p < 1 and d < 1 else 0
+            col = '#%02x%02x%02x' % tuple(int(b + (v - b) * a) for v, b in zip(self.WHITE, base))
+            if col != self.last_col[i]:
+                self.last_col[i] = col; self.itemconfigure(item, fill=col)
+        self.after(16, self.tick)
 
 def card(parent, **pack):
     """A panel with a 1 px border."""
@@ -367,7 +461,7 @@ def strip(parent, text, pad):
 def link(parent, text, url, bg=CARD):
     """A clickable web link."""
     import webbrowser
-    lab = tk.Label(parent, text=text, bg=bg, fg=ACC_HI, font=(UI, 9, 'underline'), cursor='hand2')
+    lab = tk.Label(parent, text=text, bg=bg, fg=LINK, font=(UI, 9, 'underline'), cursor='hand2')
     lab.bind('<Button-1>', lambda e: webbrowser.open(url))
     return lab
 
@@ -435,7 +529,7 @@ class App(tk.Tk):
         except Exception:
             pass
         self.icon_key = None
-        theme(self); self.build(); self.fit(); dark_titlebar(self); self.render()
+        theme(self); self.build(); self.fit(); dark_titlebar(self); smooth_resize(self); self.render()
         self.after(150, self.drain); self.after(400, lambda: self.work(self.first_check)); self.after(1500, self.auto_tick); self.after(5000, self.watchdog)
         threading.Thread(target=self.find_update, daemon=True).start(); self.after(30000, self.maybe_core_update)
 
@@ -464,7 +558,7 @@ class App(tk.Tk):
             return   # no internet or GitHub down: the watcher tries again tomorrow
         if rel:
             self.update_rel = rel
-            self.after(0, lambda: (self.update_btn.configure(text=f"Update to {rel['ver']}"), self.update_btn.pack(side='right', padx=(0, 8))))
+            self.after(0, lambda: (self.update_box.set_text(f"Update to {rel['ver']}"), self.update_box.pack(side='right', padx=(0, 5)), self.update_box.start()))
             self.after(1500, self.do_update)   # tell at launch, not only with the button
 
     def do_update(self):
@@ -548,8 +642,8 @@ class App(tk.Tk):
         slot = tk.Frame(main, bg=BG, height=3); slot.pack(fill='x'); slot.pack_propagate(False)
         self.prog = ttk.Progressbar(slot, mode='indeterminate', style='Busy.Horizontal.TProgressbar')
         pad = dict(padx=24)
-        head = ttk.Frame(main); head.pack(fill='x', pady=(18, 0), **pad)
-        ttk.Label(head, text='Overview', style='Title.TLabel').pack(side='left')
+        head = self.head = ttk.Frame(main); head.pack(fill='x', pady=(18, 0), **pad)
+        self.head_title = ttk.Label(head, text='Overview', style='Title.TLabel'); self.head_title.pack(side='left')
         self.head_pill = pill(head, 'checking', 'unk', BG); self.head_pill.pack(side='left', padx=14, pady=(6, 0))
         self.cancel_btn = ttk.Button(head, text='Cancel', command=self.cancel); self.cancel_btn.pack(side='right'); self.cancel_btn.state(['disabled'])
         self.check_btn = ttk.Button(head, text='Check now', style='Accent.TButton', command=lambda: self.work(self.first_check))
@@ -559,7 +653,8 @@ class App(tk.Tk):
         self.restart_btn.pack(side='right', padx=(0, 8)); self.buttons.append(self.restart_btn)
         self.power_btn = ttk.Button(head, text='Start' if N.stopped() else 'Stop', command=self.power)
         self.power_btn.pack(side='right', padx=(0, 8)); self.buttons.append(self.power_btn)
-        self.update_btn = ttk.Button(head, text='Update', style='Accent.TButton', command=self.do_update)   # shown when a release is newer
+        self.update_box = Snake(head, BG, 'Update', self.do_update)   # shown when a release is newer
+        head.bind('<Configure>', lambda e: self.head_fit()); self.update_box.bind('<Configure>', lambda e: self.head_fit())
 
         tiles = ttk.Frame(main); tiles.pack(fill='x', pady=(16, 0), **pad)
         self.tiles = {}
@@ -572,6 +667,7 @@ class App(tk.Tk):
             tk.Label(t, text=label, bg=CARD, fg=DIM, font=(UIB, 8)).pack(anchor='w', padx=16, pady=(14, 0))
             v = tk.Label(t, text='-', bg=CARD, fg=FG, font=(UIB, 17)); v.pack(anchor='w', padx=16)
             sub = tk.Label(t, text='', bg=CARD, fg=MUTED, font=(UI, 9), anchor='w', justify='left'); sub.pack(anchor='w', padx=16, pady=(0, 14))
+            t.bind('<Configure>', lambda e, s=sub: s.configure(wraplength=max(60, e.width - 32)))   # long hints wrap instead of being cut off
             self.tiles[k] = (v, sub)
             sub.bind('<Button-1>', lambda e, k=k: self.tile_act.get(k) and self.tile_act[k]())
         self.tile_act = {}   # a tile hint that names a button runs that button when clicked
@@ -584,7 +680,7 @@ class App(tk.Tk):
             col, name = EVENTS[k]
             tk.Label(top_, text='●', bg=CARD, fg=col, font=(UI, 9)).pack(side='left', padx=(14, 2))
             tk.Label(top_, text=name, bg=CARD, fg=MUTED, font=(UI, 8)).pack(side='left')
-        self.strip_info = tk.Label(top_, text='', bg=CARD, fg=MUTED, font=(UI, 8)); self.strip_info.pack(side='right')
+        self.strip_top = top_; self.strip_info = tk.Label(hs, text='', bg=CARD, fg=MUTED, font=(UI, 8)); self.strip_info.pack(in_=top_, side='right')
         self.hist = tk.Canvas(hs, height=40, bg=CARD, highlightthickness=0); self.hist.pack(fill='x', padx=16, pady=(4, 10))
         self.hist.bind('<Configure>', lambda e: self.draw_history())
 
@@ -597,10 +693,11 @@ class App(tk.Tk):
             st = tk.Label(row, text='', bg=CARD, fg=MUTED, font=(UI, 9), anchor='e'); st.pack(side='right')
             tk.Frame(c, bg=LINE, height=1).pack(fill='x', pady=(12, 0))
             t = table(c, COLS, height=6, stretch='verdict'); t.pack(fill='x', padx=8, pady=(2, 8))
+            t.bind('<Configure>', lambda e, t=t: fit_cols(t, e.width))
             t.bind('<<TreeviewSelect>>', lambda e, k=key: self.select(k)); t.bind('<Button-3>', lambda e, k=key: self.popup(e, k))
             t.bind('<Double-1>', lambda e, k=key: self.details(k, e))
             self.card_status[key], self.trees[key] = st, t
-        self.bind('<Configure>', lambda e: self.status.configure(wraplength=max(400, e.width - 360)) if e.widget is self else None)
+        self.status.master.bind('<Configure>', lambda e: self.status.configure(wraplength=max(300, e.width - 40)))
 
         lhead = ttk.Frame(main); lhead.pack(fill='x', pady=(14, 4), **pad)
         ttk.Label(lhead, text='ACTIVITY', style='Muted.TLabel', font=(UIB, 8)).pack(side='left')
@@ -618,6 +715,14 @@ class App(tk.Tk):
                            ('vault', 'Fix this node: swap in a node that worked before (tested again)'),
                            ('quick', 'Fix this node: quick swap to the fastest ping (configs only, not tested)')):
             self.menu.add_command(label=label, command=lambda how=how: self.replace_selected(how))
+
+    def head_fit(self):
+        """The status pill gives way when the header buttons need the room; the tiles show the same state."""
+        p = self.head_pill; rest = sum(w.winfo_reqwidth() + 8 for w in self.head.winfo_children() if w is not p and w.winfo_manager())
+        if rest + p.winfo_reqwidth() + 28 > self.head.winfo_width():
+            p.pack_forget()
+        elif not p.winfo_manager():
+            p.pack(side='left', padx=14, pady=(6, 0), after=self.head_title)
 
     def fit(self):
         """Tall enough for the whole sidebar (it grows with router features and backend files), never taller than the screen."""
@@ -840,6 +945,12 @@ class App(tk.Tk):
             counts[kind] = counts.get(kind, 0) + 1
         self.strip_info.configure(text=f"PIA Drops {counts.get('drop', 0)}   ·   Replacements {counts.get('replace', 0)}   ·   "
                                        f"Restarts {counts.get('restart', 0)}   ·   Rescues {counts.get('rescue', 0)}")
+        # the counters move to their own line when they do not fit beside the legend
+        legend = sum(x.winfo_reqwidth() + 10 for x in self.strip_top.winfo_children())
+        if legend + self.strip_info.winfo_reqwidth() + 60 > w:
+            self.strip_info.pack(in_=c.master, side='top', anchor='w', padx=16, before=c)
+        else:
+            self.strip_info.pack(in_=self.strip_top, side='right', anchor='center', padx=0)
 
     def details(self, key, e):
         row = self.trees[key].identify_row(e.y)
@@ -988,7 +1099,7 @@ class App(tk.Tk):
     def tile_link(self, k, text, act=None):
         """A tile's hint text; with act it looks like a link and clicking it does the same as the button it names."""
         sub = self.tiles[k][1]; self.tile_act[k] = act
-        sub.configure(text=text, fg=ACC_HI if act else MUTED, cursor='hand2' if act else '',
+        sub.configure(text=text, fg=LINK if act else MUTED, cursor='hand2' if act else '',
                       font=(UI, 9, 'underline') if act else (UI, 9))
 
     def rescue(self):
