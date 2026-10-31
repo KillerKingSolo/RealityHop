@@ -3,6 +3,13 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.3.4 (2026-10-30)
+
+**Why update:** the tray icon now matches the window.
+
+- While the window is open, the tray icon shows the same node ring and status as the window, and keeps that result
+  after you close the window. Before, it kept showing the last hourly check.
+
 ## 1.3.3 (2026-10-30)
 
 **Why update:** resizing the window is smooth, and nothing gets cut off when it is narrow.

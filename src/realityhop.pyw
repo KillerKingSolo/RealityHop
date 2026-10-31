@@ -1053,6 +1053,9 @@ class App(tk.Tk):
         if key != self.icon_key:
             try:
                 self.iconbitmap(default=N.tray_icon_file(self.status_state, segs)); self.icon_key = key
+                if self.status_state != 'unk' and set(segs) - {'unk'}:   # the watcher shows the same in the tray
+                    N.jsave(N.TRAY_GUI, {'last': [self.status_state, f"{len(segs) - segs.count('bad') - segs.count('unk')} of {len(segs)} nodes working",
+                                                  time.strftime('%H:%M')], 'segs': segs})
             except Exception:
                 pass
 

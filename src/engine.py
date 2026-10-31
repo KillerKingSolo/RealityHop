@@ -60,7 +60,7 @@ def data_dir():
 def set_paths(data):
     """Point every data path at one folder (again after the setup has installed Reality Hop, or after a move)."""
     global DATA, PC_DIR, ROUTER_DIR, PC_CFG, ROUTER_CFG, REPORTS, NODES_TXT, VAULT, LOGS, CORE, ROUTER_KEY, CORE_LOG
-    global THIS_PC, SETTINGS, HISTORY, LAST, TRAY_LAST
+    global THIS_PC, SETTINGS, HISTORY, LAST, TRAY_LAST, TRAY_GUI
     DATA = data                                                    # everything this PC keeps
     PC_DIR, ROUTER_DIR = os.path.join(DATA, 'PC'), os.path.join(DATA, 'Router')   # the backend files, readable by the person
     PC_CFG, ROUTER_CFG = os.path.join(PC_DIR, 'pc-config.json'), os.path.join(ROUTER_DIR, 'router-config.json')
@@ -70,8 +70,8 @@ def set_paths(data):
     LOGS = os.path.join(DATA, 'logs'); CORE_LOG = os.path.join(LOGS, 'core.log')
     CORE = os.path.join(PC_DIR, 'rh-core.exe')              # the official sing-box, under its own name: runs the PC tunnel
     ROUTER_KEY = os.path.join(DATA, 'router_ed25519')       # SSH key made by the setup wizard
-    THIS_PC, SETTINGS, HISTORY, LAST, TRAY_LAST = (os.path.join(DATA, f) for f in
-                                                   ('this-pc.json', 'settings.json', 'history.json', 'last.json', 'tray.json'))
+    THIS_PC, SETTINGS, HISTORY, LAST, TRAY_LAST, TRAY_GUI = (os.path.join(DATA, f) for f in
+                                                             ('this-pc.json', 'settings.json', 'history.json', 'last.json', 'tray.json', 'tray-window.json'))
 
 
 INSTALL_DIR = install_dir(); INSTALLED_EXE = os.path.join(INSTALL_DIR, APP + '.exe')
@@ -1840,7 +1840,23 @@ def watch():
         tray.update(state, f"Reality Hop  ·  {text}" + (f'  ·  {at}' if at else '')
                     + (f"  ·  PIA dropped {drops}x in the last hour" if drops else '')
                     + ('' if core_mode() else '  ·  rh-core missing'), st.get('segs', ()))
+
+    def follow_window():
+        """The window does the checks while it is open and writes what it shows here; the tray shows the same."""
+        seen = None
+        if not port_taken(GUI_PORT) and os.path.exists(TRAY_GUI):
+            seen = os.path.getmtime(TRAY_GUI)   # left by a window that has closed; the tray already showed it
+        while True:
+            try:
+                at = os.path.getmtime(TRAY_GUI)
+                if at != seen:
+                    seen = at; t = json.load(open(TRAY_GUI))
+                    st['last'], st['segs'] = tuple(t['last']), t.get('segs') or (); show()
+            except (OSError, ValueError, KeyError, TypeError):
+                pass
+            time.sleep(5)
     pia_feed(on_pia); show()
+    threading.Thread(target=follow_window, daemon=True).start()
     threading.Timer(15, tray_promote).start()   # Windows lists the icon a moment after it appears
     wait_api(90)
     while True:
