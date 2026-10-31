@@ -13,7 +13,7 @@ does not install or update itself.
 ## Build the exe
 
 ```
-pip install -r requirements.txt pyinstaller
+pip install -r requirements.txt
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 

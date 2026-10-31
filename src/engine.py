@@ -96,15 +96,34 @@ FRONTS = {'www.apple.com', 'swdist.apple.com', 'www.icloud.com', 'www.cloudflare
           'amazon.com', 'yahoo.com', 'www.yahoo.com', 'cdnjs.com', 'www.microsoft.com', 'www.bing.com', 'www.python.org',
           'www.nvidia.com', 'www.amd.com'}
 NOWIN = {'creationflags': subprocess.CREATE_NO_WINDOW} if os.name == 'nt' else {}
+SYS32 = os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32')
 say = print   # the GUI points this at its log pane
 
 
-def settings_load():
+def winexe(name):
+    """Full path of a Windows program. A bare name first runs any file of that name next to RealityHop.exe or in the working
+    folder, and the first run is usually from the Downloads folder."""
+    return os.path.join(SYS32, {'powershell': r'WindowsPowerShell\v1.0\powershell.exe', 'ssh': r'OpenSSH\ssh.exe',
+                                'ssh-keygen': r'OpenSSH\ssh-keygen.exe'}.get(name, name + '.exe'))
+
+
+def jload(path):
+    """A JSON object from a file; {} when the file is missing, damaged or holds something else."""
     try:
-        raw = json.load(open(SETTINGS))
+        with open(path) as f:
+            d = json.load(f)
     except (OSError, ValueError):
-        raw = {}
-    d = {}
+        return {}
+    return d if isinstance(d, dict) else {}
+
+
+def host_ok(h):
+    """An address or name for the router, safe on a command line and in the .cmd file that adds the key."""
+    return bool(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9.-]*', h or ''))
+
+
+def settings_load():
+    raw, d = jload(SETTINGS), {}
     for k, v in DEFAULTS.items():
         try:
             d[k] = type(v)(raw.get(k, v))
@@ -112,6 +131,8 @@ def settings_load():
             d[k] = v
     for k, (lo, hi) in LIMITS.items():   # a hand-edited 0 would mean a node check every 30 s
         d[k] = min(max(d[k], lo), hi)
+    if not host_ok(d['router_host']):   # a hand-edited file
+        d['router_host'] = DEFAULTS['router_host']
     global TOP, FULL_EVERY, SLOW
     TOP, FULL_EVERY, SLOW = int(d['top']), int(d['check_min']) * 60, int(d['slow_ms'])
     return d
@@ -140,14 +161,17 @@ def jsave(path, data, indent=None):
     tmp = f'{path}.{os.getpid()}-{threading.get_ident()}.tmp'
     with open(tmp, 'w') as f:
         json.dump(data, f, indent=indent)
-    os.replace(tmp, path)
+    for i in range(20):   # Windows refuses while the other process has the file open for a moment
+        try:
+            os.replace(tmp, path); return
+        except PermissionError:
+            if i == 19:
+                os.remove(tmp); raise
+            time.sleep(0.05)
 
 
 def hist_load():
-    try:
-        h = json.load(open(HISTORY))
-    except (OSError, ValueError):
-        h = {}
+    h = jload(HISTORY)
     return {'pings': h.get('pings', {}), 'events': h.get('events', [])}
 
 
@@ -204,6 +228,8 @@ def run(cmd, stdin=None, timeout=240, **kw):
     Every call has a time limit, and cancel() kills whatever is running, so no action can hang the window."""
     if CANCEL.is_set():
         raise RuntimeError('cancelled')
+    if not os.path.dirname(cmd[0]):
+        cmd = [winexe(cmd[0]), *cmd[1:]]
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE if stdin is not None else subprocess.DEVNULL,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, **NOWIN, **kw)
     _procs.add(p)
@@ -290,7 +316,7 @@ def notify(msg):
           "[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("
           "'{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\\WindowsPowerShell\\v1.0\\powershell.exe').Show([Windows.UI.Notifications.ToastNotification]::new($t))")
     try:
-        subprocess.Popen(['powershell', '-NoProfile', '-Command', ps], env=dict(os.environ, NM_MSG=msg[:250]),
+        subprocess.Popen([winexe('powershell'), '-NoProfile', '-Command', ps], env=dict(os.environ, NM_MSG=msg[:250]),
                          stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **NOWIN)
     except OSError:
         pass
@@ -298,13 +324,15 @@ def notify(msg):
 
 def ssh_exe(name='ssh'):
     """Windows' own OpenSSH client (built into Windows 10 and 11)."""
-    return shutil.which(name) or os.path.join(os.environ.get('SystemRoot', r'C:\Windows'), 'System32', 'OpenSSH', name + '.exe')
+    p = winexe(name)
+    return p if os.path.exists(p) else shutil.which(name) or p
 
 
 def ssh_base():
     s = settings_load()
-    return [ssh_exe(), '-i', s['router_key'] or ROUTER_KEY, '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10',
-            '-o', 'StrictHostKeyChecking=accept-new', '-o', 'UserKnownHostsFile=' + os.path.join(DATA, 'known_hosts'),
+    return [ssh_exe(), '-i', s['router_key'] or ROUTER_KEY, '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'IdentitiesOnly=yes',
+            # quoted: unquoted, ssh takes C:\Program Files\... as two files, saves no host key and never notices a different router
+            '-o', 'StrictHostKeyChecking=accept-new', '-o', f'UserKnownHostsFile="{os.path.join(DATA, "known_hosts")}"',
             'root@' + s['router_host']]
 
 
@@ -648,10 +676,7 @@ def router_test(nodes):
 
 
 def this_pc():
-    try:
-        return json.load(open(THIS_PC))
-    except (OSError, ValueError):
-        return {}
+    return jload(THIS_PC)
 
 
 def router_only():
@@ -671,7 +696,7 @@ def pc_only():
     return not settings_load()['router']
 
 
-CURL = shutil.which('curl') or r'C:\Windows\System32\curl.exe'
+CURL = winexe('curl') if os.path.exists(winexe('curl')) else shutil.which('curl') or winexe('curl')
 
 
 def test_exe():
@@ -733,10 +758,7 @@ KEYS = ('server', 'uuid', 'pbk', 'sid', 'sni', 'fp', 'where', 'isp')
 
 
 def vault_load():
-    try:
-        return json.load(open(VAULT))
-    except (OSError, ValueError):
-        return vault_seed()
+    return jload(VAULT) or vault_seed()
 
 
 def vault_seed():
@@ -942,8 +964,7 @@ def check_pc(nodes):
 
 
 def pc_exit():
-    curl = shutil.which('curl') or r'C:\Windows\System32\curl.exe'
-    return run([curl, '-s', '--ssl-no-revoke', '-m', '10', '--socks5-hostname', '127.0.0.1:2080', 'https://api.ipify.org']).stdout.strip() or None
+    return run([CURL, '-s', '--ssl-no-revoke', '-m', '10', '--socks5-hostname', '127.0.0.1:2080', 'https://api.ipify.org']).stdout.strip() or None
 
 
 def pc_status():
@@ -1101,6 +1122,12 @@ def router_stale(router_md5):
     return bool(router_md5) and (router_md5 != t.get('router_md5') or file_md5(ROUTER_CFG) != t.get('router_local'))
 
 
+def node_ok(n):
+    """The same checks feed() makes on a node from the public list, for a node that came from elsewhere."""
+    return (public_ip(n['server']) and bool(re.fullmatch(r'[0-9a-fA-F-]{36}', n['uuid'])) and bool(re.fullmatch(r'[A-Za-z0-9_-]{43}', n['pbk']))
+            and bool(re.fullmatch(r'([0-9a-fA-F]{2}){0,8}', n['sid'])) and host_ok(n['sni']) and n['fp'] in FPS)
+
+
 def router_sync():
     """Several PCs can share one router, and the router runs what was pushed last. When its config changed since this PC
     last pushed or looked (another PC pushed, or the router's self-repair swapped nodes), this PC takes the router's
@@ -1112,15 +1139,17 @@ def router_sync():
         return None
     try:
         r = json.loads(cfg); nodes = [from_outbound(o) for o in r['outbounds'] if o.get('type') == 'vless']
+        api = r['experimental']['clash_api']['secret']; bad = not nodes or not all(node_ok(n) for n in nodes)
     except (ValueError, KeyError, TypeError):
         return None
-    if not nodes:
-        return None
+    if bad or not re.fullmatch(r'[0-9a-fA-F]{16,128}', str(api)):
+        say("the router's config has nodes Reality Hop would not use; not following it. Push to router replaces it."); return None
     before = [n['server'] for n in inuse()]
     meta = vault_load()
     for n in nodes:   # a node another PC found is not in this PC's vault: no latency or place known yet
         n.update({'ms': None, **{k: v for k, v in meta.get(n['server'], {}).items() if k in ('where', 'isp', 'fp', 'ms') and v}})
-    jsave(ROUTER_CFG, r, indent=2)   # the router's own file: its API secret too, so this PC can still test it
+    c = json.load(open(ROUTER_CFG)); c['experimental']['clash_api']['secret'] = api   # only its secret: so this PC can still test it
+    jsave(ROUTER_CFG, c, indent=2)
     write_configs(nodes); write_txt(nodes, nodes)
     if devs == 'all' or (devs and all(lan_ip(x) for x in devs.split())):
         settings_save({'devices': devs})
@@ -1388,7 +1417,7 @@ def elevated(ps):
     import base64
     enc = base64.b64encode(ps.encode('utf-16-le')).decode()
     return run(['powershell', '-NoProfile', '-Command',
-                "try { $p = Start-Process powershell -Verb RunAs -Wait -PassThru -WindowStyle Hidden -ErrorAction Stop "
+                f"try {{ $p = Start-Process {psq(winexe('powershell'))} -Verb RunAs -Wait -PassThru -WindowStyle Hidden -ErrorAction Stop "
                 f"-ArgumentList '-NoProfile','-EncodedCommand','{enc}'; exit $p.ExitCode }} catch {{ exit 2 }}"], timeout=300).returncode
 
 
@@ -1402,9 +1431,8 @@ def set_stopped(on):
 
 
 def task_state():
-    r = run(['schtasks', '/query', '/tn', BOOT_TASK, '/fo', 'list'], timeout=15)
-    m = re.search(r'Status:\s*(\S+)', r.stdout)
-    return m.group(1) if r.returncode == 0 and m else None   # Ready / Running / Disabled / None (no task)
+    r = run(['schtasks', '/query', '/tn', BOOT_TASK, '/xml'], timeout=15)   # the XML is the same in every Windows language
+    return None if r.returncode else 'Disabled' if '<Enabled>false</Enabled>' in r.stdout else 'Ready'   # None: no task
 
 
 def manager_stop():
@@ -1695,7 +1723,7 @@ def watch_cycle(st, background=True):
             ssh('date +%s > /tmp/pc-alive')   # the router's self-repair stands down while this PC looks after the nodes
         except Exception:
             pass
-        if ssh('[ -d /tmp/heal.lock ] && echo busy').strip() == 'busy':
+        if ssh('[ -d /tmp/heal.lock ] && [ $(( $(date +%s) - $(cat /tmp/heal.started 2>/dev/null || echo 0) )) -lt 3600 ] && echo busy').strip() == 'busy':
             say('router self-repair is running; leaving it to finish'); return None
     r = check_pc(cur)
     if r is not None and not r.get('stale'):
@@ -1773,10 +1801,21 @@ def pia_feed(on_change):
     threading.Thread(target=loop, daemon=True).start()
 
 
+def memory_trim():
+    """The watcher sleeps almost all the time: give its memory back to Windows until the next check needs it."""
+    try:
+        import ctypes, gc
+        if time.time() - _feed[0] > 900:
+            _feed[:] = [0, None]   # the node list is several MB, and a new download is due anyway
+        gc.collect(); ctypes.windll.kernel32.K32EmptyWorkingSet(ctypes.c_void_p(-1))
+    except Exception:
+        pass
+
+
 def watch():
     """The background watcher (--watch, started at logon) with its tray icon. Pauses its checks while the
     window is open. Node check every hour (settings). PIA's state feed wakes it the moment PIA drops: still not
-    connected a minute later -> the nodes are checked and fixed at once. Daily rh-core beta update.
+    connected a minute later -> the nodes are checked and fixed at once. Daily sing-box update on its channel.
     Closing the window does not stop it; Quit in the tray menu does."""
     global say
     lock = socket.socket()
@@ -1904,7 +1943,7 @@ def watch():
             core_log_trim()
         except Exception as e:
             say(f'error: {e}'); st['last'] = ('bad', f'error: {e}'[:80], time.strftime('%H:%M'))
-        show()
+        show(); memory_trim()
         # sleep until the next check is due, a tray request, or a PIA change (re-checked a minute after a drop)
         due = 60 if pia['bad_since'] is not None else max(30, min(TICK, last_full + FULL_EVERY - time.time()))
         wake.wait(due); wake.clear()
@@ -2090,7 +2129,15 @@ def add_key_console(host):
                          'echo Nothing shows while you type. Reality Hop never sees it.\r\necho.\r\n'
                          f'"{esc(ssh_exe())}" -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile="{esc(kh)}" root@{host} "{remote}"\r\n'
                          'echo.\r\npause\r\n')
-    subprocess.Popen(['cmd', '/c', bat], creationflags=subprocess.CREATE_NEW_CONSOLE)
+    subprocess.Popen([winexe('cmd'), '/c', bat], creationflags=subprocess.CREATE_NEW_CONSOLE)
+
+
+def router_key_remove():
+    """Take this PC's key off the router (uninstall). Only the key Reality Hop made; other PCs keep theirs."""
+    if settings_load()['router_key']:
+        return 'router: your own key file was used, so it stays on the router'
+    k = open(ROUTER_KEY + '.pub').read().split()[1]
+    return ssh(f"sed -i '\\|{k}|d' /etc/dropbear/authorized_keys; echo 'router: the key of this PC is removed'", timeout=30).strip()
 
 
 def watcher_kill():
@@ -2137,11 +2184,11 @@ def lnk_migrate(path):
 def tray_icon_file(state, segs=()):
     """Tray icon: the center shows the overall state, the outer ring one segment per node (green working,
     amber slow, red dead, grey not checked yet). Drawn at 256 px and scaled down; cached in the data folder."""
-    from PIL import Image, ImageDraw
     col = {'ok': (95, 211, 141), 'warn': (245, 165, 36), 'bad': (255, 77, 79)}
     segs = list(segs) or ['unk'] * 6
     path = os.path.join(DATA, f"tray-{state}-{''.join(x[0] for x in segs)}.ico")
     if not os.path.exists(path):
+        from PIL import Image, ImageDraw   # only for an icon not drawn before: it costs memory until the process ends
         os.makedirs(os.path.dirname(path), exist_ok=True)
         im = Image.new('RGBA', (256, 256), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
         d.ellipse((6, 6, 250, 250), fill=(18, 18, 22, 255))
@@ -2151,6 +2198,11 @@ def tray_icon_file(state, segs=()):
             d.arc((14, 14, 242, 242), a, a + step - gap, fill=col.get(sg, (70, 70, 80)) + (255,), width=34)
         d.ellipse((84, 84, 172, 172), fill=col.get(state, (120, 120, 130)) + (255,))
         im.save(path, sizes=[(16, 16), (20, 20), (24, 24), (32, 32), (48, 48), (64, 64)])
+        for old in sorted(glob.glob(os.path.join(DATA, 'tray-*.ico')), key=os.path.getmtime)[:-200]:   # one file per ring pattern: thousands possible
+            try:
+                os.remove(old)
+            except OSError:
+                pass
     return path
 
 
@@ -2240,8 +2292,8 @@ class Tray:
             if msg == created:       # Explorer restarted: put the icon back
                 s32.Shell_NotifyIconW(0, ctypes.byref(self.nid)); return 0
             if msg == 0x8002:        # our own "refresh" message
-                self.nid.hIcon = icon(self.state, self.segs); self.nid.szTip = self.tip[:127]
-                s32.Shell_NotifyIconW(1, ctypes.byref(self.nid)); return 0
+                old, self.nid.hIcon = self.nid.hIcon, icon(self.state, self.segs); self.nid.szTip = self.tip[:127]
+                s32.Shell_NotifyIconW(1, ctypes.byref(self.nid)); u32.DestroyIcon(W.HICON(old)); return 0
             return u32.DefWindowProcW(hwnd, msg, wp, lp)
         self._proc = WNDPROC(proc)   # keep a reference, or the callback is garbage-collected
         wc = WNDCLASSW(); wc.lpfnWndProc = self._proc; wc.lpszClassName = 'RealityHopTray'; wc.hInstance = k32.GetModuleHandleW(None)

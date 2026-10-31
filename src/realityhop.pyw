@@ -25,10 +25,13 @@ on this PC. Everything lives in the install folder (C:\\Program Files\\RealityHo
   python realityhop.pyw --once prints one local check and exits
 """
 from concurrent.futures import ThreadPoolExecutor
-import colorsys, hashlib, json, os, queue, re, socket, subprocess, sys, threading, time, tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+import colorsys, hashlib, json, os, queue, re, socket, subprocess, sys, threading, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); sys.dont_write_bytecode = True   # no __pycache__ clutter
 import engine as N
+if __name__ == '__main__' and '--watch' in sys.argv:   # RealityHop.exe --watch = the background watcher; it needs no window code
+    N.watch(); sys.exit(0)
+import tkinter as tk
+from tkinter import ttk, messagebox, filedialog
 import install, report
 
 BG, SIDE, CARD, ROW2, LINE, BTN, FG, MUTED, DIM = '#0c0c0e', '#111114', '#16161a', '#1a1a1f', '#26262d', '#202026', '#ececf0', '#8d8d97', '#5c5c66'
@@ -506,7 +509,7 @@ class App(tk.Tk):
         self.lists, self.pcs, self.router = {'pc': [], 'phone': []}, None, None
         self.pc_pending, self.want_restart, self.pending, self.router_stale = False, False, None, False
         self.status_text, self.status_state = 'Reading the configs and testing from this PC...', 'unk'
-        self.update_rel = self.upd_win = None
+        self.update_rel = self.upd_win = self.cur = None; self.jobs, self.run, self.upd_wait = [], 0, False
         N.say = self.say; self.flog = N.file_log('window'); self.wstate, self.started = {}, 0
         self.lock = socket.socket()
         try:
@@ -530,6 +533,7 @@ class App(tk.Tk):
             pass
         self.icon_key = None
         theme(self); self.build(); self.fit(); dark_titlebar(self); smooth_resize(self); self.render()
+        self.bind('<Button-1>', self.click_off, add='+')
         self.after(150, self.drain); self.after(400, lambda: self.work(self.first_check)); self.after(1500, self.auto_tick); self.after(5000, self.watchdog)
         threading.Thread(target=self.find_update, daemon=True).start(); self.after(30000, self.maybe_core_update)
 
@@ -595,7 +599,10 @@ class App(tk.Tk):
             tk.Label(f, text=title, bg='#17171c', fg=FG, font=(UIB, 12)).pack(side='left')
 
         def sbtn(text, cmd, accent=False):
-            w = NavButton(side, text, cmd); w.pack(fill='x', padx=(18, 10)); self.buttons.append(w); return w
+            w = NavButton(side, text, cmd); w.pack(fill='x', padx=(18, 10))
+            if cmd == self.rerun_setup:   # it closes the window, so it cannot wait in the queue
+                self.buttons.append(w)
+            return w
         group('Nodes', '\ue774', '◆')   # globe
         sbtn('Show candidates', self.show_candidates)
         sbtn('Fix: test online nodes', lambda: self.replace_selected('online'))
@@ -647,12 +654,12 @@ class App(tk.Tk):
         self.head_pill = pill(head, 'checking', 'unk', BG); self.head_pill.pack(side='left', padx=14, pady=(6, 0))
         self.cancel_btn = ttk.Button(head, text='Cancel', command=self.cancel); self.cancel_btn.pack(side='right'); self.cancel_btn.state(['disabled'])
         self.check_btn = ttk.Button(head, text='Check now', style='Accent.TButton', command=lambda: self.work(self.first_check))
-        self.check_btn.pack(side='right', padx=(0, 8)); self.buttons.append(self.check_btn)
+        self.check_btn.pack(side='right', padx=(0, 8))
         self.restart_btn = ttk.Button(head, text='Test on router', command=lambda: self.work(self.check_router)) if RONLY else \
             ttk.Button(head, text='Restart tunnel', command=lambda: self.work(self.pc_restart))
-        self.restart_btn.pack(side='right', padx=(0, 8)); self.buttons.append(self.restart_btn)
+        self.restart_btn.pack(side='right', padx=(0, 8))
         self.power_btn = ttk.Button(head, text='Start' if N.stopped() else 'Stop', command=self.power)
-        self.power_btn.pack(side='right', padx=(0, 8)); self.buttons.append(self.power_btn)
+        self.power_btn.pack(side='right', padx=(0, 8))
         self.update_box = Snake(head, BG, 'Update', self.do_update)   # shown when a release is newer
         head.bind('<Configure>', lambda e: self.head_fit()); self.update_box.bind('<Configure>', lambda e: self.head_fit())
 
@@ -759,9 +766,12 @@ class App(tk.Tk):
         self.after(150, self.drain)
 
     def work(self, fn, *args):
-        """One action at a time on a worker thread; buttons are off meanwhile; errors go to the log and the status line."""
+        """One action at a time on a worker thread; the rest wait in a queue, in order, each once; errors go to the log and the status line."""
         if self.busy:
-            self.say('busy, wait for the current action to finish'); return
+            if (fn, args) != self.cur and (fn, args) not in self.jobs:
+                self.jobs.append((fn, args)); self.say('queued; it runs when the current action finishes')
+            return
+        self.run += 1; run = self.run; self.cur = (fn, args)
         self.busy, self.started = True, time.time(); N.CANCEL.clear(); self.cancel_btn.state(['!disabled']); self.prog.pack(fill='x'); self.prog.start(14)
         if self.cand and self.cand.winfo_exists():
             self.cand.prog.pack(fill='x'); self.cand.prog.start(14)
@@ -773,22 +783,27 @@ class App(tk.Tk):
             except Exception as e:
                 self.say(f'error: {e}'); self.status_text, self.status_state = f'Something failed: {e}', 'bad'
             finally:
-                self.after(0, self.done)
+                self.after(0, lambda: run == self.run and self.done())   # not one the watchdog gave up on
         threading.Thread(target=go, daemon=True).start()
+
+    def drop_jobs(self):
+        if self.jobs:
+            self.say(f'dropped {len(self.jobs)} queued action(s)'); self.jobs.clear()
 
     def cancel(self):
         if self.busy:
-            self.say('cancelling the current action...'); N.cancel()
+            self.say('cancelling the current action...'); self.drop_jobs(); N.cancel()
 
     def watchdog(self):
         """Nothing may keep the buttons greyed out: after 6 minutes the action is cancelled and the window freed."""
         if self.busy and time.time() - self.started > 360:
             self.say('the action ran over 6 minutes; cancelled'); N.cancel()
-            self.status_text, self.status_state = 'The last action took too long and was cancelled.', 'bad'; self.done()
+            self.status_text, self.status_state = 'The last action took too long and was cancelled.', 'bad'
+            self.drop_jobs(); self.run += 1; self.done()
         self.after(5000, self.watchdog)
 
     def done(self):
-        self.busy = False; self.cancel_btn.state(['disabled']); self.prog.stop(); self.prog.pack_forget()
+        self.busy, self.cur = False, None; self.cancel_btn.state(['disabled']); self.prog.stop(); self.prog.pack_forget()
         if self.cand and self.cand.winfo_exists():
             self.cand.prog.stop(); self.cand.prog.pack_forget()
         for b in self.buttons:
@@ -802,6 +817,10 @@ class App(tk.Tk):
                              'at': time.strftime('%H:%M')})
         except Exception:
             pass
+        if self.jobs:
+            fn, args = self.jobs.pop(0); self.work(fn, *args)
+        if self.upd_wait and not any(j[0] == self.apply_update for j in self.jobs + [self.cur] if j):
+            self.upd_wait = False; self.update_box.set_text(f"Update to {self.update_rel['ver']}")
 
     def select(self, key):
         s = self.trees[key].selection()
@@ -810,6 +829,19 @@ class App(tk.Tk):
             for k, t in self.trees.items():
                 if k != key and t.selection():
                     t.selection_remove(*t.selection())
+
+    def click_off(self, e):
+        """A click anywhere else clears the node selection. The sidebar actions need it, and scrolling is not a click off."""
+        w = e.widget
+        if w in self.trees.values() and w.identify_row(e.y):
+            return
+        while w:
+            if isinstance(w, (NavButton, ttk.Scrollbar)):
+                return
+            w = getattr(w, 'master', None)
+        self.sel = None
+        for t in self.trees.values():
+            t.selection_remove(*t.selection())
 
     def popup(self, e, key):
         row = self.trees[key].identify_row(e.y)
@@ -1426,11 +1458,11 @@ class Candidates(tk.Toplevel):
             btn(bar3, f'vless-{i + 1}', lambda i=i: self.put_slot(i))
         self.status = strip(self, self.msg, pad)
         self.status.master.master.pack_configure(pady=(12, 18))
-        self.app.buttons += self.buttons; self.protocol('WM_DELETE_WINDOW', self.close)
+        self.protocol('WM_DELETE_WINDOW', self.close)
         dark_titlebar(self); self.app.work(self.ping)
 
     def close(self):
-        self.app.buttons = [b for b in self.app.buttons if b not in self.buttons]; self.destroy()
+        self.app.jobs = [j for j in self.app.jobs if j[0] not in (self.ping, self.test, self.test_tunnel)]; self.destroy()
 
     def slots(self):
         return len(self.app.lists[MAIN]) or 6
@@ -1633,8 +1665,6 @@ class DevicesDialog(tk.Toplevel):
         self.fill([(i, self.tree.set(i, 'name')) for i in self.tree.get_children() if i in self.shown])
 
     def save(self):
-        if self.app.busy:
-            self.msg.configure(text='Wait for the current action to finish, then press Save and push again.', fg=STATE['warn']); return
         ips = ['all'] if self.all_var.get() else sorted(self.picked, key=lambda x: tuple(int(k) for k in x.split('.')))
         what = ('every device on the main network, this PC included' if ips == ['all'] else '\n'.join(ips) or
                 '(none: the router tunnel then carries no device)')
@@ -1691,7 +1721,10 @@ class UpdateDialog(tk.Toplevel):
         dark_titlebar(self); self.lift(); self.focus_force()
 
     def install(self):
-        self.destroy(); self.app.work(self.app.apply_update, self.rel)
+        self.destroy()
+        if self.app.busy:
+            self.app.upd_wait = True; self.app.update_box.set_text('Update queued')
+        self.app.work(self.app.apply_update, self.rel)
 
 
 class ReportDialog(tk.Toplevel):
@@ -2018,7 +2051,7 @@ class Wizard(tk.Tk):
 
     def save_host(self, h=None):
         h = (h if h is not None else self.host.get()).strip()
-        if not re.fullmatch(r'[A-Za-z0-9.-]+', h):
+        if not N.host_ok(h):
             raise RuntimeError('the router address looks wrong; use something like 192.168.8.1')
         N.settings_save({'router_host': h})
         return h
@@ -2198,8 +2231,6 @@ def uninstall_dialog():
 
 
 if __name__ == '__main__':
-    if '--watch' in sys.argv:   # RealityHop.exe --watch = the background watcher
-        N.watch(); sys.exit(0)
     if '--once' in sys.argv:
         where = N.known_where()
         for key, label, rel, cfg in LISTS:

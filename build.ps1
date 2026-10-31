@@ -1,4 +1,4 @@
-# Build dist\RealityHop.exe (one file). Needs: pip install -r requirements.txt pyinstaller
+# Build dist\RealityHop.exe (one file). Needs: pip install -r requirements.txt
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 # Version resource: Task Manager, the startup apps list and the file's Properties show "Reality Hop" and the version

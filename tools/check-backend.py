@@ -37,12 +37,14 @@ def ver(s):
 def actions():
     seen = set()
     for wf in glob.glob(os.path.join(ROOT, '.github', 'workflows', '*.yml')):
-        for repo, tag in re.findall(r'uses:\s*([\w.-]+/[\w.-]+)@([\w.-]+)', open(wf, encoding='utf-8').read()):
+        # pinned to a commit, with the version it is in a comment: a moved tag cannot change what the release runs
+        for repo, sha, tag in re.findall(r'uses:\s*([\w.-]+/[\w.-]+)@([\w.-]+)[ \t]*#[ \t]*(v[\w.-]+)', open(wf, encoding='utf-8').read()):
             if (repo, tag) in seen:
                 continue
             seen.add((repo, tag))
             latest = get(f'https://api.github.com/repos/{repo}/releases/latest')['tag_name']
-            report(major(tag) >= major(latest), repo, f'uses {tag}, newest {latest}')
+            real = get(f'https://api.github.com/repos/{repo}/commits/{tag}')['sha']
+            report(major(tag) >= major(latest) and real == sha, repo, f'uses {tag}, newest {latest}' + ('' if real == sha else f', but {tag} is commit {real}'))
 
 
 def python():

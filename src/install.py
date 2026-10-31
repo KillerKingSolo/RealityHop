@@ -71,9 +71,11 @@ def cleanup():
 
 def place(src, dst):
     """Put src at dst; a running copy there is renamed out of the way first."""
+    new = dst + '.new'
+    shutil.copy2(src, new)   # first, so a full disk leaves the current copy in place
     if os.path.exists(dst):
         os.replace(dst, dst[:-4] + f'.old-{int(time.time())}.exe')
-    shutil.copy2(src, dst)
+    os.replace(new, dst)
 
 
 def others_kill():
@@ -126,7 +128,7 @@ def install(target=None):
     if os.path.basename(d).lower() != N.APP.lower():
         d = os.path.join(d, N.APP)   # a parent folder was picked: Reality Hop gets its own folder in it
     e = os.path.join(d, N.APP + '.exe')
-    copy = not same(sys.executable, e)   # setup run again from the installed copy: nothing to copy
+    copy, fresh = not same(sys.executable, e), not os.path.exists(e)   # setup run again from the installed copy: nothing to copy
     others_kill()
     ps = (f"$d = {N.psq(d)}; $e = {N.psq(e)}; New-Item -ItemType Directory -Force -Path $d | Out-Null; "
           + ("if (Test-Path -LiteralPath $e) { Rename-Item -LiteralPath $e -NewName ('RealityHop.old-' + "
@@ -151,6 +153,8 @@ def install(target=None):
     if not running_legacy():
         shutil.rmtree(N.LEGACY_DIR, ignore_errors=True)   # else the new copy removes it on its first start
     N.move_data(d)
+    if fresh:
+        N.set_stopped(False)   # an uninstall that kept the data left this on, and the watcher would never start
     if os.path.exists(N.STARTUP_LNK):
         N.startup(True)   # the logon start now points at Program Files; starts the watcher from there
     N.say(f'installed Reality Hop {N.VERSION} to {d}')
@@ -261,6 +265,8 @@ def uninstall(keep_data=False, router_too=False):
     if router_too and not N.pc_only():
         try:
             out.append(N.router_off())
+            if not keep_data:
+                out.append(N.router_key_remove())   # its private half is about to be deleted
         except Exception as e:
             out.append(f'router: could not switch it off ({e}); do it later in the GL.iNet panel')
     N.startup(False); N.core_stop(); out.append('PC tunnel and background watcher: stopped')
@@ -282,10 +288,10 @@ def uninstall(keep_data=False, router_too=False):
     dirs = [N.LEGACY_DIR] + ([] if keep_data else [N.DATA])
     rm = [f'Remove-Item -LiteralPath {N.psq(d)} -Recurse -Force -ErrorAction SilentlyContinue' for d in dirs]
     if keep_data and same(N.DATA, N.INSTALL_DIR):   # the data stays in the program folder: only the program goes
-        rm.append(f"Get-ChildItem -LiteralPath {N.psq(N.INSTALL_DIR)} -File -Filter 'Reality Hop*.exe' | Remove-Item -Force")
+        rm.append(f"Get-ChildItem -LiteralPath {N.psq(N.INSTALL_DIR)} -File -Filter 'RealityHop*.exe' | Remove-Item -Force")
     else:
         rm.append(f'Remove-Item -LiteralPath {N.psq(N.INSTALL_DIR)} -Recurse -Force -ErrorAction SilentlyContinue')
     # this process may run from the install folder: a separate shell removes it once this one has exited
-    subprocess.Popen(['powershell', '-NoProfile', '-Command', 'Start-Sleep 3; ' + '; '.join(rm)], creationflags=subprocess.CREATE_NO_WINDOW)
+    subprocess.Popen([N.winexe('powershell'), '-NoProfile', '-Command', 'Start-Sleep 3; ' + '; '.join(rm)], creationflags=subprocess.CREATE_NO_WINDOW)
     out.append('program folder' + ('' if keep_data else ' and data folder') + ': removed')
     return out

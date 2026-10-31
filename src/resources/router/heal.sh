@@ -9,7 +9,9 @@ log() { echo "$(date '+%F %T') $*" >> $L; tail -n 200 $L > $L.t && mv $L.t $L; }
 
 pgrep -f '/etc/sing-box/config[.]json' >/dev/null || exit 0     # service off on purpose: leave it alone
 [ $(( $(date +%s) - $(cat /tmp/pc-alive 2>/dev/null || echo 0) )) -lt 7200 ] && exit 0   # the PC watcher checked within 2 h: it decides
-mkdir /tmp/heal.lock 2>/dev/null || exit 0; trap 'rmdir /tmp/heal.lock' EXIT
+# a lock older than an hour was left by a run that was killed: it would stop this script and the PC's checks until a reboot
+mkdir /tmp/heal.lock 2>/dev/null || [ $(( $(date +%s) - $(cat /tmp/heal.started 2>/dev/null || echo 0) )) -ge 3600 ] || exit 0
+date +%s > /tmp/heal.started; trap 'rmdir /tmp/heal.lock' EXIT; trap 'exit 1' INT TERM
 ping -c 1 -W 3 9.9.9.9 >/dev/null 2>&1 || ping -c 1 -W 3 1.1.1.1 >/dev/null 2>&1 || exit 0   # router offline: nodes are not the problem
 
 alive() {

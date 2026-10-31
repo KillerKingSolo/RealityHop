@@ -3,6 +3,27 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.3.5 (2026-10-30)
+
+**Why update:** security fixes for the router connection and the installer, actions wait their turn, and the background
+watcher uses less memory.
+
+- Security: the router's SSH host key is now really checked. In a folder with a space in its name, such as Program
+  Files, it was never saved, so a different device at the router's address went unnoticed.
+- Security: when another PC or the router changes the router's nodes, this PC follows only nodes that pass the same
+  checks as the public node list, and takes nothing else from the router's config.
+- Security: Windows programs start by their full path, so a file with the same name in the Downloads folder cannot run
+  in their place.
+- Security: problem reports also redact website names without a port, wildcard names, short IDs and other users' folders.
+- Security: the release build uses pinned tools and actions.
+- Actions now queue. Press Update, or anything else, during a check and it runs when the check finishes.
+- Clicking away from a node clears its highlight.
+- The background watcher loads no window code and gives its memory back to Windows while idle.
+- Uninstalling with "keep my settings" now removes the program, and a later install starts normally.
+- Uninstalling with your data removed and the router tunnel switched off also takes this PC's key off the router.
+- Fixed: saving could fail while the other process read the same file, the router's self-repair could stay locked until
+  a reboot, Start could leave the boot start off on non-English Windows, and the tray icon cache could grow without limit.
+
 ## 1.3.4 (2026-10-30)
 
 **Why update:** the tray icon now matches the window.

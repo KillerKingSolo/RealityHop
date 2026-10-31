@@ -13,6 +13,7 @@ KEEP_IPS = {'0.0.0.0', '9.9.9.9', '149.112.112.112', '1.1.1.1', '8.8.8.8'}   # p
 KEEP_HOSTS = {'api.ipify.org', 'www.gstatic.com', 'ip-api.com', 'api.github.com', 'github.com', 'raw.githubusercontent.com',
               'objects.githubusercontent.com', 'release-assets.githubusercontent.com', 'cdn.jsdelivr.net',
               'fastly.jsdelivr.net'} | N.FRONTS   # what Reality Hop itself uses
+KEEP_EXT = {'json', 'py', 'pyw', 'exe', 'log', 'txt', 'sh', 'pub', 'ico', 'cmd', 'lnk', 'zip', 'tmp', 'md', 'dll', 'old', 'new'}   # file names
 LINES = 400   # per log
 
 
@@ -46,7 +47,7 @@ class Scrubber:
 
     def host(self, m):
         h = m.group(0).lower()
-        return h if h in KEEP_HOSTS or h.rsplit('.', 1)[1] in ('json', 'py', 'pyw', 'exe', 'log', 'txt', 'sh') else self.tok('host', h)
+        return m.group(0) if h in KEEP_HOSTS or h.rsplit('.', 1)[1] in KEEP_EXT else self.tok('host', h)
 
     def ipv4(self, m):
         ip = m.group(0)
@@ -64,8 +65,10 @@ class Scrubber:
         for v in sorted(self.exact, key=len, reverse=True):
             text = re.sub(r'(?<![A-Za-z0-9])' + re.escape(v) + r'(?![A-Za-z0-9])', self.exact[v].replace('\\', '\\\\'), text, flags=re.I)
         text = re.sub(r'(?m)^[+-]\d{4} (?=\d{4}-\d\d-\d\d)', '', text)   # sing-box's time zone offset tells where you are
-        text = re.sub(r'\b(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}(?=:\d{1,5}\b)', self.host, text)   # sites the tunnel connected to
+        text = re.sub(r'\b[A-Za-z]:\\Users\\[^\\\s"\']+', lambda m: m.group(0)[:9] + '<user>', text)   # any profile folder, on any drive
+        text = re.sub(r'(?i)\b(sid|short_id|token|secret|password|bearer)([=:\s]+)[^\s&"\']+', r'\1\2<secret>', text)
         text = re.sub(r'[\w.+-]+@[\w-]+\.[\w.-]+', '<email>', text)
+        text = re.sub(r'(?<![\w-])(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}(?![\w-])', self.host, text)   # sites the tunnel reached or looked up
         text = re.sub(r'\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b', '<uuid>', text)
         text = re.sub(r'\b(?:[0-9a-fA-F]{2}[:-]){5}[0-9a-fA-F]{2}\b', lambda m: self.tok('mac', m.group(0).lower()), text)
         text = re.sub(r'\b(?:[0-9a-fA-F]{4}\.){2}[0-9a-fA-F]{4}\b', lambda m: self.tok('mac', m.group(0).lower()), text)   # aabb.ccdd.eeff

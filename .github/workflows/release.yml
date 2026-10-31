@@ -12,27 +12,31 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false   # the build tools run below must not find a token that can push
 
       - name: Refuse the release while the backend is out of date
         run: python tools/check-backend.py
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.15'
 
       - name: Install build tools
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller
+          pip install -r requirements.txt
 
       - name: Version from the tag
         shell: pwsh
+        env:
+          TAG: ${{ github.ref_name }}   # through the environment: a tag name must not become part of the script
         run: |
-          $v = '${{ github.ref_name }}'.TrimStart('v')
-          if ($v -notmatch '^\d+\.\d+\.\d+') { $v = '0.0.0' }
+          $v = $env:TAG.TrimStart('v')
+          if ($v -notmatch '^\d+\.\d+\.\d+$') { $v = '0.0.0' }
           "VERSION = '$v'" | Set-Content -Encoding ascii src/version.py
 
       - name: Build
@@ -54,14 +58,14 @@ jobs:
 
       - name: Publish the release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: dist/RealityHop.exe
           body_path: dist/notes.md
 
       - name: Keep the build (manual runs)
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: RealityHop
           path: dist/RealityHop.exe
