@@ -3,6 +3,12 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.3.6 (2026-10-31)
+
+**Why update:** a tidier install folder.
+
+- Tray icons now go in their own `tray-icons` folder. The old ones in the main folder are removed automatically.
+
 ## 1.3.5 (2026-10-30)
 
 **Why update:** security fixes for the router connection and the installer, actions wait their turn, and the background

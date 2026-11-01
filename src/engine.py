@@ -60,7 +60,7 @@ def data_dir():
 def set_paths(data):
     """Point every data path at one folder (again after the setup has installed Reality Hop, or after a move)."""
     global DATA, PC_DIR, ROUTER_DIR, PC_CFG, ROUTER_CFG, REPORTS, NODES_TXT, VAULT, LOGS, CORE, ROUTER_KEY, CORE_LOG
-    global THIS_PC, SETTINGS, HISTORY, LAST, TRAY_LAST, TRAY_GUI
+    global THIS_PC, SETTINGS, HISTORY, LAST, TRAY_LAST, TRAY_GUI, TRAY_ICONS
     DATA = data                                                    # everything this PC keeps
     PC_DIR, ROUTER_DIR = os.path.join(DATA, 'PC'), os.path.join(DATA, 'Router')   # the backend files, readable by the person
     PC_CFG, ROUTER_CFG = os.path.join(PC_DIR, 'pc-config.json'), os.path.join(ROUTER_DIR, 'router-config.json')
@@ -68,6 +68,7 @@ def set_paths(data):
     NODES_TXT = os.path.join(DATA, 'nodes.txt')
     VAULT = os.path.join(DATA, 'vault.json')   # every node that ever passed a test; the rescue pool
     LOGS = os.path.join(DATA, 'logs'); CORE_LOG = os.path.join(LOGS, 'core.log')
+    TRAY_ICONS = os.path.join(DATA, 'tray-icons')   # drawn tray icons, one per ring pattern
     CORE = os.path.join(PC_DIR, 'rh-core.exe')              # the official sing-box, under its own name: runs the PC tunnel
     ROUTER_KEY = os.path.join(DATA, 'router_ed25519')       # SSH key made by the setup wizard
     THIS_PC, SETTINGS, HISTORY, LAST, TRAY_LAST, TRAY_GUI = (os.path.join(DATA, f) for f in
@@ -2183,10 +2184,10 @@ def lnk_migrate(path):
 # ---- tray icon for the watcher (Windows notification area), plain Win32 through ctypes, no extra packages
 def tray_icon_file(state, segs=()):
     """Tray icon: the center shows the overall state, the outer ring one segment per node (green working,
-    amber slow, red dead, grey not checked yet). Drawn at 256 px and scaled down; cached in the data folder."""
+    amber slow, red dead, grey not checked yet). Drawn at 256 px and scaled down; cached in TRAY_ICONS."""
     col = {'ok': (95, 211, 141), 'warn': (245, 165, 36), 'bad': (255, 77, 79)}
     segs = list(segs) or ['unk'] * 6
-    path = os.path.join(DATA, f"tray-{state}-{''.join(x[0] for x in segs)}.ico")
+    path = os.path.join(TRAY_ICONS, f"tray-{state}-{''.join(x[0] for x in segs)}.ico")
     if not os.path.exists(path):
         from PIL import Image, ImageDraw   # only for an icon not drawn before: it costs memory until the process ends
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -2198,7 +2199,8 @@ def tray_icon_file(state, segs=()):
             d.arc((14, 14, 242, 242), a, a + step - gap, fill=col.get(sg, (70, 70, 80)) + (255,), width=34)
         d.ellipse((84, 84, 172, 172), fill=col.get(state, (120, 120, 130)) + (255,))
         im.save(path, sizes=[(16, 16), (20, 20), (24, 24), (32, 32), (48, 48), (64, 64)])
-        for old in sorted(glob.glob(os.path.join(DATA, 'tray-*.ico')), key=os.path.getmtime)[:-200]:   # one file per ring pattern: thousands possible
+        for old in (glob.glob(os.path.join(DATA, 'tray-*.ico'))   # where versions up to 1.3.5 kept them
+                    + sorted(glob.glob(os.path.join(TRAY_ICONS, 'tray-*.ico')), key=os.path.getmtime)[:-200]):   # one file per ring pattern: thousands possible
             try:
                 os.remove(old)
             except OSError:
