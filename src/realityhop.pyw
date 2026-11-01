@@ -124,15 +124,18 @@ def smooth_resize(win):
         pass
 
 
-def dark_titlebar(win):
+def dark_titlebar(win, show=True):
+    """Done while the window is see-through: hiding and showing it again to repaint the bar made it flash twice."""
     try:
-        import ctypes; win.update()
+        import ctypes; win.attributes('-alpha', 0); win.update()
         hwnd = ctypes.windll.user32.GetParent(win.winfo_id())
         ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, ctypes.byref(ctypes.c_int(1)), 4)
         ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 35, ctypes.byref(ctypes.c_int(0x000e0c0c)), 4)   # caption color (Win 11)
-        win.withdraw(); win.deiconify()
+        ctypes.windll.user32.SetWindowPos(hwnd, None, 0, 0, 0, 0, 0x27)   # SWP_FRAMECHANGED, nothing else moves
     except Exception:
         pass
+    if show:
+        win.attributes('-alpha', 1)
 
 
 def ms(v, none='-'):
@@ -503,7 +506,7 @@ def md_insert(t, text, tags):
 
 class App(tk.Tk):
     def __init__(self):
-        super().__init__()
+        super().__init__(); self.attributes('-alpha', 0)   # seen only once it is fully drawn
         self.title('Reality Hop'); self.geometry('1440x1040'); self.minsize(MIN_W, MIN_H); self.configure(bg=BG)
         self.q, self.busy, self.streak, self.sel, self.cand = queue.Queue(), False, {}, None, None
         self.lists, self.pcs, self.router = {'pc': [], 'phone': []}, None, None
@@ -532,7 +535,8 @@ class App(tk.Tk):
         except Exception:
             pass
         self.icon_key = None
-        theme(self); self.build(); self.fit(); dark_titlebar(self); smooth_resize(self); self.render()
+        theme(self); self.build(); self.fit(); dark_titlebar(self, show=False); smooth_resize(self); self.render()
+        self.update_idletasks(); self.attributes('-alpha', 1)
         self.bind('<Button-1>', self.click_off, add='+')
         self.after(150, self.drain); self.after(400, lambda: self.work(self.first_check)); self.after(1500, self.auto_tick); self.after(5000, self.watchdog)
         threading.Thread(target=self.find_update, daemon=True).start(); self.after(30000, self.maybe_core_update)

@@ -3,6 +3,12 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.3.7 (2026-10-31)
+
+**Why update:** the window opens without flashing.
+
+- Fixed: the window and dialogs flashed twice when they opened. They now appear once, fully drawn.
+
 ## 1.3.6 (2026-10-31)
 
 **Why update:** a tidier install folder.
