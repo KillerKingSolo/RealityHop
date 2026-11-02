@@ -3,6 +3,16 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.4.0 (2026-11-02)
+
+**Why update:** replacing a node now always restarts the PC tunnel, and a node that just died in your tunnel is not offered again.
+
+- Fixed: when the router could not be reached, "Fix this node", "Replace all" and the Candidates buttons stopped before restarting the PC tunnel. The PC tunnel now restarts anyway, and the status says the router was not updated.
+- Fixed: a node that failed in your PC tunnel could come back as a candidate right after you replaced it. Such nodes are now skipped for 12 hours, or until they work in your tunnel again.
+- Candidates pings and tests the 40 fastest on its own when it opens. The "Test 40 fastest" button is gone; "Ping and test again" does both.
+- "Put picked in slots" now restarts the tunnel, checks the slots and closes Candidates when they work, like the other replace buttons.
+- The picked list in Candidates shows real arrows (vless-1 ← node).
+
 ## 1.3.9 (2026-11-02)
 
 **Why update:** putting one node into a slot from Candidates now takes effect right away.

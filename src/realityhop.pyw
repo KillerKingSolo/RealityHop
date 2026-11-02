@@ -191,12 +191,11 @@ TIPS = {
     'Hide': 'Hides the activity log.',
     'Show': 'Shows the activity log.',
     # candidates
-    'Ping again from this PC': 'Downloads the node list again and pings port 443 of each candidate from this PC.',
-    'Test fastest': 'Tests the fastest candidates with a separate copy of sing-box: a real handshake and download through each. '
-                    'Shows which ones work before you put them in.',
+    'Ping and test again': 'Downloads the node list again, pings port 443 of each candidate from this PC, then tests the fastest '
+                           'with a separate copy of sing-box: a real handshake and download through each. Runs on its own when this window opens.',
     'Replace all 6 with the best 6': 'Puts the 6 fastest tunnel-tested candidates into your slots (it tests first if too few passed), '
                                      'restarts the tunnel, checks every slot and closes this window.',
-    'Put picked in slots': 'Writes the candidates you picked into the slots, in the order you clicked them. Nothing restarts yet.',
+    'Put picked in slots': 'Puts the candidates you picked into the slots, in the order you clicked them, restarts the tunnel and checks them.',
     'Test PC tunnel': 'Tests the nodes in your slots through the running PC tunnel, as Check now does. Restart first after a change.',
     # settings
     'Check for updates': 'Asks GitHub for a newer Reality Hop release now.',
@@ -236,7 +235,7 @@ def tip_text(text):
     m = re.fullmatch(r'vless-(\d)', text)
     if m:
         return f'Puts the selected candidate into slot vless-{m.group(1)}, restarts the tunnel and checks it.'
-    return TIPS.get('Test fastest' if re.fullmatch(r'Test \d+ fastest', text) else text)
+    return TIPS.get(text)
 
 
 class Tip:
@@ -1179,10 +1178,13 @@ class App(tk.Tk):
         self.status_text, self.status_state = sentence + ' Nothing deployed yet. ' + PUSH_HINT, 'warn'
 
     def after_deploy(self, sentence, ask):
-        self.router = None; self.router_stale = False; self.pc_pending, self.want_restart = True, ask
+        self.router = None; self.router_stale = not N.PUSHED; self.pc_pending, self.want_restart = True, ask
         for n in self.lists['phone']:
             n['phone_ms'] = n['phone_why'] = None
         self.check_local('both')
+        if not N.PUSHED:
+            self.status_text, self.status_state = sentence + (' Router NOT updated (not reachable).' if RONLY else
+                                                              ' PC tunnel updated; router NOT updated (not reachable).'), 'warn'; return
         self.status_text, self.status_state = sentence + (' PC tunnel updated.' if N.pc_only() else ' Router updated.' if RONLY else
                                                           ' Router and PC tunnel updated.'), 'ok'
 
@@ -1456,8 +1458,7 @@ class Candidates(tk.Toplevel):
         def btn(parent, text, cmd, accent=False):
             w = ttk.Button(parent, text=text, command=cmd, style='Accent.TButton' if accent else 'TButton'); w.pack(side='left', padx=(0, 8)); self.buttons.append(w)
         bar1 = ttk.Frame(self); bar1.pack(fill='x', pady=(12, 0), **pad)
-        btn(bar1, 'Ping again from this PC', lambda: self.app.work(self.ping))
-        btn(bar1, 'Test 40 fastest', lambda: self.app.work(self.test))
+        btn(bar1, 'Ping and test again', lambda: self.app.work(self.scan))
         self.pick_lbl = ttk.Label(bar1, text='', style='Muted.TLabel'); self.pick_lbl.pack(side='right')
         bar2 = ttk.Frame(self); bar2.pack(fill='x', pady=(8, 0), **pad)
         btn(bar2, 'Replace all 6 with the best 6', self.put_best, True)
@@ -1474,10 +1475,13 @@ class Candidates(tk.Toplevel):
         self.status = strip(self, self.msg, pad)
         self.status.master.master.pack_configure(pady=(12, 18))
         self.protocol('WM_DELETE_WINDOW', self.close)
-        dark_titlebar(self); self.app.work(self.ping)
+        dark_titlebar(self); self.app.work(self.scan)
 
     def close(self):
-        self.app.jobs = [j for j in self.app.jobs if j[0] not in (self.ping, self.test, self.test_tunnel)]; self.destroy()
+        self.app.jobs = [j for j in self.app.jobs if j[0] not in (self.scan, self.test_tunnel)]; self.destroy()
+
+    def scan(self):
+        self.ping(); self.app.after(0, self.render); self.test()
 
     def slots(self):
         return len(self.app.lists[MAIN]) or 6
@@ -1490,7 +1494,7 @@ class Candidates(tk.Toplevel):
             self.tree.selection_remove(*extra); return   # fires this handler again with the trimmed selection
         for iid in self.tree.get_children():
             self.tree.set(iid, 'num', str(self.order.index(iid) + 1) if iid in self.order else '')
-        self.pick_lbl['text'] = ('  '.join(f'vless-{i + 1} <- {s}' for i, s in enumerate(self.order))
+        self.pick_lbl['text'] = ('   '.join(f'vless-{i + 1} ← {s}' for i, s in enumerate(self.order))
                                  if self.order else 'no candidates picked')
 
     def popup(self, e):
@@ -1503,10 +1507,12 @@ class Candidates(tk.Toplevel):
         used = {n['server'] for n in self.app.lists['phone']} | {n['server'] for n in self.app.lists['pc']}
         c = [n for n in N.feed() if n['server'] not in used]
         self.app.say(f'candidates: {len(c)} with plausible fronts; pinging 443 from this PC...')
-        where, failed = N.known_where(), N.known_failed()
+        where, failed, dead = N.known_where(), N.known_failed(), N.tunnel_fails()
         for n in c:
             n['where'] = where.get(n['server'], '?')
-            if n['server'] in failed:
+            if n['server'] in dead:
+                n['ok'], n['why'], n['ms'] = False, f"failed in your PC tunnel at {time.strftime('%H:%M', time.localtime(dead[n['server']]))}", None
+            elif n['server'] in failed:
                 n['ok'], n['why'], n['ms'] = False, 'failed the last scan', None
         self.nodes = sorted(N.probe(c), key=lambda n: (n.get('ok') is False, n['tcp_ms'])); self.order = []   # known-failed last
         self.msg = f'{len(self.nodes)} of {len(c)} candidates answer on 443 from this PC. None is tunnel-tested yet.'
@@ -1542,7 +1548,8 @@ class Candidates(tk.Toplevel):
             if n.get('ok') is True:
                 state, res = 'ok', f"works, {n['ms']} ms in the test, exit {n['exit']}"
             elif n.get('ok') is False:
-                state, res = 'bad', f"failed the test: {n['why']}"
+                why = n.get('why') or '?'
+                state, res = 'bad', why if why.startswith('failed') else f'failed the test: {why}'
             else:
                 state, res = 'warn', 'answers on 443; not tunnel-tested'
             self.tree.insert('', 'end', iid=n['server'], tags=(state, 'odd' if i % 2 else 'even'),
@@ -1555,15 +1562,15 @@ class Candidates(tk.Toplevel):
         self.status.configure(text=self.msg)
 
     def picks(self, pairs):
-        return '\n'.join(f"vless-{i + 1}  <-  {n['server']}  ({'tested, works' if n.get('ok') else 'NOT tunnel-tested'})" for i, n in pairs)
+        return '\n'.join(f"vless-{i + 1}  ←  {n['server']}  ({'tested, works' if n.get('ok') else 'NOT tunnel-tested'})" for i, n in pairs)
 
     def put_all(self):
         if not self.order:
             messagebox.showinfo('Candidates', 'Pick candidates first: click one, Ctrl+click more. The order gives the slot numbers.', parent=self); return
         by = {n['server']: n for n in self.nodes}
         pairs = [(i, by[s]) for i, s in enumerate(self.order)]
-        if messagebox.askyesno('Put in slots', 'Write these into the configs? Nothing is restarted until you say so.\n\n' + self.picks(pairs), parent=self):
-            self.app.work(self.do_put, pairs)
+        if messagebox.askyesno('Put in slots', 'Put these into the slots, restart the tunnel and check them?\n\n' + self.picks(pairs), parent=self):
+            self.app.work(lambda: self.finish(self.deploy(pairs)))
 
     def tested_ok(self):
         return sorted([n for n in self.nodes if n.get('ok')], key=lambda n: n['ms'])
@@ -1601,7 +1608,7 @@ class Candidates(tk.Toplevel):
     def finish(self, dead):
         if dead:
             self.msg = (f"{', '.join(f'vless-{i + 1}' for i in dead)} did not work through the PC tunnel after the restart. "
-                        'Test again and put another node there.')
+                        'Ping and test again, then put another node there.')
         else:
             self.app.after(0, self.close)
 
@@ -1611,7 +1618,7 @@ class Candidates(tk.Toplevel):
         used = {n['server'] for _, n in pairs}
         self.nodes = [x for x in self.nodes if x['server'] not in used]; self.order = []
         N.deploy_files()
-        self.app.after_deploy(' '.join(f"{tag}: {old} -> {new['server']}" + (f" ({new['ms']} ms, tested)." if new.get('ok') else ' (not tunnel-tested).')
+        self.app.after_deploy(' '.join(f"{tag}: {old} → {new['server']}" + (f" ({new['ms']} ms, tested)." if new.get('ok') else ' (not tunnel-tested).')
                                        for tag, old, new in swaps), False)
         if RONLY:
             return []
@@ -1630,14 +1637,6 @@ class Candidates(tk.Toplevel):
         n = next(x for x in self.nodes if x['server'] == self.ctx)
         if messagebox.askyesno('Put in slot', 'Put this into the slot, restart the tunnel and check it?\n\n' + self.picks([(slot, n)]), parent=self):
             self.app.work(lambda: self.finish(self.deploy([(slot, n)])))
-
-    def do_put(self, pairs):
-        swaps = N.swap_files(pairs)
-        used = {n['server'] for _, n in pairs}
-        self.nodes = [x for x in self.nodes if x['server'] not in used]; self.order = []
-        sentence = ' '.join(f"{tag}: {old} -> {new['server']}" + (f" ({new['ms']} ms, tested)." if new.get('ok') else ' (not tunnel-tested).')
-                            for tag, old, new in swaps)
-        self.app.after_files('Configs updated. ' + sentence); self.msg = self.app.status_text
 
 
 class DevicesDialog(tk.Toplevel):

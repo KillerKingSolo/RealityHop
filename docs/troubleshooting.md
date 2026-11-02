@@ -45,7 +45,7 @@ first check finishes, which takes a few seconds after the tunnel starts. If it s
 ## All nodes are dead
 
 Press **Rescue**. It tests the vault of nodes that worked before and fills up from the public list. If nothing works,
-check that the PC has internet at all. Then try **Show candidates → Test 40 fastest** later; public nodes come and go.
+check that the PC has internet at all. Then try **Show candidates** (it pings and tests the 40 fastest on its own) later; public nodes come and go.
 
 ## Router: Push to router failed
 

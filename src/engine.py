@@ -60,13 +60,14 @@ def data_dir():
 def set_paths(data):
     """Point every data path at one folder (again after the setup has installed Reality Hop, or after a move)."""
     global DATA, PC_DIR, ROUTER_DIR, PC_CFG, ROUTER_CFG, REPORTS, NODES_TXT, VAULT, LOGS, CORE, ROUTER_KEY, CORE_LOG
-    global THIS_PC, SETTINGS, HISTORY, LAST, TRAY_LAST, TRAY_GUI, TRAY_ICONS
+    global THIS_PC, SETTINGS, HISTORY, LAST, TRAY_LAST, TRAY_GUI, TRAY_ICONS, TUNNEL_FAILS
     DATA = data                                                    # everything this PC keeps
     PC_DIR, ROUTER_DIR = os.path.join(DATA, 'PC'), os.path.join(DATA, 'Router')   # the backend files, readable by the person
     PC_CFG, ROUTER_CFG = os.path.join(PC_DIR, 'pc-config.json'), os.path.join(ROUTER_DIR, 'router-config.json')
     REPORTS = os.path.join(DATA, 'anonymous-logs')   # problem reports with everything personal taken out
     NODES_TXT = os.path.join(DATA, 'nodes.txt')
     VAULT = os.path.join(DATA, 'vault.json')   # every node that ever passed a test; the rescue pool
+    TUNNEL_FAILS = os.path.join(DATA, 'tunnel-fails.json')   # nodes that just failed in the running PC tunnel
     LOGS = os.path.join(DATA, 'logs'); CORE_LOG = os.path.join(LOGS, 'core.log')
     TRAY_ICONS = os.path.join(DATA, 'tray-icons')   # drawn tray icons, one per ring pattern
     CORE = os.path.join(PC_DIR, 'rh-core.exe')              # the official sing-box, under its own name: runs the PC tunnel
@@ -961,7 +962,31 @@ def check_pc(nodes):
             n['pc_ms'], n['pc_why'] = pc_delay(n['tag'])
     with ThreadPoolExecutor(len(nodes) or 1) as ex:
         list(ex.map(one, nodes))
+    tunnel_fails_note(nodes)
     return {'now': px.get('auto', {}).get('now'), 'exit': pc_exit(), 'stale': False}
+
+
+def tunnel_fails_note(nodes):
+    """A node that fails in the running tunnel can still pass the candidate test. It stays out of the spares
+    for FAIL_HOURS, or until it works in the tunnel again."""
+    if not any(n.get('pc_ms') is not None for n in nodes):
+        return   # all dead: more likely this PC's own network than six bad nodes
+    f, now = jload(TUNNEL_FAILS), time.time()
+    for n in nodes:
+        if n.get('pc_ms') is None:
+            f[n['server']] = now
+        else:
+            f.pop(n['server'], None)
+    jsave(TUNNEL_FAILS, {s: t for s, t in f.items() if now - t < FAIL_HOURS * 3600})
+
+
+def tunnel_fails():
+    """server -> time it last failed in the PC tunnel, within FAIL_HOURS."""
+    now = time.time()
+    return {s: t for s, t in jload(TUNNEL_FAILS).items() if isinstance(t, (int, float)) and now - t < FAIL_HOURS * 3600}
+
+
+FAIL_HOURS = 12
 
 
 def pc_exit():
@@ -1492,10 +1517,18 @@ pc_apply = lambda background=False: pc_push()
 
 def deploy_files():
     """Deploy the configs: router-config.json -> router over ssh (push), pc-config.json -> the PC tunnel (pc_push).
-    Returns (router ok, router output)."""
-    out = push(); say(out)
-    pc_push()
-    return 'sing-box service: running' in out or pc_only(), out
+    Returns (router ok, router output). A router that cannot be reached does not stop the PC tunnel restart."""
+    global PUSHED
+    try:
+        out = push()
+    except Exception as e:
+        out = f'router not updated: {e}'
+    say(out); pc_push()
+    PUSHED = 'sing-box service: running' in out or pc_only()
+    return PUSHED, out
+
+
+PUSHED = True   # whether the last deploy_files reached the router
 
 
 def pending_deploy():
@@ -1553,7 +1586,7 @@ def replace(slots, top=None, vault=False):
         s = router_sync()
         if s:   # the slots now hold other nodes: what was picked no longer applies
             raise RuntimeError(s + ' Nothing replaced; check again and pick the node to fix.')
-    cur = inuse(); ex = {n['server'] for n in cur}
+    cur = inuse(); ex = {n['server'] for n in cur} | set(tunnel_fails())
     try:
         spares, tested = (vault_spares if vault else find_spares)(top, ex)
     except Exception as e:
@@ -1603,7 +1636,7 @@ def swap_files(pairs):
 
 def fastest_local(k, exclude):
     """Feed candidates not in use and not known-failed, ranked by 443 ping from this PC only. Not tunnel-tested."""
-    where, skip = known_where(), exclude | known_failed()
+    where, skip = known_where(), exclude | known_failed() | set(tunnel_fails())
     live = probe([n for n in feed() if n['server'] not in skip])[:k]
     for n in live:
         n['where'] = where.get(n['server'], '?')
