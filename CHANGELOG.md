@@ -3,6 +3,14 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.3.8 (2026-11-02)
+
+**Why update:** trackpad scrolling works, and replacing nodes from Candidates only puts in nodes that work.
+
+- Fixed: a trackpad could not scroll the window when it was too small for its content.
+- Fixed: "Replace all 6 with the best 6" in Candidates could put in untested nodes that did not work. It now uses only tested working nodes and tests first when too few passed.
+- Fixed: "Replace all 6 with the best 6" now restarts the tunnel, checks every slot, swaps a node that fails once more, and closes the window when all work.
+
 ## 1.3.7 (2026-10-31)
 
 **Why update:** the window opens without flashing.

@@ -194,7 +194,8 @@ TIPS = {
     'Ping again from this PC': 'Downloads the node list again and pings port 443 of each candidate from this PC.',
     'Test fastest': 'Tests the fastest candidates with a separate copy of sing-box: a real handshake and download through each. '
                     'Shows which ones work before you put them in.',
-    'Replace all 6 with the best 6': 'Writes the best 6 candidates into your slots, tested working ones first. Nothing restarts yet.',
+    'Replace all 6 with the best 6': 'Puts the 6 fastest tunnel-tested candidates into your slots (it tests first if too few passed), '
+                                     'restarts the tunnel, checks every slot and closes this window.',
     'Put picked in slots': 'Writes the candidates you picked into the slots, in the order you clicked them. Nothing restarts yet.',
     'Test PC tunnel': 'Tests the nodes in your slots through the running PC tunnel, as Check now does. Restart first after a change.',
     # settings
@@ -350,6 +351,10 @@ class Scroll(tk.Frame):
         self.job, self.shown = None, False
         self.inner.bind('<Configure>', self.later); self.cv.bind('<Configure>', self.later)
         self.bind_all('<MouseWheel>', self.wheel, add='+')
+        try:   # Tk 9 sends trackpad scrolls as their own event, not MouseWheel
+            self.bind_all('<TouchpadScroll>', self.pad, add='+')
+        except tk.TclError:
+            pass
 
     def later(self, e=None):
         """Lays the content out when a window drag pauses: doing it on every step is what makes resizing stutter."""
@@ -369,13 +374,19 @@ class Scroll(tk.Frame):
         if self.w:   # the bar adds to the width instead of squeezing the content
             self.configure(width=self.w + (self.bar.winfo_reqwidth() if self.bar.winfo_ismapped() else 0))
 
-    def wheel(self, e):
-        w = e.widget
+    def owns(self, w):
         if not self.bar.winfo_ismapped() or not str(w).startswith(str(self) + '.'):
-            return
-        if isinstance(w, (tk.Text, ttk.Treeview)) and w.yview() != (0.0, 1.0):
-            return   # a list or log that scrolls on its own
-        self.cv.yview_scroll(-1 if e.delta > 0 else 1, 'units')
+            return False
+        return not (isinstance(w, (tk.Text, ttk.Treeview)) and w.yview() != (0.0, 1.0))   # a list or log that scrolls on its own
+
+    def wheel(self, e):
+        if self.owns(e.widget):
+            self.cv.yview_scroll(-1 if e.delta > 0 else 1, 'units')
+
+    def pad(self, e):
+        if self.owns(e.widget):
+            dy = int(self.tk.splitlist(self.tk.call('tk::PreciseScrollDeltas', e.delta))[1])
+            self.cv.yview_moveto(self.cv.yview()[0] - dy / max(self.inner.winfo_reqheight(), 1))
 
 
 class Snake(tk.Canvas):
@@ -1554,19 +1565,54 @@ class Candidates(tk.Toplevel):
         if messagebox.askyesno('Put in slots', 'Write these into the configs? Nothing is restarted until you say so.\n\n' + self.picks(pairs), parent=self):
             self.app.work(self.do_put, pairs)
 
+    def tested_ok(self):
+        return sorted([n for n in self.nodes if n.get('ok')], key=lambda n: n['ms'])
+
     def put_best(self):
-        """The best nodes into every slot: tested working ones first (fastest tunnel), then fastest 443 ping."""
+        """Only tunnel-tested working nodes go in. Tests first when too few passed, then deploys and checks each slot."""
         k = self.slots()
-        ok = sorted([n for n in self.nodes if n.get('ok')], key=lambda n: n['ms'])
-        rest = [n for n in self.nodes if n.get('ok') is None]
-        best = (ok + rest)[:k]
-        if not best:
+        if not self.nodes:
             messagebox.showinfo('Candidates', 'No candidates yet; ping first.', parent=self); return
-        note = '' if len(ok) >= k else (f'\n\nOnly {len(ok)} of these passed the test. Run "Test {N.TOP} fastest" first '
-                                        'to fill every slot with a node that is known to work.')
-        if messagebox.askyesno('Replace all', 'Write these into the configs? Nothing is restarted until you say so.\n\n'
-                               + self.picks(list(enumerate(best))) + note, parent=self):
-            self.app.work(self.do_put, list(enumerate(best)))
+        ok = self.tested_ok()
+        first = '' if len(ok) >= k else f'It first tests the {N.TOP} fastest (about 20 seconds). '
+        where = 'restarts the PC tunnel' if N.pc_only() else 'pushes to the router' if RONLY else 'pushes to the router, restarts the PC tunnel'
+        if messagebox.askyesno('Replace all', f'Put the best {k} tested nodes into your slots? {first}Only nodes that pass the test '
+                               f'go in. Then it {where} and checks every slot.', parent=self):
+            self.app.work(self.do_best, k)
+
+    def do_best(self, k):
+        if len(self.tested_ok()) < k:
+            self.test()
+        ok = self.tested_ok()
+        if not ok:
+            self.msg = 'No candidate passed the test; nothing changed. Ping again later.'; return
+        cur = self.app.lists[MAIN]
+        def speed(i):   # dead slots first, then the slowest
+            ms = cur[i].get('pc_ms') or cur[i].get('phone_ms') if i < len(cur) else None
+            return (ms is not None, -(ms or 0))
+        slots = sorted(sorted(range(k), key=speed)[:len(ok)])
+        dead = self.deploy(list(zip(slots, ok)))
+        if dead:   # one more try with the next tested spares
+            spares = self.tested_ok()
+            if spares:
+                dead = self.deploy(list(zip(dead, spares)))
+        if dead:
+            self.msg = (f"{', '.join(f'vless-{i + 1}' for i in dead)} did not work through the PC tunnel after the restart. "
+                        'Test again and put another node there.')
+        else:
+            self.app.after(0, self.close)
+
+    def deploy(self, pairs):
+        """Writes the pairs, deploys, checks the PC tunnel. Returns the slot indexes whose new node failed there."""
+        swaps = N.swap_files(pairs)
+        used = {n['server'] for _, n in pairs}
+        self.nodes = [x for x in self.nodes if x['server'] not in used]; self.order = []
+        N.deploy_files()
+        self.app.after_deploy(' '.join(f"{tag}: {old} -> {new['server']} ({new['ms']} ms, tested)." for tag, old, new in swaps), False)
+        if RONLY:
+            return []
+        by = {n['server']: n for n in self.app.lists['pc']}
+        return [i for i, n in pairs if by.get(n['server'], {}).get('pc_ms') is None]
 
     def put_slot(self, slot):
         sel = self.tree.selection()
