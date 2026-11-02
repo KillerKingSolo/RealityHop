@@ -235,7 +235,7 @@ TIPS = {
 def tip_text(text):
     m = re.fullmatch(r'vless-(\d)', text)
     if m:
-        return f'Puts the selected candidate into slot vless-{m.group(1)}. Nothing restarts yet.'
+        return f'Puts the selected candidate into slot vless-{m.group(1)}, restarts the tunnel and checks it.'
     return TIPS.get('Test fastest' if re.fullmatch(r'Test \d+ fastest', text) else text)
 
 
@@ -1451,7 +1451,7 @@ class Candidates(tk.Toplevel):
         self.tree.bind('<<TreeviewSelect>>', self.on_select); self.tree.bind('<Button-3>', self.popup)
         self.menu = menu(self)
         for i in range(6):
-            self.menu.add_command(label=f'Put this one into vless-{i + 1}  (configs only)', command=lambda i=i: self.put_one(i))
+            self.menu.add_command(label=f'Put this one into vless-{i + 1} and restart', command=lambda i=i: self.put_one(i))
         self.buttons = []
         def btn(parent, text, cmd, accent=False):
             w = ttk.Button(parent, text=text, command=cmd, style='Accent.TButton' if accent else 'TButton'); w.pack(side='left', padx=(0, 8)); self.buttons.append(w)
@@ -1596,6 +1596,9 @@ class Candidates(tk.Toplevel):
             spares = self.tested_ok()
             if spares:
                 dead = self.deploy(list(zip(dead, spares)))
+        self.finish(dead)
+
+    def finish(self, dead):
         if dead:
             self.msg = (f"{', '.join(f'vless-{i + 1}' for i in dead)} did not work through the PC tunnel after the restart. "
                         'Test again and put another node there.')
@@ -1608,7 +1611,8 @@ class Candidates(tk.Toplevel):
         used = {n['server'] for _, n in pairs}
         self.nodes = [x for x in self.nodes if x['server'] not in used]; self.order = []
         N.deploy_files()
-        self.app.after_deploy(' '.join(f"{tag}: {old} -> {new['server']} ({new['ms']} ms, tested)." for tag, old, new in swaps), False)
+        self.app.after_deploy(' '.join(f"{tag}: {old} -> {new['server']}" + (f" ({new['ms']} ms, tested)." if new.get('ok') else ' (not tunnel-tested).')
+                                       for tag, old, new in swaps), False)
         if RONLY:
             return []
         by = {n['server']: n for n in self.app.lists['pc']}
@@ -1624,8 +1628,8 @@ class Candidates(tk.Toplevel):
         if not self.ctx:
             return
         n = next(x for x in self.nodes if x['server'] == self.ctx)
-        if messagebox.askyesno('Put in slot', 'Write this into the configs? Nothing is restarted until you say so.\n\n' + self.picks([(slot, n)]), parent=self):
-            self.app.work(self.do_put, [(slot, n)])
+        if messagebox.askyesno('Put in slot', 'Put this into the slot, restart the tunnel and check it?\n\n' + self.picks([(slot, n)]), parent=self):
+            self.app.work(lambda: self.finish(self.deploy([(slot, n)])))
 
     def do_put(self, pairs):
         swaps = N.swap_files(pairs)

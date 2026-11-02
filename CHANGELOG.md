@@ -3,6 +3,12 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.3.9 (2026-11-02)
+
+**Why update:** putting one node into a slot from Candidates now takes effect right away.
+
+- Fixed: "Put this one into vless-N" (right-click in Candidates) and the vless-1 to vless-6 buttons only wrote the configs. They now restart the tunnel, check the slot, and close the window when the node works.
+
 ## 1.3.8 (2026-11-02)
 
 **Why update:** trackpad scrolling works, and replacing nodes from Candidates only puts in nodes that work.
