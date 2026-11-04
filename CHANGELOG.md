@@ -3,6 +3,20 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.4.2 (2026-11-04)
+
+**Why update:** fixes the crash dialog some people saw while updating to 1.4.1, keeps the tray icon current after a repair, and does less that antivirus sandboxes flag.
+
+- Fixed: updating from 1.4.0 could show "Error -5 while decompressing data". The copy that switches the install to the program folder now stops the other Reality Hop processes first and starts them again from the new exe. Every update now stops them before the exe is swapped.
+- Fixed: after the watcher replaced a dead node or restarted the PC tunnel, the tray icon kept showing the old, dead nodes until the next hourly check. It now tests the nodes that run and updates the icon right away.
+- Fixed: on some PCs the install failed with "Access is denied" while it moved the new program folder into place (a virus scanner was still reading the new files). Reality Hop now waits for the scan and, if needed, moves the files one by one.
+- Fixed: the Control Panel entry repair no longer depends on the cleanup of old files succeeding.
+- Security tools see less to flag:
+  - rh-core checks certificates against sing-box's own Mozilla root list (sing-box 1.12 or newer), so Windows no longer adds root certificates on its behalf.
+  - Downloads use Mozilla's root list bundled with Reality Hop, not a PowerShell web request, on a fresh Windows.
+  - Steps that need administrator rights run as readable PowerShell text, not an encoded command.
+  - The tunnel process is checked and stopped directly, not with `tasklist` and `taskkill`. The check is also faster.
+
 ## 1.4.1 (2026-11-04)
 
 **Why update:** Reality Hop starts about 90 seconds sooner after logon, opens in a fraction of a second, and uninstalls cleanly.
