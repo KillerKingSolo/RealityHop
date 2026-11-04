@@ -39,9 +39,9 @@ if __name__ == '__main__' and '--unpack-to' in sys.argv:   # the updater runs a 
 if __name__ == '__main__' and '--watch' in sys.argv:   # RealityHop.exe --watch = the background watcher; it needs no window code
     import install
     try:
-        if install.needs_unfold() and install.unfold():   # updated from 1.4.0 or older: start again from the program folder
-            install.start_watcher(*[a for a in sys.argv[1:] if a != '--watch']); sys.exit(0)
-    except OSError as e:
+        if install.stale_onefile() and install.switch_over('watch'):   # left by the 1.4.0 updater: start again from the folder build
+            install.start_watcher(*[a for a in sys.argv[1:] if a != '--watch']); os._exit(0)
+    except Exception as e:
         N.say(f'could not switch to the program folder build: {e}; running from the one-file exe')
     N.watch(); sys.exit(0)
 import tkinter as tk
@@ -2331,18 +2331,17 @@ if __name__ == '__main__':
         pass
     if '--uninstall' in sys.argv:
         uninstall_dialog(); sys.exit(0)
-    try:
-        install.cleanup(); install.entry_fix()
-    except Exception as e:   # housekeeping: it must never keep Reality Hop from opening
-        N.say(f'cleanup: {e}')
-    if install.needs_unfold():   # updated from 1.4.0 or older: switch to the program folder build, then start from it
+    if install.stale_onefile():   # left by the 1.4.0 updater: switch to the folder build, then start again from it
         try:
-            if install.unfold():
-                if N.port_taken(N.WATCH_PORT):
-                    N.watcher_kill(); install.start_watcher()
+            if install.switch_over('window'):
                 restart_window(sys.argv[1:])
         except Exception as e:
             N.say(f'could not switch to the program folder build: {e}; running from the one-file exe')
+    for step in (install.cleanup, install.entry_fix):   # housekeeping: it must never keep Reality Hop from opening
+        try:
+            step()
+        except Exception as e:
+            N.say(f'{step.__name__}: {e}')
     if N.is_setup() and not N.this_pc().get('boot_priority_asked'):   # boot tasks made up to 1.4.0: checked once, asked once
         N.set_this_pc(boot_priority_asked=True)
         if N.boot_task_priority() not in (None, 5):

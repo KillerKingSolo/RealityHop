@@ -13,7 +13,7 @@ alone (with SYSTEM and administrators), so Reality Hop can update itself later w
 account can read the keys in it. The exe itself never runs as administrator. Installs made by 1.0.x (data in
 %LOCALAPPDATA%\\RealityHop, the program of 1.0.0 and 1.0.1 in %LOCALAPPDATA%\\Programs\\RealityHop) are moved there.
 """
-import glob, hashlib, json, os, re, shutil, subprocess, sys, time, urllib.request
+import glob, hashlib, json, os, re, shutil, subprocess, sys, time, urllib.request, zipfile   # all at start: see stale_onefile()
 import engine as N
 
 UNINSTALL_KEY = N.UNINSTALL_KEY
@@ -120,36 +120,84 @@ def unpack_app(src, d):
         except OSError:
             dst = None       # it runs: it is this very version, keep it
     if dst:
-        os.replace(os.path.join(part, app), dst)
+        move_in(os.path.join(part, app), dst)
     place(os.path.join(part, exe_name), os.path.join(d, exe_name))
     shutil.rmtree(part, ignore_errors=True)
 
 
-def needs_unfold():
-    """True for the one-file exe that the updater of 1.4.0 and older put in the install folder: it switches the
-    install to the folder build it carries."""
-    return installed_here() and not onedir() and os.path.isfile(EMBED) and \
-        not os.path.isdir(os.path.join(N.INSTALL_DIR, f'app-{N.VERSION}'))
+def move_in(src, dst, wait=30):
+    """Rename folder src to dst. A virus scanner still reading the new files makes Windows refuse a folder rename (Access
+    denied): try again for a while, then move the files one by one, each with its own retries."""
+    t = time.time()
+    while True:
+        try:
+            os.replace(src, dst); return
+        except PermissionError:
+            if time.time() - t > wait:
+                break
+            time.sleep(1)
+    N.say('the new program folder is still being scanned; moving its files one by one...')
+    for root, _, files in os.walk(src):
+        to = os.path.join(dst, os.path.relpath(root, src)); os.makedirs(to, exist_ok=True)
+        for f in files:
+            for i in range(30):
+                try:
+                    os.replace(os.path.join(root, f), os.path.join(to, f)); break
+                except PermissionError:
+                    if i == 29:
+                        raise
+                    time.sleep(1)
 
 
-def unfold():
-    """Swap the installed one-file exe for the folder build. The window and the watcher may both start at once after
-    an update: only one does it. True when this process did it and should start again from the new exe."""
+def stale_onefile():
+    """True for a one-file exe running from the install folder, as the updater of 1.4.0 and older leaves it. PyInstaller
+    reads a program's modules from its exe, by path, whenever one is first imported: such a copy must not run on once the
+    folder build has replaced the exe at that path, or it crashes ("Error -5 while decompressing data")."""
+    return installed_here() and not onedir()
+
+
+def folder_in_place():
+    """True when the install folder holds this version's folder build: its launcher exe and app-X.Y.Z."""
+    try:
+        with zipfile.ZipFile(EMBED) as z:
+            size = z.getinfo(N.APP + '.exe').file_size
+        return os.path.getsize(N.INSTALLED_EXE) == size and os.path.isdir(os.path.join(N.INSTALL_DIR, f'app-{N.VERSION}'))
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return False
+
+
+def switch_over(role):
+    """For a stale one-file copy: switch the install to the folder build it carries, or wait while another copy does it
+    (the 1.4.0 updater starts the window and the watcher at once). Every other Reality Hop process is stopped before the
+    exe is swapped, and started again from the new exe after. role: 'watch' or 'window', what this copy is. True: the
+    caller starts itself again from the new exe and exits."""
+    if not os.path.isfile(EMBED):
+        return False   # a one-file build without the folder build in it runs on as it is
     lock = os.path.join(N.INSTALL_DIR, 'unfold.lock')
     try:
         if time.time() - os.path.getmtime(lock) > 300:
             os.remove(lock)   # left by a run that died
     except OSError:
         pass
-    try:
-        fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-    except OSError:
-        return False
-    try:
-        unpack_app(EMBED, N.INSTALL_DIR); N.say(f'Reality Hop {N.VERSION} now runs from its program folder: nothing to unpack at each start')
-    finally:
-        os.close(fd); os.remove(lock)
-    return True
+    if not folder_in_place():
+        try:
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except OSError:   # another copy is switching it over (and may stop this one first)
+            t = time.time()
+            while os.path.exists(lock) and time.time() - t < 180:
+                time.sleep(0.5)
+        else:
+            try:
+                stopped = others_stop()
+                unpack_app(EMBED, N.INSTALL_DIR); N.say(f'Reality Hop {N.VERSION} now runs from its program folder: nothing to unpack at each start')
+            finally:
+                os.close(fd); os.remove(lock)
+            roles = {'watch' if '--watch' in c else 'window' for c in stopped if '--unpack-to' not in c and '--uninstall' not in c}
+            if 'watch' in roles and role != 'watch':
+                start_watcher()
+            if 'window' in roles and role != 'window':
+                N.gui_open()
+    return folder_in_place()
 
 
 def place(src, dst):
@@ -321,6 +369,7 @@ def apply_update(rel):
         os.remove(tmp)
         raise RuntimeError('the download does not match the checksum published with the release; not installed')
     dst = sys.executable
+    others_stop()   # a copy still running when its exe is replaced crashes at its next import; the caller starts them again
     if onedir():
         d = os.path.dirname(dst)
         code = unpack_from(tmp, d)
@@ -439,11 +488,12 @@ def uninstall(keep_data=False, router_too=False):
 
 def others_stop():
     """Stop every other Reality Hop process (a window left open, the watcher, a node test): a running copy keeps its
-    program folder from being removed."""
+    program folder from being removed, and crashes when its exe is replaced. Returns their command lines."""
     keep = ','.join(str(p) for p in {os.getpid(), os.getppid()})   # this copy (and its one-file starter)
-    N.run(['powershell', '-NoProfile', '-Command', "Get-CimInstance Win32_Process | Where-Object { ($_.Name -in @('RealityHop.exe', "
-           f"'rh-test.exe')) -and ($_.ProcessId -notin @({keep})) }} | ForEach-Object {{ Stop-Process -Id $_.ProcessId -Force "
-           "-ErrorAction SilentlyContinue }"], timeout=30)
+    r = N.run(['powershell', '-NoProfile', '-Command', "Get-CimInstance Win32_Process | Where-Object { ($_.Name -in @('RealityHop.exe', "
+               f"'rh-test.exe')) -and ($_.ProcessId -notin @({keep})) }} | ForEach-Object {{ Stop-Process -Id $_.ProcessId -Force "
+               "-ErrorAction SilentlyContinue; if ($_.Name -eq 'RealityHop.exe') { $_.CommandLine } }"], timeout=30)
+    return [l for l in r.stdout.splitlines() if l.strip()]
 
 
 def traces_remove():

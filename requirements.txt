@@ -1,4 +1,5 @@
 # runtime: the tray and window icons
 pillow==13.0.0
+certifi==2026.10.23   # Mozilla root list for downloads on a fresh Windows
 # build only
 pyinstaller==6.22.3

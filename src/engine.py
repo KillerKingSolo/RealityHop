@@ -424,43 +424,35 @@ def lan_ip(x):
 def gh_get(url, timeout=30):
     """A whole download from GitHub (url or Request): direct first, then through the PC tunnel, which gets past a block.
     The retry also covers a download that stalls partway, as DPI filters do. TLS stays end to end with GitHub."""
-    global _TLS
-    for first in (True, False):
-        try:
-            with urllib.request.urlopen(url, timeout=timeout, context=_TLS) as r:
-                return r.read()
-        except Exception as e:
-            if first and roots_fetch(url, e):
-                import ssl
-                _TLS = ssl.create_default_context(); continue   # Python keeps the certificates it read first: read them again
-            if router_only() or not port_open(2080):
-                raise
-            say(f'direct download failed ({e}); retrying through the tunnel'); break
+    try:
+        with urllib.request.urlopen(url, timeout=timeout, context=tls()) as r:
+            return r.read()
+    except Exception as e:
+        if router_only() or not port_open(2080):
+            raise
+        say(f'direct download failed ({e}); retrying through the tunnel')
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({'http': TUNNEL_PROXY, 'https': TUNNEL_PROXY}),
-                                         urllib.request.HTTPSHandler(context=_TLS))
+                                         urllib.request.HTTPSHandler(context=tls()))
     with opener.open(url, timeout=timeout * 3) as r:
         return r.read()
 
 
-_TLS = None   # the TLS settings for downloads: Python's default until Windows has fetched a root certificate
+_TLS = []
 
 
-def roots_fetch(url, err):
-    """A fresh Windows holds few root certificates: it fetches one the first time its own certificate check meets a site
-    that needs it, and Python only reads the store. On a certificate error, one HEAD request through Windows' own check
-    (.NET in PowerShell, redirects followed, nothing downloaded) makes Windows fetch the root, even when the site answers
-    the request with an error. True: try once more."""
-    import ssl
-    if not isinstance(getattr(err, 'reason', err), ssl.SSLCertVerificationError):
-        return False
-    u = getattr(url, 'full_url', url)
-    say(f'certificate not trusted yet for {urlparse(u).hostname}; letting Windows fetch its root certificate...')
-    try:   # the address goes in through the environment, never as part of the command
-        run([winexe('powershell'), '-NoProfile', '-Command', "try { $q = [Net.WebRequest]::Create($env:RH_URL); $q.Method = 'HEAD'; "
-             "$q.Timeout = 30000; $q.GetResponse().Close() } catch { }"], timeout=45, env=dict(os.environ, RH_URL=u))
-    except Exception:
-        pass
-    return True
+def tls():
+    """TLS settings for downloads: the Windows root store plus Mozilla's root list (certifi). A fresh Windows holds few
+    roots and only fetches one when its own check meets a site; Python only reads the store, so the bundled list covers it."""
+    if not _TLS:
+        import ssl
+        c = ssl.create_default_context()
+        try:
+            import certifi
+            c.load_verify_locations(certifi.where())
+        except (ImportError, OSError, ssl.SSLError):
+            pass
+        _TLS.append(c)
+    return _TLS[0]
 
 
 def mirrors(u):
@@ -758,6 +750,8 @@ def local_test(nodes):
                'outbounds': [outbound19(n, f'n-{i}') for i, n in enumerate(nodes)] + [{'type': 'direct', 'tag': 'direct'}],
                'route': {'rules': [{'inbound': [f'in-{i}'], 'outbound': f'n-{i}'} for i in range(len(nodes))],
                          'final': 'direct', 'auto_detect_interface': True}}
+        if store_ok():
+            cfg['certificate'] = CERT_STORE
         json.dump(cfg, open(os.path.join(d, 'c.json'), 'w'))
         p = subprocess.Popen([test_exe(), 'run', '-c', os.path.join(d, 'c.json')], stdin=subprocess.DEVNULL,
                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **NOWIN)
@@ -1230,7 +1224,7 @@ def core_stop():
     """Stop every rh-core: the boot task's copy (only the task can stop it) and our own; wait until 2080 is free."""
     if boot_task_exists():
         run(['schtasks', '/end', '/tn', BOOT_TASK], timeout=20)
-    run(['taskkill', '/F', '/IM', os.path.basename(CORE)], timeout=20)
+    kill_name(os.path.basename(CORE))
     for _ in range(20):
         if not core_running() and not port_taken(2080):
             return True
@@ -1278,7 +1272,7 @@ def port_blocker():
     """The other program on port 2080 that keeps rh-core from starting, or None. The old sb-core is stopped if it can be."""
     owner = port_owner(2080) if port_taken(2080) else None
     if owner and owner.lower() == LEGACY_CORE:
-        run(['taskkill', '/F', '/IM', LEGACY_CORE], timeout=20); time.sleep(1)
+        kill_name(LEGACY_CORE); time.sleep(1)
         owner = port_owner(2080) if port_taken(2080) else None
     return owner if owner and owner.lower() != os.path.basename(CORE).lower() else None
 
@@ -1410,10 +1404,48 @@ def hidden():
     return si
 
 
+def pids(name):
+    """Process ids of every process with this exe name (a Windows snapshot of the process list, in this process)."""
+    import ctypes
+    from ctypes import wintypes as W
+
+    class PE(ctypes.Structure):
+        _fields_ = [('dwSize', W.DWORD), ('cntUsage', W.DWORD), ('th32ProcessID', W.DWORD), ('th32DefaultHeapID', ctypes.c_size_t),
+                    ('th32ModuleID', W.DWORD), ('cntThreads', W.DWORD), ('th32ParentProcessID', W.DWORD),
+                    ('pcPriClassBase', ctypes.c_long), ('dwFlags', W.DWORD), ('szExeFile', W.WCHAR * 260)]
+    k = ctypes.windll.kernel32
+    k.CreateToolhelp32Snapshot.restype = W.HANDLE; k.CreateToolhelp32Snapshot.argtypes = [W.DWORD, W.DWORD]
+    k.Process32FirstW.argtypes = k.Process32NextW.argtypes = [W.HANDLE, ctypes.POINTER(PE)]; k.CloseHandle.argtypes = [W.HANDLE]
+    snap, out = k.CreateToolhelp32Snapshot(0x2, 0), []   # TH32CS_SNAPPROCESS
+    if snap in (None, W.HANDLE(-1).value):
+        return out
+    try:
+        e = PE(); e.dwSize = ctypes.sizeof(PE); ok = k.Process32FirstW(snap, ctypes.byref(e))
+        while ok:
+            if e.szExeFile.lower() == name.lower():
+                out.append(e.th32ProcessID)
+            ok = k.Process32NextW(snap, ctypes.byref(e))
+    finally:
+        k.CloseHandle(snap)
+    return out
+
+
+def kill_name(name):
+    """Stop every process with this exe name that this user may stop (what taskkill /F /IM did)."""
+    import ctypes
+    from ctypes import wintypes as W
+    k = ctypes.windll.kernel32
+    k.OpenProcess.restype = W.HANDLE; k.OpenProcess.argtypes = [W.DWORD, W.BOOL, W.DWORD]
+    k.TerminateProcess.argtypes = [W.HANDLE, W.UINT]; k.CloseHandle.argtypes = [W.HANDLE]
+    for pid in pids(name):
+        h = k.OpenProcess(0x1, False, pid)   # PROCESS_TERMINATE
+        if h:
+            k.TerminateProcess(h, 1); k.CloseHandle(h)
+
+
 def core_running():
     """Is rh-core alive? Asks the process list, not the port, so a busy PC right after boot is not mistaken for a dead tunnel."""
-    r = run(['tasklist', '/FI', f'IMAGENAME eq {os.path.basename(CORE)}', '/NH'], timeout=20)
-    return os.path.basename(CORE).lower() in r.stdout.lower()
+    return bool(pids(os.path.basename(CORE)))
 
 
 def core_update_due():
@@ -1471,12 +1503,31 @@ def boot_task_ps(core, cfg):
 
 
 def elevated(ps):
-    """Run a PowerShell snippet as administrator (one UAC prompt). Returns the exit code (2 = declined)."""
-    import base64
-    enc = base64.b64encode(ps.encode('utf-16-le')).decode()
-    return run(['powershell', '-NoProfile', '-Command',
-                f"try {{ $p = Start-Process {psq(winexe('powershell'))} -Verb RunAs -Wait -PassThru -WindowStyle Hidden -ErrorAction Stop "
-                f"-ArgumentList '-NoProfile','-EncodedCommand','{enc}'; exit $p.ExitCode }} catch {{ exit 2 }}"], timeout=300).returncode
+    """Run a PowerShell snippet as administrator (one UAC prompt). Returns the exit code (2 = declined).
+    The snippet goes in as plain text, readable in the process list."""
+    import ctypes
+    from ctypes import wintypes as W
+
+    class SEI(ctypes.Structure):
+        _fields_ = [('cbSize', W.DWORD), ('fMask', W.ULONG), ('hwnd', W.HWND), ('lpVerb', W.LPCWSTR), ('lpFile', W.LPCWSTR),
+                    ('lpParameters', W.LPCWSTR), ('lpDirectory', W.LPCWSTR), ('nShow', ctypes.c_int), ('hInstApp', W.HINSTANCE),
+                    ('lpIDList', ctypes.c_void_p), ('lpClass', W.LPCWSTR), ('hkeyClass', W.HKEY), ('dwHotKey', W.DWORD),
+                    ('hIcon', W.HANDLE), ('hProcess', W.HANDLE)]
+    s32, k32 = ctypes.WinDLL('shell32', use_last_error=True), ctypes.windll.kernel32
+    s32.ShellExecuteExW.argtypes = [ctypes.POINTER(SEI)]
+    k32.WaitForSingleObject.argtypes = [W.HANDLE, W.DWORD]; k32.CloseHandle.argtypes = [W.HANDLE]
+    k32.GetExitCodeProcess.argtypes = [W.HANDLE, ctypes.POINTER(W.DWORD)]
+    e = SEI(); e.cbSize = ctypes.sizeof(SEI); e.fMask = 0x40 | 0x400   # SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC
+    e.lpVerb, e.lpFile, e.nShow = 'runas', winexe('powershell'), 0
+    e.lpParameters = subprocess.list2cmdline(['-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-Command', ps])
+    if not s32.ShellExecuteExW(ctypes.byref(e)) or not e.hProcess:
+        return 2   # UAC declined (or no admin account)
+    try:
+        k32.WaitForSingleObject(e.hProcess, 300_000); code = W.DWORD()
+        k32.GetExitCodeProcess(e.hProcess, ctypes.byref(code))
+        return code.value
+    finally:
+        k32.CloseHandle(e.hProcess)
 
 
 def stopped():
@@ -1817,9 +1868,7 @@ def watch_cycle(st, background=True):
         say('the PC tunnel cannot test the current set and the router is unreachable; nothing to judge'); return None
     res = test(); dead = [t for t, ms in res.items() if ms is None]
     say(f"{side} check: {len(res) - len(dead)} of {len(res)} nodes working" + (f"; dead: {', '.join(dead)}" if dead else ''))
-    st['last'] = ('bad' if len(dead) == len(res) else 'warn' if dead else 'ok', f'{len(res) - len(dead)} of {len(res)} nodes working',
-                  time.strftime('%H:%M'))
-    st['segs'] = ['bad' if ms is None else 'warn' if ms > SLOW else 'ok' for ms in res.values()]
+    tray_mark(st, res)
     if dead:
         say('re-checking in 30 s so one dropped probe does not cost a node...'); time.sleep(30)
         res = test(); dead = [t for t, ms in res.items() if ms is None]
@@ -1832,9 +1881,7 @@ def watch_cycle(st, background=True):
             for n in again:
                 if n['ok']:
                     res[n['tag']] = n['ms']
-    st['last'] = ('bad' if len(dead) == len(res) else 'warn' if dead else 'ok', f'{len(res) - len(dead)} of {len(res)} nodes working',
-                  time.strftime('%H:%M'))
-    st['segs'] = ['bad' if t in dead else 'warn' if (ms or 0) > SLOW else 'ok' for t, ms in res.items()]
+    tray_mark(st, res, dead)
     hist_add(pings={n['server']: (None if n['tag'] in dead else res.get(n['tag'])) for n in cur})
     out = None
     if dead and len(dead) == len(res):
@@ -1851,6 +1898,30 @@ def watch_cycle(st, background=True):
         if v:
             router_test(v); say(f"vault refresh: {sum(n['ok'] for n in v)} of {len(v)} still work")
     return out
+
+
+def tray_mark(st, res, dead=None):
+    """The tray state from test results {tag: ms or None}."""
+    dead = [t for t, ms in res.items() if ms is None] if dead is None else dead
+    st['last'] = ('bad' if len(dead) == len(res) else 'warn' if dead else 'ok', f'{len(res) - len(dead)} of {len(res)} nodes working',
+                  time.strftime('%H:%M'))
+    st['segs'] = ['bad' if t in dead else 'warn' if (ms or 0) > SLOW else 'ok' for t, ms in res.items()]
+
+
+def tray_recheck(st):
+    """After the tunnel restarts or nodes change: test what runs now, so the tray does not keep showing the old set."""
+    try:
+        cur = inuse()
+        if not cur or stopped():
+            return
+        if not router_only() and wait_api(30):
+            r = check_pc(cur)
+            if r is not None and not r.get('stale'):
+                tray_mark(st, {n['tag']: n['pc_ms'] for n in cur}); say(f"after the change: {st['last'][1]}"); return
+        if router_up():
+            check_phone(cur); tray_mark(st, {n['tag']: n['phone_ms'] for n in cur}); say(f"after the change: {st['last'][1]}")
+    except Exception as e:
+        say(f'tray re-check failed: {e}')
 
 
 def gui_open():
@@ -2013,20 +2084,28 @@ def watch():
                 want.discard('restart'); say('restart requested from the tray')
                 ok = core_restart(); hist_add(event=('restart', 'PC tunnel restarted from the tray'))
                 notify('PC tunnel restarted.' if ok else 'PC tunnel did not come back; open Reality Hop.')
+                tray_recheck(st)
             elif 'rescue' in want:
                 want.discard('rescue'); out = rescue(); say(out); notify(out); hist_add(event=('rescue', out)); last_full = now
+                tray_recheck(st)
             elif 'check' in want:
-                want.discard('check'); last_full = now; watch_cycle(st)
+                want.discard('check'); last_full = now
+                if watch_cycle(st):
+                    tray_recheck(st)   # the old state still shows the nodes that were just replaced
             elif pia_bad and now - pia['bad_since'] >= 60 and now - last_fix > 300 and now >= hold:
                 say(f'PIA still "{pia["state"]}" after a minute; checking the nodes now')
                 last_fix = last_full = now
-                if not watch_cycle(st) and core_mode():
+                if watch_cycle(st):
+                    tray_recheck(st)
+                elif core_mode():
                     say('every node checks fine; restarting the PC tunnel'); core_restart()
-                    hist_add(event=('restart', 'PC tunnel restarted because PIA could not reconnect'))
+                    hist_add(event=('restart', 'PC tunnel restarted because PIA could not reconnect')); tray_recheck(st)
             elif port_taken(GUI_PORT):
                 last_full = now   # the window does the checks while it is open
             elif now - last_full > FULL_EVERY:
-                last_full = now; watch_cycle(st)
+                last_full = now
+                if watch_cycle(st):
+                    tray_recheck(st)
             elif core_mode():
                 core_ensure()
             core_log_trim()
@@ -2074,20 +2153,43 @@ API_ORIGIN = ['http://127.0.0.1:9090']   # web pages allowed to call the PC tunn
 
 
 def api_lockdown():
-    """Configs made before 1.1.0 let a script on any web page reach the control API (it still needed the secret).
-    Allow no web page at all. rh-core checks the change first; it applies from the next tunnel restart."""
+    """Two config fixes, each checked by rh-core first; they apply from the next tunnel restart.
+    Configs made before 1.1.0 let a script on any web page reach the control API (it still needed the secret): allow no
+    web page at all. Up to 1.4.1 rh-core checked certificates against the Windows root store, which makes Windows add
+    root certificates on a fresh PC (antivirus sandboxes flag that): use sing-box's built-in Mozilla list instead."""
     try:
         c = json.load(open(PC_CFG)); api = c['experimental']['clash_api']
-        if api.get('access_control_allow_origin') == API_ORIGIN or not os.path.exists(CORE):
+        if not os.path.exists(CORE):
             return
-        api.update(access_control_allow_origin=API_ORIGIN, access_control_allow_private_network=False)
+        fix = []
+        if api.get('access_control_allow_origin') != API_ORIGIN:
+            api.update(access_control_allow_origin=API_ORIGIN, access_control_allow_private_network=False); fix.append('control API: closed to web pages')
+        if store_ok() and c.get('certificate') != CERT_STORE:
+            c['certificate'] = CERT_STORE; fix.append("rh-core: checks certificates against its own Mozilla root list")
+        if not fix:
+            return
         tmp = PC_CFG + '.check.json'; jsave(tmp, c, indent=2)
         if run([CORE, 'check', '-c', tmp], timeout=30, cwd=os.path.dirname(CORE)).returncode == 0:
-            os.replace(tmp, PC_CFG); say('control API: closed to web pages (from the next tunnel restart)')
+            os.replace(tmp, PC_CFG); say('; '.join(fix) + ' (from the next tunnel restart)')
         else:
             os.remove(tmp)
     except (OSError, ValueError, KeyError, RuntimeError):
         pass
+
+
+CERT_STORE = {'store': 'mozilla'}   # sing-box 1.12.0+: its own copy of Mozilla's root list, the Windows store is not touched
+_STORE = {}
+
+
+def store_ok():
+    """True when rh-core is sing-box 1.12.0 or newer (it knows the certificate store setting). Cached per rh-core file."""
+    try:
+        k = (os.path.getmtime(CORE), os.path.getsize(CORE))
+    except OSError:
+        return False
+    if k not in _STORE:
+        _STORE.clear(); _STORE[k] = vkey(core_version()) >= (1, 12, 0)
+    return _STORE[k]
 
 
 PC_README = '''Reality Hop: PC tunnel files
@@ -2148,6 +2250,7 @@ def setup_pc():
         res.append(f"nodes: the {len(best)} fastest working ones are in use (best {best[0]['ms']} ms)")
     else:
         res.append(f'nodes: {len(nodes_of(PC_CFG))} already in use, kept')
+    api_lockdown()   # rh-core's check needs nodes in the config, so the empty template could not take it in prepare()
     owner = None if router_only() else port_blocker()
     if router_only():
         res.append('PC tunnel: off (router-only mode: the router tunnels your devices)')
