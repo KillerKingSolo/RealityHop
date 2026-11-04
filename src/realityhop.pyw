@@ -28,7 +28,21 @@ from concurrent.futures import ThreadPoolExecutor
 import colorsys, hashlib, json, os, queue, re, socket, subprocess, sys, threading, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); sys.dont_write_bytecode = True   # no __pycache__ clutter
 import engine as N
+if __name__ == '__main__' and '--unpack-to' in sys.argv:   # the updater runs a new download this way: its program folder goes there
+    import install
+    try:
+        install.unpack_app(install.EMBED, sys.argv[sys.argv.index('--unpack-to') + 1]); sys.exit(0)
+    except PermissionError:
+        sys.exit(5)
+    except Exception:
+        sys.exit(1)
 if __name__ == '__main__' and '--watch' in sys.argv:   # RealityHop.exe --watch = the background watcher; it needs no window code
+    import install
+    try:
+        if install.needs_unfold() and install.unfold():   # updated from 1.4.0 or older: start again from the program folder
+            install.start_watcher(*[a for a in sys.argv[1:] if a != '--watch']); sys.exit(0)
+    except OSError as e:
+        N.say(f'could not switch to the program folder build: {e}; running from the one-file exe')
     N.watch(); sys.exit(0)
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
@@ -585,14 +599,14 @@ class App(tk.Tk):
 
     def apply_update(self, rel):
         install.apply_update(rel); N.watcher_kill()
-        if os.path.exists(N.STARTUP_LNK):
+        if N.startup_on():
             install.start_watcher()
         self.lock.close(); restart_window()
 
     def build(self):
         self.buttons = []
         self.auto_on, self.auto_min, self.auto_fix = tk.BooleanVar(value=True), tk.IntVar(value=60), tk.BooleanVar(value=True)
-        self.bg_on = tk.BooleanVar(value=os.path.exists(N.STARTUP_LNK))
+        self.bg_on = tk.BooleanVar(value=N.startup_on())
 
         # sidebar: every action, grouped
         self.side_sc = Scroll(self, SIDE, width=262); self.side_sc.pack(side='left', fill='y'); side = self.side = self.side_sc.inner
@@ -1827,6 +1841,17 @@ class ReportDialog(tk.Toplevel):
         self.clipboard_clear(); self.clipboard_append(self.text)
 
 
+def hidden_root():
+    """A hidden window for the dialogs shown before any window exists, with Reality Hop's icon instead of Tk's feather."""
+    root = tk.Tk(); root.withdraw()
+    try:
+        import ctypes; ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('RealityHop.App')
+        root.iconbitmap(default=os.path.join(N.RES, 'app.ico'))
+    except Exception:
+        pass
+    return root
+
+
 def restart_window(args=()):
     """Close this window and open Reality Hop again (with args, e.g. --setup for the wizard)."""
     cmd = ([N.exe()] if N.FROZEN else [N.pythonw(), os.path.abspath(__file__)]) + list(args)
@@ -2273,7 +2298,7 @@ class Wizard(tk.Tk):
 
 
 def uninstall_dialog():
-    root = tk.Tk(); root.withdraw()
+    root = hidden_root()
     if not messagebox.askyesno('Uninstall Reality Hop', 'Remove Reality Hop from this PC?\n\nThe tunnel, the background watcher, the boot '
                                'start (one UAC prompt), the shortcuts and the program are removed.'):
         return
@@ -2306,11 +2331,31 @@ if __name__ == '__main__':
         pass
     if '--uninstall' in sys.argv:
         uninstall_dialog(); sys.exit(0)
-    install.cleanup()
+    try:
+        install.cleanup(); install.entry_fix()
+    except Exception as e:   # housekeeping: it must never keep Reality Hop from opening
+        N.say(f'cleanup: {e}')
+    if install.needs_unfold():   # updated from 1.4.0 or older: switch to the program folder build, then start from it
+        try:
+            if install.unfold():
+                if N.port_taken(N.WATCH_PORT):
+                    N.watcher_kill(); install.start_watcher()
+                restart_window(sys.argv[1:])
+        except Exception as e:
+            N.say(f'could not switch to the program folder build: {e}; running from the one-file exe')
+    if N.is_setup() and not N.this_pc().get('boot_priority_asked'):   # boot tasks made up to 1.4.0: checked once, asked once
+        N.set_this_pc(boot_priority_asked=True)
+        if N.boot_task_priority() not in (None, 5):
+            root = hidden_root()
+            if messagebox.askyesno(N.NAME, 'The PC tunnel starts at boot with below-normal CPU priority, so it waits behind '
+                                   'other programs when the PC is busy. Give it normal priority? One admin prompt; it '
+                                   'applies from the next tunnel restart.'):
+                N.boot_task_priority_fix()
+            root.destroy()
     if N.is_setup() and (install.running_legacy() or (install.needs_install() and
                                                        (os.path.exists(N.INSTALLED_EXE) or os.path.exists(install.LEGACY_EXE)))):
         # set up already: this copy came from Downloads, or it is an old per-user install. Install it to Program Files.
-        root = tk.Tk(); root.withdraw()
+        root = hidden_root()
         q = (f'Reality Hop now installs to {N.INSTALL_DIR}. Move it there now? (one admin prompt)' if install.running_legacy() else
              f"Reality Hop {install.installed_version() or ''} is installed. Replace it with this copy ({N.VERSION}) and open it?")
         if messagebox.askyesno('Reality Hop', q + '\n\nYour settings, nodes and the running tunnel are kept.'):
@@ -2324,7 +2369,7 @@ if __name__ == '__main__':
             sys.exit(0)
         root.destroy()   # keep running from the old place this time; asked again next start
     if N.is_setup() and install.needs_move():   # installed by 1.0.x: the data is still in %LOCALAPPDATA%
-        root = tk.Tk(); root.withdraw()
+        root = hidden_root()
         if messagebox.askyesno(N.NAME, f'Reality Hop now keeps everything in its program folder:\n{N.INSTALL_DIR}\n\nMove your '
                                f'settings, nodes, logs and the tunnel engine there from {N.OLD_DATA} now? The tunnel stops '
                                'for a few seconds. One admin prompt: the folder becomes yours alone, and the boot start '

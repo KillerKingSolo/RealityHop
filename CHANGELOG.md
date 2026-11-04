@@ -3,6 +3,21 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.4.1 (2026-11-04)
+
+**Why update:** Reality Hop starts about 90 seconds sooner after logon, opens in a fraction of a second, and uninstalls cleanly.
+
+- Faster logon start: the background watcher now starts from a Task Scheduler task a few seconds after logon, not from the Startup folder (about 90 s later on a busy PC). It runs as you, not elevated. The first node check still waits 90 s, so a network that is not up yet does not count as dead nodes.
+- Faster launch: Reality Hop now runs from its program folder (`RealityHop.exe` plus `app-<version>`), so nothing is unpacked to `%TEMP%` at each start. A window opens in about 0.3 s instead of 1 s or more, and the first start after an update no longer waits about 13 s for the antivirus scan of the unpacked files.
+- Fixed: a long-running watcher could lose its unpacked files to a temp cleaner, and router updates then failed with "No such file or directory".
+- Updates still come as one `RealityHop.exe`. Reality Hop checks its SHA-256, then the new exe puts its program folder next to the running one. The first start after this update switches your install over by itself.
+- The PC tunnel now runs at normal priority, not below normal. Existing installs are asked once (one UAC prompt).
+- Fixed: uninstalling with Reality Hop's window open left the program folder behind. Uninstall now stops every Reality Hop process first, and also removes what Windows keeps about the app (tray icon entry, Start menu tile cache, name cache, usage count).
+- Fixed: an install made by 1.0.x kept a Control Panel entry that pointed at a folder that is gone, so "Uninstall a program" failed. The entry is repaired the first time the window opens.
+- Fixed: on a freshly installed Windows the setup could fail with "CERTIFICATE_VERIFY_FAILED". Reality Hop now lets Windows fetch the missing root certificate and tries again.
+- The uninstall dialogs show the Reality Hop icon, not the Tk feather.
+- Docs: Control Panel > Programs > Uninstall a program is listed as a way to uninstall.
+
 ## 1.4.0 (2026-11-02)
 
 **Why update:** replacing a node now always restarts the PC tunnel, and a node that just died in your tunnel is not offered again.

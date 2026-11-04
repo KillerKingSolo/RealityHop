@@ -32,6 +32,10 @@ REPO = 'KillerKingSolo/RealityHop'   # GitHub owner/repo: app updates come from 
 FROZEN = getattr(sys, 'frozen', False)   # running as RealityHop.exe (PyInstaller)
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.join(getattr(sys, '_MEIPASS', HERE), 'resources')   # config templates and router scripts (inside the exe)
+try:   # an open file keeps the program folder this copy runs from (app-X.Y.Z) from being renamed or removed under it
+    _PIN = open(os.path.join(sys._MEIPASS, 'base_library.zip'), 'rb') if FROZEN else None
+except (AttributeError, OSError):
+    _PIN = None
 _LOCAL = os.environ.get('LOCALAPPDATA') or os.path.expanduser('~')
 OLD_DATA = os.path.join(_LOCAL, APP)        # the data folder of 1.0.x (and when run from source); moved on request
 LEGACY_DIR = os.path.join(_LOCAL, 'Programs', APP)               # where 1.0.0 and 1.0.1 installed; moved on update
@@ -82,6 +86,7 @@ HEAL_SH = os.path.join(RES, 'router', 'heal.sh')       # router self-repair, ins
 NFT_SH = os.path.join(RES, 'router', 'nft-devices.sh')  # router firewall rule that diverts the chosen devices
 WATCH_PORT, GUI_PORT = 47291, 47292                    # loopback ports used only as "is it running" locks
 STARTUP_LNK = os.path.join(os.environ.get('APPDATA', ''), r'Microsoft\Windows\Start Menu\Programs\Startup', NAME + '.lnk')
+LOGON_TASK = 'RealityHop watcher'   # Task Scheduler starts the watcher at logon; the Startup shortcut is the fallback
 API = 'http://127.0.0.1:9090'
 TEST_URL = 'https://www.gstatic.com/generate_204'
 FEEDS = ('https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt',)   # github.com/rtwo2/FastNodes
@@ -419,16 +424,43 @@ def lan_ip(x):
 def gh_get(url, timeout=30):
     """A whole download from GitHub (url or Request): direct first, then through the PC tunnel, which gets past a block.
     The retry also covers a download that stalls partway, as DPI filters do. TLS stays end to end with GitHub."""
-    try:
-        with urllib.request.urlopen(url, timeout=timeout) as r:
-            return r.read()
-    except Exception as e:
-        if router_only() or not port_open(2080):
-            raise
-        say(f'direct download failed ({e}); retrying through the tunnel')
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({'http': TUNNEL_PROXY, 'https': TUNNEL_PROXY}))
+    global _TLS
+    for first in (True, False):
+        try:
+            with urllib.request.urlopen(url, timeout=timeout, context=_TLS) as r:
+                return r.read()
+        except Exception as e:
+            if first and roots_fetch(url, e):
+                import ssl
+                _TLS = ssl.create_default_context(); continue   # Python keeps the certificates it read first: read them again
+            if router_only() or not port_open(2080):
+                raise
+            say(f'direct download failed ({e}); retrying through the tunnel'); break
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({'http': TUNNEL_PROXY, 'https': TUNNEL_PROXY}),
+                                         urllib.request.HTTPSHandler(context=_TLS))
     with opener.open(url, timeout=timeout * 3) as r:
         return r.read()
+
+
+_TLS = None   # the TLS settings for downloads: Python's default until Windows has fetched a root certificate
+
+
+def roots_fetch(url, err):
+    """A fresh Windows holds few root certificates: it fetches one the first time its own certificate check meets a site
+    that needs it, and Python only reads the store. On a certificate error, one HEAD request through Windows' own check
+    (.NET in PowerShell, redirects followed, nothing downloaded) makes Windows fetch the root, even when the site answers
+    the request with an error. True: try once more."""
+    import ssl
+    if not isinstance(getattr(err, 'reason', err), ssl.SSLCertVerificationError):
+        return False
+    u = getattr(url, 'full_url', url)
+    say(f'certificate not trusted yet for {urlparse(u).hostname}; letting Windows fetch its root certificate...')
+    try:   # the address goes in through the environment, never as part of the command
+        run([winexe('powershell'), '-NoProfile', '-Command', "try { $q = [Net.WebRequest]::Create($env:RH_URL); $q.Method = 'HEAD'; "
+             "$q.Timeout = 30000; $q.GetResponse().Close() } catch { }"], timeout=45, env=dict(os.environ, RH_URL=u))
+    except Exception:
+        pass
+    return True
 
 
 def mirrors(u):
@@ -1425,14 +1457,14 @@ def boot_task(on):
 
 def boot_task_ps(core, cfg):
     """PowerShell (needs admin) that creates the boot task, or points it at a new rh-core; a task switched off by Stop
-    stays off."""
+    stays off. Normal priority: the Task Scheduler default (7) runs the tunnel below normal, behind every other program."""
     user = f"{os.environ.get('USERDOMAIN', '')}\\{os.environ.get('USERNAME', '')}".lstrip('\\')
     exe_, args, wd = psq(core), psq(f'run -c "{cfg}"'), psq(os.path.dirname(core))
     return (f"$was = (Get-ScheduledTask -TaskName '{BOOT_TASK}' -ErrorAction SilentlyContinue).State; "
             f"$a = New-ScheduledTaskAction -Execute {exe_} -Argument {args} -WorkingDirectory {wd}; "
             "$t = New-ScheduledTaskTrigger -AtStartup; "
             f"$p = New-ScheduledTaskPrincipal -UserId {psq(user)} -LogonType S4U -RunLevel Limited; "
-            "$s = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 5 "
+            "$s = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -Priority 5 -RestartCount 5 "
             "-RestartInterval (New-TimeSpan -Minutes 1) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable; "
             f"Register-ScheduledTask -TaskName '{BOOT_TASK}' -Action $a -Trigger $t -Principal $p -Settings $s -Force | Out-Null; "
             f"if ($was -eq 'Disabled') {{ Disable-ScheduledTask -TaskName '{BOOT_TASK}' | Out-Null }}")
@@ -1459,6 +1491,23 @@ def set_stopped(on):
 def task_state():
     r = run(['schtasks', '/query', '/tn', BOOT_TASK, '/xml'], timeout=15)   # the XML is the same in every Windows language
     return None if r.returncode else 'Disabled' if '<Enabled>false</Enabled>' in r.stdout else 'Ready'   # None: no task
+
+
+def boot_task_priority():
+    """The boot task's priority (7, below normal, when the task does not set one), or None when there is no task."""
+    r = run(['schtasks', '/query', '/tn', BOOT_TASK, '/xml'], timeout=15)
+    m = re.search(r'<Priority>(\d+)</Priority>', r.stdout or '')
+    return None if r.returncode else int(m.group(1)) if m else 7
+
+
+def boot_task_priority_fix():
+    """Boot tasks made up to 1.4.0 run rh-core below normal priority. One UAC prompt sets it to normal; it applies from
+    the next tunnel restart. True when it is set."""
+    say('giving the PC tunnel normal priority at boot; answer the UAC prompt...')
+    elevated(boot_task_ps(CORE, PC_CFG))
+    ok = boot_task_priority() == 5
+    say('PC tunnel: normal priority from the next restart' if ok else 'PC tunnel priority not changed (UAC declined)')
+    return ok
 
 
 def manager_stop():
@@ -1846,6 +1895,9 @@ def memory_trim():
         pass
 
 
+LOGON_HOLD = 90   # s after a logon start: the first node check comes no earlier than it did with the Startup shortcut
+
+
 def watch():
     """The background watcher (--watch, started at logon) with its tray icon. Pauses its checks while the
     window is open. Node check every hour (settings). PIA's state feed wakes it the moment PIA drops: still not
@@ -1872,7 +1924,10 @@ def watch():
     say('router-only mode: no tunnel on this PC' if router_only() else 'rh-core started at logon' if started else 'rh-core already running')
     settings_load()
     say(f'watcher started: node check every {FULL_EVERY // 60} min, PIA state feed {"on" if os.path.exists(PIACTL) else "not available (PIA not installed)"}, {"core" if core_mode() else "NO rh-core"} mode')
-    st, last_full, last_fix = {}, 0, 0   # first node check as soon as the tunnel answers
+    if os.path.exists(STARTUP_LNK) and 'logon_task' not in this_pc():
+        startup(True)   # up to 1.4.0 the Startup folder started the watcher; move it to Task Scheduler once
+    hold = started_at + (LOGON_HOLD if '--logon' in sys.argv else 0)   # no node is judged before the network is up
+    st, last_full, last_fix = {}, hold - FULL_EVERY, 0   # first node check at `hold`, as soon as the tunnel answers
     last_app = time.time() - 24 * 3600 + 900   # app update check 15 min after logon, then daily
     try:   # the last known state at once, so the tray icon is not grey while the first check runs
         t = json.load(open(TRAY_LAST)); st['last'], st['segs'] = tuple(t['last']), t.get('segs') or ()
@@ -1962,7 +2017,7 @@ def watch():
                 want.discard('rescue'); out = rescue(); say(out); notify(out); hist_add(event=('rescue', out)); last_full = now
             elif 'check' in want:
                 want.discard('check'); last_full = now; watch_cycle(st)
-            elif pia_bad and now - pia['bad_since'] >= 60 and now - last_fix > 300:
+            elif pia_bad and now - pia['bad_since'] >= 60 and now - last_fix > 300 and now >= hold:
                 say(f'PIA still "{pia["state"]}" after a minute; checking the nodes now')
                 last_fix = last_full = now
                 if not watch_cycle(st) and core_mode():
@@ -2184,24 +2239,55 @@ def watcher_kill():
 
 
 def startup(on):
-    """Start the watcher at logon (a shortcut in the Startup folder, no admin needed); also starts or stops it now.
-    It runs on the newest installed Python (or RealityHop.exe when frozen)."""
+    """Start the watcher at logon (no admin needed); also starts or stops it now. Task Scheduler starts it a few
+    seconds after logon; a Startup-folder shortcut waits for Explorer (about 90 s on a busy PC), so it is only the
+    fallback. It runs on the newest installed Python (or RealityHop.exe when frozen)."""
     cmd = self_cmd('--watch')
     if on:
         os.makedirs(DATA, exist_ok=True); lnk_migrate(STARTUP_LNK)
-        args = ' '.join(f'"{a}"' if ' ' in a else a for a in cmd[1:])
-        ps = (f"$s = (New-Object -ComObject WScript.Shell).CreateShortcut({psq(STARTUP_LNK)}); $s.TargetPath = {psq(cmd[0])}; "
-              f"$s.Arguments = {psq(args)}; $s.WorkingDirectory = {psq(DATA)}; $s.Save()")
-        run(['powershell', '-NoProfile', '-Command', ps], timeout=30)
+        task = logon_task(cmd + ['--logon']); set_this_pc(logon_task=task)
+        if task:
+            if os.path.exists(STARTUP_LNK):
+                os.remove(STARTUP_LNK)   # one start at logon, not two
+        else:
+            args = ' '.join(f'"{a}"' if ' ' in a else a for a in cmd[1:])
+            ps = (f"$s = (New-Object -ComObject WScript.Shell).CreateShortcut({psq(STARTUP_LNK)}); $s.TargetPath = {psq(cmd[0])}; "
+                  f"$s.Arguments = {psq(args)}; $s.WorkingDirectory = {psq(DATA)}; $s.Save()")
+            run(['powershell', '-NoProfile', '-Command', ps], timeout=30)
         if not port_taken(WATCH_PORT):
             subprocess.Popen(cmd, cwd=DATA, env=own_env(), creationflags=subprocess.DETACHED_PROCESS)
-        say('background watcher: on, starts at every logon')
+        say('background watcher: on, starts at every logon' + ('' if task else ' (Startup folder: Task Scheduler refused the logon task)'))
     else:
         lnk_migrate(STARTUP_LNK)
         if os.path.exists(STARTUP_LNK):
             os.remove(STARTUP_LNK)
-        watcher_kill()
+        if this_pc().get('logon_task'):
+            run(['schtasks', '/delete', '/tn', LOGON_TASK, '/f'], timeout=20)
+        set_this_pc(logon_task=False); watcher_kill()
         say('background watcher: off')
+
+
+def startup_on():
+    """True when the watcher starts at logon."""
+    return bool(this_pc().get('logon_task')) or os.path.exists(STARTUP_LNK)
+
+
+def logon_task(cmd):
+    """Register the logon task as this user, not elevated (no UAC prompt). Normal priority: the Task Scheduler default
+    is below normal, and the window and rh-core the watcher starts would inherit it. True when it is in place."""
+    user = f"{os.environ.get('USERDOMAIN', '')}\\{os.environ.get('USERNAME', '')}".lstrip('\\')
+    args = ' '.join(f'"{a}"' if ' ' in a else a for a in cmd[1:])
+    ps = (f"try {{ $a = New-ScheduledTaskAction -Execute {psq(cmd[0])} -Argument {psq(args)} -WorkingDirectory {psq(DATA)}; "
+          f"$t = New-ScheduledTaskTrigger -AtLogOn -User {psq(user)}; "
+          f"$p = New-ScheduledTaskPrincipal -UserId {psq(user)} -LogonType Interactive -RunLevel Limited; "
+          "$s = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -Priority 5 -MultipleInstances IgnoreNew "
+          "-AllowStartIfOnBatteries -DontStopIfGoingOnBatteries; "
+          f"Register-ScheduledTask -TaskName {psq(LOGON_TASK)} -Action $a -Trigger $t -Principal $p -Settings $s -Force "
+          "-ErrorAction Stop | Out-Null; exit 0 } catch { exit 1 }")
+    try:
+        return run(['powershell', '-NoProfile', '-Command', ps], timeout=60).returncode == 0
+    except Exception:
+        return False
 
 
 def lnk_migrate(path):
@@ -2285,6 +2371,7 @@ class Tray:
         u32.AppendMenuW.argtypes = [W.HMENU, W.UINT, ctypes.c_size_t, W.LPCWSTR]
         u32.TrackPopupMenu.argtypes = [W.HMENU, W.UINT, ctypes.c_int, ctypes.c_int, ctypes.c_int, W.HWND, W.LPVOID]
         u32.DestroyMenu.argtypes = [W.HMENU]
+        u32.SetTimer.argtypes = [W.HWND, ctypes.c_size_t, W.UINT, ctypes.c_void_p]; u32.KillTimer.argtypes = [W.HWND, ctypes.c_size_t]
 
         class WNDCLASSW(ctypes.Structure):
             _fields_ = [('style', W.UINT), ('lpfnWndProc', WNDPROC), ('cbClsExtra', ctypes.c_int), ('cbWndExtra', ctypes.c_int),
@@ -2324,8 +2411,12 @@ class Tray:
                 elif lp == 0x205:    # WM_RBUTTONUP
                     menu()
                 return 0
-            if msg == created:       # Explorer restarted: put the icon back
+            if msg == created:       # Explorer (re)started: put the icon back
                 s32.Shell_NotifyIconW(0, ctypes.byref(self.nid)); return 0
+            if msg == 0x113 and wp == 1:   # WM_TIMER: the taskbar was not up yet at logon; try again until it is
+                if s32.Shell_NotifyIconW(0, ctypes.byref(self.nid)) or s32.Shell_NotifyIconW(1, ctypes.byref(self.nid)):
+                    u32.KillTimer(hwnd, 1)
+                return 0
             if msg == 0x8002:        # our own "refresh" message
                 old, self.nid.hIcon = self.nid.hIcon, icon(self.state, self.segs); self.nid.szTip = self.tip[:127]
                 s32.Shell_NotifyIconW(1, ctypes.byref(self.nid)); u32.DestroyIcon(W.HICON(old)); return 0
@@ -2335,7 +2426,8 @@ class Tray:
         u32.RegisterClassW(ctypes.byref(wc))
         self.hwnd = u32.CreateWindowExW(0, 'RealityHopTray', 'Reality Hop', 0, 0, 0, 0, 0, None, None, wc.hInstance, None)
         self.nid.hWnd = self.hwnd; self.nid.hIcon = icon(self.state, self.segs); self.nid.szTip = self.tip
-        s32.Shell_NotifyIconW(0, ctypes.byref(self.nid))   # NIM_ADD
+        if not s32.Shell_NotifyIconW(0, ctypes.byref(self.nid)):   # NIM_ADD fails while Explorer starts
+            u32.SetTimer(self.hwnd, 1, 2000, None)
         self._remove = lambda: s32.Shell_NotifyIconW(2, ctypes.byref(self.nid))
         msg = W.MSG()
         while u32.GetMessageW(ctypes.byref(msg), None, 0, 0) > 0:

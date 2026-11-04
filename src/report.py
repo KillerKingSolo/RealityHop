@@ -106,7 +106,7 @@ def summary():
             ('Settings', f"check every {s['check_min']} min, slow above {s['slow_ms']} ms, switch margin {s['tolerance_ms']} ms, "
              f"{s['top']} candidates per scan, auto-update {'on' if s['auto_update'] else 'off'}"),
             ('State', f"{'stopped' if t.get('stopped') else 'running'}, setup {'done' if t.get('setup_done') else 'not finished'}, "
-             f"boot start {N.task_state() or 'off'}, background at logon {'on' if os.path.exists(N.STARTUP_LNK) else 'off'}"),
+             f"boot start {N.task_state() or 'off'}, background at logon {'on' if N.startup_on() else 'off'}"),
             ('Router features', ('on' if s['router'] else 'off') + (', router only (no PC tunnel)' if N.router_only() else '')
              + ((', every device on the main network' if N.all_devices() else f', {len(N.devices())} device(s) chosen') if s['router'] else ''))]
     if s['router']:

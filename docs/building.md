@@ -17,7 +17,10 @@ pip install -r requirements.txt
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
-The result is `dist\RealityHop.exe`, one file with the templates and router scripts from `src/resources` inside.
+The result is `dist\RealityHop.exe`, the one file that is released. It carries the program as a folder:
+`RealityHop.exe` plus `app-<version>` (Python, Tk and the templates and router scripts from `src/resources`). The setup
+installs that folder, and Reality Hop runs from it. It starts in about 0.2 s because nothing is unpacked; a one-file
+exe unpacks about 20 MB to `%TEMP%` at every start (1 s or more, 13 s on the first start while antivirus scans it).
 
 ## Release
 
@@ -38,7 +41,10 @@ Releases are built by GitHub Actions ([`.github/workflows/release.yml`](../.gith
    SHA-256 checksum of the exe.
 
 Installed copies find the new release within a day (the watcher checks daily, and the window checks when it opens).
-They check the download against the release's SHA-256 before they swap it in.
+They download `RealityHop.exe` and check it against the release's SHA-256, then run it with `--unpack-to`. It puts the
+new `app-<version>` folder next to the running one, then the new `RealityHop.exe` replaces the old one. The old folder
+is removed at a later start, once nothing runs from it. Copies up to 1.4.0 swap in the downloaded exe instead; at its
+first start it installs the folder it carries and starts again from it.
 
 The update source is the `REPO` constant in `src/engine.py`. If you fork the project, point it at your fork.
 

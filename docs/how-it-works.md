@@ -37,10 +37,12 @@ row leaves it. **Rescue** tests the vault, and that works even when the node lis
 
 ## The background watcher
 
-`RealityHop.exe --watch` starts at logon from a Startup-folder shortcut and shows the tray icon.
+`RealityHop.exe --watch` starts at logon and shows the tray icon. A Task Scheduler task ("RealityHop watcher", this
+user, not elevated, normal priority) starts it a few seconds after logon. A Startup-folder shortcut waits for Explorer,
+about 90 seconds on a busy PC, so it is only used when Windows refuses the task.
 
-- At logon it starts the tunnel first, so the VPN app finds the proxy. It shows the last known state at once, then
-  checks as soon as the tunnel answers.
+- At logon it starts the tunnel first, so the VPN app finds the proxy. It shows the last known state at once. The
+  first node check waits 90 seconds after a logon start, so a network that is not up yet does not count as dead nodes.
 - Every 60 minutes (Settings) it tests each node through the running tunnel. A dead node is re-checked after 30
   seconds, then given a second opinion from a fresh test instance. Only then is it replaced with the best tested
   spare. If every node is dead, it runs Rescue.
@@ -62,11 +64,11 @@ It runs as your user in "do not store password" mode. Creating or removing the t
 
 Everything is in one folder: `C:\Program Files\RealityHop` unless you picked another one in the setup. The
 setup gives that folder to your Windows user alone (plus SYSTEM and administrators), because it holds the
-router key, the node keys and the API secret. Updates replace the exe there without a UAC prompt.
+router key, the node keys and the API secret. Updates replace the program there without a UAC prompt.
 
 | In the install folder | What |
 |---|---|
-| `RealityHop.exe` | the program |
+| `RealityHop.exe`, `app-<version>\` | the program: it starts from this folder, nothing is unpacked at each start |
 | `PC\pc-config.json` | PC tunnel config (its API secret is random per install) |
 | `PC\rh-core.exe` | sing-box (official release, stable or test builds) |
 | `Router\router-config.json` | router tunnel config |

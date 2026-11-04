@@ -120,7 +120,8 @@ OpenVPN config file, use `proto tcp`, the server's port `443`, and add `socks-pr
 | Files&nbsp;(optional) | **Open backend folder** (`PC`, `Router`, `logs`, `anonymous-logs`) and **Open logs folder**. |
 | **Settings** | Check interval, slow threshold, switching margin, router features on/off, sing-box stable or test builds, show backend files, updates, run setup again, uninstall. |
 
-**Uninstall:** use Settings → Uninstall, or Windows Settings → Apps → Reality Hop.
+**Uninstall:** Control Panel → Programs → Uninstall a program → Reality Hop. Windows Settings → Apps → Installed apps
+→ Reality Hop and Reality Hop's own Settings → Uninstall do the same.
 
 ## Where the nodes come from
 

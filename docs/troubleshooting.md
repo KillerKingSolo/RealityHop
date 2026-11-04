@@ -38,8 +38,8 @@ config, the current build is kept, and the log says why.
 
 ## The tray icon is grey
 
-Grey means the state is not known yet. At logon the icon first shows the last known state, then updates as soon as the
-first check finishes, which takes a few seconds after the tunnel starts. If it stays grey, open the window and press
+Grey means the state is not known yet. At logon the icon first shows the last known state, then updates when the
+first check finishes, about 90 seconds after logon. If it stays grey, open the window and press
 **Check now**.
 
 ## All nodes are dead
@@ -72,4 +72,10 @@ slider next to the device), then update the device list (Router → Devices).
 
 ## Remove everything
 
-Settings → **Uninstall**, or Windows Settings → Apps → Reality Hop. Then turn your VPN app's proxy off.
+Any of these runs the same uninstall:
+
+- In Reality Hop: Settings → **Uninstall**.
+- Control Panel → Programs → **Uninstall a program** → Reality Hop → Uninstall.
+- Windows Settings → Apps → Installed apps → Reality Hop → Uninstall.
+
+Then turn your VPN app's proxy off.
