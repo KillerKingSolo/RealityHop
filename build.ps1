@@ -3,7 +3,7 @@
 # starts without unpacking anything. The setup and the updater (RealityHop.exe --unpack-to) put the folder in place.
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
-# Version resource: Task Manager, the startup apps list and the file's Properties show "Reality Hop" and the version
+# Version resource: Task Manager, the startup apps list and the file's Properties show "Reality Hop tunnel manager" and the version
 $v = (Get-Content src\version.py -Raw) -replace "(?s).*VERSION = '([^']+)'.*", '$1'
 $n = ((@([regex]::Matches($v, '\d+') | ForEach-Object { $_.Value }) + @('0', '0', '0', '0'))[0..3]) -join ', '
 New-Item -ItemType Directory -Force build | Out-Null
@@ -11,7 +11,8 @@ New-Item -ItemType Directory -Force build | Out-Null
 VSVersionInfo(
   ffi=FixedFileInfo(filevers=($n), prodvers=($n)),
   kids=[StringFileInfo([StringTable('040904B0', [
-    StringStruct('FileDescription', 'Reality Hop'), StringStruct('ProductName', 'Reality Hop'),
+    StringStruct('FileDescription', 'Reality Hop tunnel manager'), StringStruct('ProductName', 'Reality Hop'),
+    StringStruct('Comments', 'Keeps a sing-box VLESS Reality tunnel working on this PC and a GL.iNet router: tests nodes, swaps dead ones, runs in the tray.'),
     StringStruct('FileVersion', '$v'), StringStruct('ProductVersion', '$v'),
     StringStruct('OriginalFilename', 'RealityHop.exe'), StringStruct('InternalName', 'RealityHop'),
     StringStruct('LegalCopyright', '(c) 2026 KillerKingSolo, CC BY-NC-ND 4.0, github.com/KillerKingSolo/RealityHop')])]),

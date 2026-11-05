@@ -3,6 +3,15 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.4.3 (2026-11-05)
+
+**Why update:** the window and the tray icon now always show the same node state.
+
+- Fixed: with the window open, its taskbar icon kept an old result after the watcher re-tested the nodes or restarted the tunnel, so it could show red while the tray showed green. The window now re-checks as soon as the tray shows something different.
+- Fixed: when the nodes had changed since the window was last closed, the window opened with the old nodes' results. It now starts on "checking" instead.
+- Changed: the buttons under Settings (Check for updates, Run setup again, Change router, Uninstall) have an outline that turns red on hover.
+- Changed: the exe's file properties now include a description.
+
 ## 1.4.2 (2026-11-04)
 
 **Why update:** fixes the crash dialog some people saw while updating to 1.4.1, keeps the tray icon current after a repair, and does less that antivirus sandboxes flag.

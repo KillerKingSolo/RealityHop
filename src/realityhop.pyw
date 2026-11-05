@@ -107,6 +107,10 @@ def theme(root):
     s.map('SideAccent.TButton', background=[('disabled', SIDE), ('pressed', '#2a1517'), ('active', '#22141a')], foreground=[('disabled', DIM)])
     s.configure('Ghost.TButton', background=CARD, foreground=FG, padding=(12, 6), bordercolor=LINE, lightcolor=CARD, darkcolor=CARD)
     s.map('Ghost.TButton', background=[('disabled', CARD), ('active', '#202026')], foreground=[('disabled', DIM)])
+    s.configure('Outline.TButton', background=CARD, foreground=FG, padding=(12, 6), borderwidth=1, relief='solid',
+                bordercolor='#4a4a55', lightcolor=CARD, darkcolor=CARD)
+    s.map('Outline.TButton', background=[('disabled', CARD), ('active', '#202026')], foreground=[('disabled', DIM)],
+          bordercolor=[('active', ACC)], lightcolor=[('active', '#202026')], darkcolor=[('active', '#202026')])
     s.configure('Treeview', background=CARD, fieldbackground=CARD, foreground=FG, rowheight=30, relief='flat', font=(UI, 10))
     s.configure('Treeview.Heading', background=CARD, foreground=DIM, relief='flat', font=(UIB, 8), padding=(8, 8))
     s.map('Treeview.Heading', background=[('active', CARD)])
@@ -548,12 +552,15 @@ class App(tk.Tk):
             self.lists, self.pcs = last['lists'], last['pcs']
             self.router = tuple(last['router']) if last.get('router') else None
             self.lists = {k: self.lists.get(k, []) for k in ('pc', 'phone')}
+            for k, f in (('pc', N.PC_CFG), ('phone', N.ROUTER_CFG)):   # nodes changed since: the saved results are not theirs
+                if self.lists[k] and [n['server'] for n in self.lists[k]] != [n['server'] for n in N.nodes_of(f)]:
+                    raise ValueError('stale')
             if RONLY:   # saved before a switch to router only: no PC tunnel state any more
                 self.pcs, self.lists['pc'] = None, []
             self.judge()   # the last known state at once, so the icon is not grey while the first check runs
             self.status_text = f"Last check {last['at']}: {self.status_text} Checking again now..."
         except Exception:
-            pass
+            self.lists, self.pcs, self.router = {'pc': [], 'phone': []}, None, None
         try:
             import ctypes; ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('RealityHop.App')   # own taskbar icon
         except Exception:
@@ -563,6 +570,7 @@ class App(tk.Tk):
         self.update_idletasks(); self.attributes('-alpha', 1)
         self.bind('<Button-1>', self.click_off, add='+')
         self.after(150, self.drain); self.after(400, lambda: self.work(self.first_check)); self.after(1500, self.auto_tick); self.after(5000, self.watchdog)
+        self.tray_seen = None; self.after(5000, self.follow_tray)
         threading.Thread(target=self.find_update, daemon=True).start(); self.after(30000, self.maybe_core_update)
 
     def maybe_core_update(self):
@@ -821,6 +829,20 @@ class App(tk.Tk):
     def cancel(self):
         if self.busy:
             self.say('cancelling the current action...'); self.drop_jobs(); N.cancel()
+
+    def follow_tray(self):
+        """The tray follows the window; the window follows the tray too. When the watcher shows something else (it restarted
+        the tunnel or swapped nodes), check again at once."""
+        try:
+            at = os.path.getmtime(N.TRAY_LAST)
+            if at != self.tray_seen and not self.busy:
+                first = self.tray_seen is None; self.tray_seen = at; t = json.load(open(N.TRAY_LAST))
+                if not first and self.icon_key and (t['last'][0], tuple(t.get('segs') or ())) != self.icon_key:
+                    self.icon_key = None   # so the result goes to the tray even when the icon stays the same
+                    self.work(self.check_local, 'both')
+        except (OSError, ValueError, KeyError, TypeError, IndexError):
+            pass
+        self.after(5000, self.follow_tray)
 
     def watchdog(self):
         """Nothing may keep the buttons greyed out: after 6 minutes the action is cancelled and the window freed."""
@@ -1369,7 +1391,7 @@ class SettingsDialog(tk.Toplevel):
         row2 = tk.Frame(c2, bg=CARD); row2.pack(fill='x', padx=16, pady=(4, 14))
         for text, cmd in (('Check for updates', self.check_updates), ('Run setup again', lambda: (self.destroy(), app.rerun_setup())),
                           *((('Change router', self.change_router),) if ROUTER else ()), ('Uninstall', self.uninstall)):
-            ttk.Button(row2, text=text, style='Ghost.TButton', command=cmd).pack(side='left', padx=(0, 8))
+            ttk.Button(row2, text=text, style='Outline.TButton', command=cmd).pack(side='left', padx=(0, 8))
         row = tk.Frame(self, bg=BG); row.pack(fill='x', padx=22, pady=16)
         ttk.Button(row, text='Save', style='Accent.TButton', command=self.save).pack(side='right')
         ttk.Button(row, text='Defaults', command=lambda: [v.set(N.DEFAULTS[k]) for k, v in self.vars.items()]).pack(side='right', padx=8)
