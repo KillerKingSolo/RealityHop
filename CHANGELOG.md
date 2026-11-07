@@ -3,6 +3,12 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.4.4 (2026-11-06)
+
+**Why update:** the log now shows when an action has finished.
+
+- Changed: each window action ends with a log line, "done (N s)" or "cancelled", so a finished check no longer looks stuck.
+
 ## 1.4.3 (2026-11-05)
 
 **Why update:** the window and the tray icon now always show the same node state.

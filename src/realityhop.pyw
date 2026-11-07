@@ -816,6 +816,8 @@ class App(tk.Tk):
         def go():
             try:
                 fn(*args)
+                if run == self.run:   # the log shows where an action ends
+                    self.say('cancelled' if N.CANCEL.is_set() else f'done ({time.time() - self.started:.0f} s)')
             except Exception as e:
                 self.say(f'error: {e}'); self.status_text, self.status_state = f'Something failed: {e}', 'bad'
             finally:
