@@ -408,14 +408,14 @@ class Scroll(tk.Frame):
 
 class Snake(tk.Canvas):
     """The Update button: an RGB snake around it and a shine passing over it. It only draws while it can be seen."""
-    M, STEP, LAP, LEN = 3, 2, 2.8, 0.55   # ring width, px per segment, seconds per lap, share of the ring it covers
+    M, STEP, LAP, LEN = 3, 4, 2.8, 0.55   # ring width, px per segment, seconds per lap, share of the ring it covers
     SWEEP, EVERY, BAND, SLANT = 0.9, 3.2, 20, 12   # shine: seconds to cross, seconds between starts, half width, lean in px
     BASE, LIT, WHITE = (0xa8, 0x24, 0x28), (0xbd, 0x2c, 0x30), (255, 255, 255)
 
     def __init__(self, parent, bg, text, command):
         super().__init__(parent, bg=bg, highlightthickness=0, bd=0, cursor='hand2')
         self.bg_rgb = tuple(v // 256 for v in self.winfo_rgb(bg)); self.text, self.base, self.on = text, self.BASE, False
-        self.segs, self.cols, self.last, self.last_col = [], [], [], []
+        self.segs, self.cols, self.last, self.last_col, self.shine = [], [], [], [], False
         self.hues = [tuple(int(v * 255) for v in colorsys.hsv_to_rgb(i / 256, 1, 1)) for i in range(256)]
         self.bind('<Enter>', lambda e: (self.hover(self.LIT), Tip.enter(self, 'Update')))
         self.bind('<Leave>', lambda e: (self.hover(self.BASE), Tip.leave(e)))
@@ -423,7 +423,7 @@ class Snake(tk.Canvas):
         self.build()
 
     def hover(self, rgb):
-        self.base = rgb; self.last_col = [None] * len(self.cols)
+        self.base = rgb; self.last_col = [0] * len(self.cols); self.shine = True; self.itemconfigure(self.face, fill='#%02x%02x%02x' % rgb)
 
     def set_text(self, text):
         self.text = text; self.build()
@@ -432,12 +432,16 @@ class Snake(tk.Canvas):
         import tkinter.font as tkf
         M, s = self.M, self.STEP; w, h = tkf.Font(font=(UIB, 10)).measure(self.text) + 30 + 2 * M, 33 + 2 * M; m = M // 2; r, b = w - 1 - m, h - 1 - m
         self.configure(width=w, height=h); self.delete('all'); pts = []; self.w = w
-        self.cols = [(x + self.SLANT / 2, self.create_line(x + self.SLANT, M, x, h - M, width=2, fill='#%02x%02x%02x' % self.base))
+        # Tk draws every item on the canvas again at each frame, so the parts that are not lit are hidden: the face is one
+        # rectangle with the shine's columns over it, the ring one outline with the snake's segments over it
+        self.face = self.create_rectangle(0, 0, w, h, fill='#%02x%02x%02x' % self.base, outline='')
+        self.cols = [(x + self.SLANT / 2, self.create_line(x + self.SLANT, M, x, h - M, width=2, state='hidden'))
                      for x in range(M - self.SLANT, w - M)]
+        self.create_rectangle(m, m, r, b, outline=self['bg'], width=M)
         for (x0, y0), (x1, y1) in (((m, m), (r, m)), ((r, m), (r, b)), ((r, b), (m, b)), ((m, b), (m, m))):
             n = max(abs(x1 - x0), abs(y1 - y0)) // s
             pts += [(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n) for i in range(n)]
-        self.segs = [self.create_line(*a, *pts[(i + 1) % len(pts)], width=M, capstyle='projecting', fill=self['bg']) for i, a in enumerate(pts)]
+        self.segs = [self.create_line(*a, *pts[(i + 1) % len(pts)], width=M, capstyle='projecting', state='hidden') for i, a in enumerate(pts)]
         self.create_text(w / 2, h / 2, text=self.text, fill='#ffffff', font=(UIB, 10))
         self.last, self.last_col = [None] * len(self.segs), [None] * len(self.cols)
 
@@ -459,14 +463,15 @@ class Snake(tk.Canvas):
                 a = (1 - d / body) ** 0.7; rgb = self.hues[int((i / n + now * 0.12) * 256) % 256]
                 col = '#%02x%02x%02x' % tuple(int(b + (c - b) * a) for c, b in zip(rgb, br))
             if col != self.last[i]:
-                self.last[i] = col; self.itemconfigure(seg, fill=col or self['bg'])
+                self.last[i] = col; self.itemconfigure(seg, **({'fill': col, 'state': 'normal'} if col else {'state': 'hidden'}))
         p = now % self.EVERY / self.SWEEP; c = -self.BAND + (self.w + 2 * self.BAND) * p; base = self.base
-        for i, (x, item) in enumerate(self.cols):
+        for i, (x, item) in enumerate(self.cols if p < 1 or self.shine else ()):   # nothing to do between two shines
             d = abs(x - c) / self.BAND
             a = 0.38 * (1 - d * d) ** 2 if p < 1 and d < 1 else 0
-            col = '#%02x%02x%02x' % tuple(int(b + (v - b) * a) for v, b in zip(self.WHITE, base))
+            col = '#%02x%02x%02x' % tuple(int(b + (v - b) * a) for v, b in zip(self.WHITE, base)) if a else None
             if col != self.last_col[i]:
-                self.last_col[i] = col; self.itemconfigure(item, fill=col)
+                self.last_col[i] = col; self.itemconfigure(item, **({'fill': col, 'state': 'normal'} if col else {'state': 'hidden'}))
+        self.shine = p < 1
         self.after(16, self.tick)
 
 def card(parent, **pack):
@@ -541,6 +546,7 @@ class App(tk.Tk):
         self.pc_pending, self.want_restart, self.pending, self.router_stale = False, False, None, False
         self.status_text, self.status_state = 'Reading the configs and testing from this PC...', 'unk'
         self.update_rel = self.upd_win = self.cur = None; self.jobs, self.run, self.upd_wait = [], 0, False
+        self.ready = threading.Event()   # set once the main loop runs
         N.say = self.say; self.flog = N.file_log('window'); self.wstate, self.started = {}, 0
         self.lock = socket.socket()
         try:
@@ -572,6 +578,13 @@ class App(tk.Tk):
         self.after(150, self.drain); self.after(400, lambda: self.work(self.first_check)); self.after(1500, self.auto_tick); self.after(5000, self.watchdog)
         self.tray_seen = None; self.after(5000, self.follow_tray)
         threading.Thread(target=self.find_update, daemon=True).start(); self.after(30000, self.maybe_core_update)
+        self.after(0, self.ready.set)   # last: nothing runs it before the main loop does
+
+    def ui(self, fn, *args):
+        """For the threads started while the window is built: run fn in the window's thread. self.after() from a thread
+        fails when the main loop does not run within a second (a slow start): the boot switch then stayed off and the
+        sing-box version blank. So this waits for the main loop first."""
+        self.ready.wait(); self.after(0, fn, *args)
 
     def maybe_core_update(self):
         """sing-box keeps itself current on its own channel, also when Reality Hop has no new release: daily (the watcher
@@ -598,8 +611,8 @@ class App(tk.Tk):
             return   # no internet or GitHub down: the watcher tries again tomorrow
         if rel:
             self.update_rel = rel
-            self.after(0, lambda: (self.update_box.set_text(f"Update to {rel['ver']}"), self.update_box.pack(side='right', padx=(0, 5)), self.update_box.start()))
-            self.after(1500, self.do_update)   # tell at launch, not only with the button
+            self.ui(lambda: (self.update_box.set_text(f"Update to {rel['ver']}"), self.update_box.pack(side='right', padx=(0, 5)), self.update_box.start(),
+                             self.after(1500, self.do_update)))   # tell at launch, not only with the button
 
     def do_update(self):
         if self.update_rel and not (self.upd_win and self.upd_win.winfo_exists()):
@@ -675,7 +688,7 @@ class App(tk.Tk):
         self.boot_on = tk.BooleanVar(value=False)
         if not RONLY:
             Toggle(foot, 'Start tunnel at boot', self.boot_on, lambda: self.work(self.set_boot, self.boot_on.get())).pack(anchor='w', pady=(10, 0))
-        threading.Thread(target=lambda: self.after(0, self.boot_on.set, N.boot_task_exists()), daemon=True).start()
+        threading.Thread(target=lambda: self.ui(self.boot_on.set, N.boot_task_exists()), daemon=True).start()
         self.next_lbl = ttk.Label(foot, text='', style='SideMuted.TLabel'); self.next_lbl.pack(anchor='w', pady=(10, 0))
         ttk.Button(foot, text='Settings', style='Ghost.TButton', command=self.settings).pack(anchor='w', pady=(12, 0))
         self.auto_min.set(N.settings_load()['check_min'])
@@ -777,7 +790,7 @@ class App(tk.Tk):
         """Under the name: the sing-box build on this PC and whether it is a stable release or a test build."""
         ver = N.core_version(); m = re.search(r'alpha|beta|rc', ver or '')
         text = f"sing-box {ver} · {'test build' if m else 'stable'}" if ver else 'sing-box: not installed'   # fits the sidebar
-        self.after(0, lambda: self.core_lbl.configure(text=text))
+        self.ui(lambda: self.core_lbl.configure(text=text))
 
     def toggle_log(self):
         self.log_shown = not self.log_shown
@@ -917,18 +930,22 @@ class App(tk.Tk):
             self.say(f'{label}: {len(nodes)} nodes in {rel}; testing 443 from this PC...'); N.tcp_probe(nodes)
             self.lists[key] = nodes
         if which in ('pc', 'both') and not RONLY:
-            self.say('PC: asking the PC tunnel...'); self.pcs = N.pc_status()
-            if self.pcs['api']:
-                r = N.check_pc(self.lists['pc'])
-                if r and r['stale']:
-                    self.pc_pending = True
-                    self.say('PC: the tunnel still runs the previous node set; restart it to test the new one')
-                elif r:
-                    self.pc_pending = False
-                    N.hist_add(pings={n['server']: n['pc_ms'] for n in self.lists['pc']})
-            else:
-                for n in self.lists['pc']:
-                    n['pc_ms'] = n['pc_why'] = None
+            self.say('PC: asking the PC tunnel...'); self.pcs = N.pc_status(exit_ip=False)
+            with ThreadPoolExecutor(1) as ex:   # the exit address is looked up while the nodes are tested, and once, not twice
+                ext = ex.submit(N.pc_exit) if self.pcs['listening'] else None
+                if self.pcs['api']:
+                    r = N.check_pc(self.lists['pc'])
+                    if r and r['stale']:
+                        self.pc_pending = True
+                        self.say('PC: the tunnel still runs the previous node set; restart it to test the new one')
+                    elif r:
+                        self.pc_pending = False
+                        N.hist_add(pings={n['server']: n['pc_ms'] for n in self.lists['pc']})
+                else:
+                    for n in self.lists['pc']:
+                        n['pc_ms'] = n['pc_why'] = None
+                if ext:
+                    self.pcs['exit'] = ext.result()
         self.pending = N.pending_deploy()
         for key in ('pc', 'phone'):
             if which in (key, 'both'):
@@ -1391,7 +1408,9 @@ class SettingsDialog(tk.Toplevel):
                           ('Tunnel engine: github.com/SagerNet/sing-box', 'https://github.com/SagerNet/sing-box')):
             link(c2, text, url).pack(anchor='w', padx=16)
         row2 = tk.Frame(c2, bg=CARD); row2.pack(fill='x', padx=16, pady=(4, 14))
-        for text, cmd in (('Check for updates', self.check_updates), ('Run setup again', lambda: (self.destroy(), app.rerun_setup())),
+        self.upd_btn = ttk.Button(row2, text='Check for updates', style='Outline.TButton', command=self.check_updates)
+        self.upd_btn.pack(side='left', padx=(0, 8))
+        for text, cmd in (('Run setup again', lambda: (self.destroy(), app.rerun_setup())),
                           *((('Change router', self.change_router),) if ROUTER else ()), ('Uninstall', self.uninstall)):
             ttk.Button(row2, text=text, style='Outline.TButton', command=cmd).pack(side='left', padx=(0, 8))
         row = tk.Frame(self, bg=BG); row.pack(fill='x', padx=22, pady=16)
@@ -1406,15 +1425,26 @@ class SettingsDialog(tk.Toplevel):
             N.router_forget(); restart_window(['--setup', '--router'])
 
     def check_updates(self):
-        try:
-            rel = install.check_update() if N.FROZEN else None
-        except Exception as e:
-            messagebox.showerror('Updates', f'Could not reach GitHub: {e}', parent=self); return
-        if rel:
-            self.app.update_rel = rel; self.destroy(); self.app.do_update()
-        else:
-            messagebox.showinfo('Updates', f'Reality Hop {N.VERSION} is the newest version.' if N.FROZEN else
-                                'Running from source: update with git pull.', parent=self)
+        """Asks GitHub on a thread: on a network that blocks GitHub the answer takes up to a minute, and the window froze."""
+        def ask():
+            try:
+                res = install.check_update() if N.FROZEN else None
+            except Exception as e:
+                res = e
+            self.app.after(0, done, res)
+
+        def done(res):
+            if not self.winfo_exists():
+                return
+            self.upd_btn.state(['!disabled'])
+            if isinstance(res, Exception):
+                messagebox.showerror('Updates', f'Could not reach GitHub: {res}', parent=self)
+            elif res:
+                self.app.update_rel = res; self.destroy(); self.app.do_update()
+            else:
+                messagebox.showinfo('Updates', f'Reality Hop {N.VERSION} is the newest version.' if N.FROZEN else
+                                    'Running from source: update with git pull.', parent=self)
+        self.upd_btn.state(['disabled']); threading.Thread(target=ask, daemon=True).start()
 
     def uninstall(self):
         if not messagebox.askyesno('Uninstall Reality Hop', 'Remove Reality Hop from this PC?\n\nThe tunnel, the background watcher, the '

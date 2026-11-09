@@ -3,6 +3,22 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.5.0 (2026-11-09)
+
+**Why update:** it closes a command injection in the setup, keeps website names out of problem reports, and makes tunnel restarts and checks faster.
+
+- Security: a folder or user name with a typographic apostrophe (’) ended a quoted PowerShell command. The install then failed with "the UAC prompt was declined", and a crafted folder name could run its own command with admin rights. Every quote character is now escaped.
+- Security: the problem report left website names that end in .sh, .md, .py, .zip, .pub or .new readable (crt.sh, for example). They are now replaced like every other website.
+- Fixed: Add key to router did not save the router's host key when the install folder had a space in its path (the default C:\Program Files), and did not run at all from a folder with an & in its name.
+- Fixed: on new Windows builds Reality Hop could not tell which program holds port 2080. It now reads Windows' own list of listening ports.
+- Fixed: with router features on and rh-core missing, replacing a dead node stopped with the error 'ms'.
+- Fixed: on a slow start the "Start tunnel at boot" switch showed off and the sing-box version stayed blank.
+- Fixed: Check for updates froze the Settings window until GitHub answered.
+- Changed: a tunnel restart is faster (5.5 s down to 0.5 s in a test without the boot start).
+- Changed: Check now looks up the exit address once, while the nodes are tested (about 3 s down to 1 s in a test).
+- Changed: the background check tests each node once, not twice, and no longer looks up the exit address.
+- Changed: the Update button's animation uses about a third of the processor time it did.
+
 ## 1.4.4 (2026-11-06)
 
 **Why update:** the log now shows when an action has finished.

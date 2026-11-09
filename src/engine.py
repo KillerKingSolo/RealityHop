@@ -254,8 +254,9 @@ def run(cmd, stdin=None, timeout=240, **kw):
 
 def psq(s):
     """s as a PowerShell single-quoted string. Without this a ' in a path (a user called O'Brien, a renamed download)
-    ends the string early: the command fails, or worse, the rest of the name runs as a command."""
-    return "'" + str(s).replace("'", "''") + "'"
+    ends the string early: the command fails, or worse, the rest of the name runs as a command. PowerShell takes the
+    four typographic single quotes for a ' as well, so each of them is doubled too."""
+    return "'" + re.sub('([\'‘’‚‛])', r'\1\1', str(s)) + "'"
 
 
 def cancel():
@@ -968,10 +969,11 @@ def pc_delay(tag):
         return None, 'no response'
 
 
-def check_pc(nodes):
+def check_pc(nodes, exit_ip=False):
     """Fresh test of every node through the PC's running daemon, one retry each. None if the API is down.
     If the daemon still runs an older node set (files changed, no restart yet), nothing is tested: vless-N
-    would still point at the old server. Returns {'stale': True} then."""
+    would still point at the old server. Returns {'stale': True} then. exit_ip: also look up the exit address
+    (one more download through the tunnel); only the command line shows it from here."""
     try:
         px = json.loads(pc_get('/proxies', 5))['proxies']
     except (OSError, ValueError, KeyError):
@@ -989,7 +991,7 @@ def check_pc(nodes):
     with ThreadPoolExecutor(len(nodes) or 1) as ex:
         list(ex.map(one, nodes))
     tunnel_fails_note(nodes)
-    return {'now': px.get('auto', {}).get('now'), 'exit': pc_exit(), 'stale': False}
+    return {'now': px.get('auto', {}).get('now'), 'exit': pc_exit() if exit_ip else None, 'stale': False}
 
 
 def tunnel_fails_note(nodes):
@@ -1019,8 +1021,8 @@ def pc_exit():
     return run([CURL, '-s', '--ssl-no-revoke', '-m', '10', '--socks5-hostname', '127.0.0.1:2080', 'https://api.ipify.org']).stdout.strip() or None
 
 
-def pc_status():
-    """What the PC tunnel is doing right now, without SSH."""
+def pc_status(exit_ip=True):
+    """What the PC tunnel is doing right now, without SSH. exit_ip=False leaves the exit address to the caller (pc_exit)."""
     st = {'service': core_running(), 'listening': False, 'api': False, 'now': None, 'exit': None}
     s = socket.socket(); s.settimeout(1)
     try:
@@ -1033,7 +1035,7 @@ def pc_status():
         st['now'], st['api'] = json.loads(pc_get('/proxies/auto', 4)).get('now'), True
     except (OSError, ValueError):
         pass
-    if st['listening']:
+    if st['listening'] and exit_ip:
         st['exit'] = pc_exit()
     return st
 
@@ -1057,7 +1059,7 @@ def write_txt(nodes, best):
          'IN USE  (both configs, urltest group "auto")']
     for i, n in enumerate(best, 1):
         L += row(n, f'vless-{i}')
-    spares = [n for n in sorted(nodes, key=lambda n: n['ms'] or 9e9) if n.get('ok') and n not in best]
+    spares = [n for n in sorted(nodes, key=lambda n: n.get('ms') or 9e9) if n.get('ok') and n not in best]   # a kept node may be untested
     L += ['', 'SPARES  (passed, not in use; the window or  python engine.py --apply N  rotates them in)']
     for n in spares:
         L += row(n)
@@ -1225,10 +1227,10 @@ def core_stop():
     if boot_task_exists():
         run(['schtasks', '/end', '/tn', BOOT_TASK], timeout=20)
     kill_name(os.path.basename(CORE))
-    for _ in range(20):
+    for _ in range(100):   # 10 s at most; it is gone within a moment
         if not core_running() and not port_taken(2080):
             return True
-        time.sleep(0.5)
+        time.sleep(0.1)
     return False
 
 
@@ -1248,8 +1250,10 @@ def core_start():
 
 
 def core_up(wait=15):
-    for _ in range(wait):
-        time.sleep(1)
+    """True as soon as the PC tunnel answers with the node set of pc-config.json; asked 4 times a second."""
+    end = time.time() + wait
+    while time.time() < end:
+        time.sleep(0.25)
         try:
             if set_mark(nodes_of(PC_CFG)) in json.loads(pc_get('/proxies', 3))['proxies']:
                 return True
@@ -1391,12 +1395,24 @@ def core_update(force=False):
 
 
 def port_owner(port):
-    """Image name of the process listening on a local port, or None."""
-    r = run(['powershell', '-NoProfile', '-Command',
-             f'(Get-Process -Id (Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction SilentlyContinue | '
-             'Select-Object -First 1).OwningProcess -ErrorAction SilentlyContinue).ProcessName'], timeout=30)
-    name = r.stdout.strip()
-    return name + '.exe' if name else None
+    """Exe name of the process listening on a local TCP port, or None. Read from Windows' own table of listening
+    sockets (IPv4, then IPv6): asking PowerShell took over a second at every tunnel restart."""
+    import ctypes
+    from ctypes import wintypes as W
+    get = ctypes.windll.iphlpapi.GetExtendedTcpTable
+    get.argtypes = [ctypes.c_void_p, ctypes.POINTER(W.DWORD), W.BOOL, W.ULONG, ctypes.c_int, W.ULONG]; get.restype = W.DWORD
+    for family, row, at_port, at_pid in ((2, 24, 8, 20), (23, 56, 20, 52)):   # AF_INET, AF_INET6: row size, where the port and the pid are
+        size = W.DWORD(0); get(None, ctypes.byref(size), False, family, 3, 0)   # TCP_TABLE_OWNER_PID_LISTENER
+        size = W.DWORD(size.value + 4096); buf = ctypes.create_string_buffer(size.value)   # room for sockets opened since
+        if get(buf, ctypes.byref(size), False, family, 3, 0):
+            continue
+        raw = buf.raw
+        for i in range(int.from_bytes(raw[:4], 'little')):
+            r = raw[4 + i * row:4 + (i + 1) * row]
+            if int.from_bytes(r[at_port:at_port + 2], 'big') == port:   # the port is in network byte order
+                pid = int.from_bytes(r[at_pid:at_pid + 4], 'little')
+                return next((name for p, name in procs() if p == pid), None)
+    return None
 
 
 def hidden():
@@ -1405,7 +1421,12 @@ def hidden():
 
 
 def pids(name):
-    """Process ids of every process with this exe name (a Windows snapshot of the process list, in this process)."""
+    """Process ids of every process with this exe name."""
+    return [p for p, exe_ in procs() if exe_.lower() == name.lower()]
+
+
+def procs():
+    """[(process id, exe name)] of every process (a Windows snapshot of the process list, in this process)."""
     import ctypes
     from ctypes import wintypes as W
 
@@ -1422,9 +1443,7 @@ def pids(name):
     try:
         e = PE(); e.dwSize = ctypes.sizeof(PE); ok = k.Process32FirstW(snap, ctypes.byref(e))
         while ok:
-            if e.szExeFile.lower() == name.lower():
-                out.append(e.th32ProcessID)
-            ok = k.Process32NextW(snap, ctypes.byref(e))
+            out.append((e.th32ProcessID, e.szExeFile)); ok = k.Process32NextW(snap, ctypes.byref(e))
     finally:
         k.CloseHandle(snap)
     return out
@@ -1769,7 +1788,7 @@ def apply(nodes, k):
 def check_all(nodes):
     """Both live checks; returns (phone status, pc status)."""
     geolocate(nodes)
-    return check_phone(nodes), check_pc(nodes)
+    return check_phone(nodes), check_pc(nodes, exit_ip=True)
 
 
 def status_table(nodes, ph, pc):
@@ -1866,7 +1885,8 @@ def watch_cycle(st, background=True):
         side = 'router'
     else:
         say('the PC tunnel cannot test the current set and the router is unreachable; nothing to judge'); return None
-    res = test(); dead = [t for t, ms in res.items() if ms is None]
+    res = {n['tag']: n['pc_ms'] for n in cur} if side == 'PC' else test()   # the PC tunnel tested them just above: not twice
+    dead = [t for t, ms in res.items() if ms is None]
     say(f"{side} check: {len(res) - len(dead)} of {len(res)} nodes working" + (f"; dead: {', '.join(dead)}" if dead else ''))
     tray_mark(st, res)
     if dead:
@@ -1935,6 +1955,12 @@ _procs_feed = []
 KILL_FEEDS = ['powershell', '-NoProfile', '-Command', "Get-CimInstance Win32_Process -Filter \"Name='piactl.exe'\" | Where-Object { $_.CommandLine -like '*monitor connectionstate*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"]   # stray PIA monitors left by a watcher that was stopped
 
 
+def kill_feeds():
+    """Stop the stray PIA monitors. PowerShell takes a second to start, so only when a piactl runs at all."""
+    if pids('piactl.exe'):
+        run(KILL_FEEDS, timeout=30)
+
+
 def pia_feed(on_change):
     """PIA's own state feed (piactl monitor): one line per change, no polling and no network traffic.
     Restarts itself if PIA is not running yet."""
@@ -1988,7 +2014,7 @@ def watch():
     lnk_migrate(STARTUP_LNK); api_lockdown()
     started = core_fast_start()   # before anything else, so PIA finds the proxy when it connects
     try:
-        run(KILL_FEEDS, timeout=30)
+        kill_feeds()
     except Exception:
         pass
     say = file_log('watch'); started_at = time.time()
@@ -2311,17 +2337,18 @@ def make_key():
 def add_key_console(host):
     """Opens a console that adds this PC's key to the router. The person types the router password into ssh there;
     Reality Hop never sees it."""
-    pub, kh = make_key(), os.path.join(DATA, 'known_hosts')
-    k = pub.split()[1]
+    pub = make_key(); k = pub.split()[1]
     remote = (f"mkdir -p /etc/dropbear; touch /etc/dropbear/authorized_keys; grep -q {k} /etc/dropbear/authorized_keys "
               f"|| echo {pub} >> /etc/dropbear/authorized_keys; chmod 600 /etc/dropbear/authorized_keys; echo; echo Key added. Close this window.")
     bat, esc = os.path.join(DATA, 'add-router-key.cmd'), lambda p: p.replace('%', '%%')   # % is special in a .cmd
     open(bat, 'w', encoding='utf-8').write('@echo off\r\nchcp 65001 >nul\r\ntitle Reality Hop: add key to router\r\n'
                          'echo Type the router admin password (the one for the GL.iNet web panel) and press Enter.\r\n'
                          'echo Nothing shows while you type. Reality Hop never sees it.\r\necho.\r\n'
-                         f'"{esc(ssh_exe())}" -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile="{esc(kh)}" root@{host} "{remote}"\r\n'
+                         f'"{esc(ssh_exe())}" -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=known_hosts root@{host} "{remote}"\r\n'
                          'echo.\r\npause\r\n')
-    subprocess.Popen([winexe('cmd'), '/c', bat], creationflags=subprocess.CREATE_NEW_CONSOLE)
+    # run by name from the data folder, and known_hosts by name too: cmd cuts a full path at an &, and ssh takes a
+    # quoted path with a space in it (C:\Program Files) as two files, so the router's host key was never saved
+    subprocess.Popen([winexe('cmd'), '/c', '.\\' + os.path.basename(bat)], cwd=DATA, creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 
 def router_key_remove():
@@ -2338,7 +2365,7 @@ def watcher_kill():
          "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*--watch*' -and "
          f"($_.CommandLine -like '*engine.py*' -or $_.Name -eq 'RealityHop.exe') -and $_.ProcessId -ne {os.getpid()} }} | "
          "ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"], timeout=30)
-    run(KILL_FEEDS, timeout=30)
+    kill_feeds()
 
 
 def startup(on):

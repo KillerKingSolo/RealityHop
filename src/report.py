@@ -13,7 +13,10 @@ KEEP_IPS = {'0.0.0.0', '9.9.9.9', '149.112.112.112', '1.1.1.1', '8.8.8.8'}   # p
 KEEP_HOSTS = {'api.ipify.org', 'www.gstatic.com', 'ip-api.com', 'api.github.com', 'github.com', 'raw.githubusercontent.com',
               'objects.githubusercontent.com', 'release-assets.githubusercontent.com', 'cdn.jsdelivr.net',
               'fastly.jsdelivr.net'} | N.FRONTS   # what Reality Hop itself uses
-KEEP_EXT = {'json', 'py', 'pyw', 'exe', 'log', 'txt', 'sh', 'pub', 'ico', 'cmd', 'lnk', 'zip', 'tmp', 'md', 'dll', 'old', 'new'}   # file names
+KEEP_EXT = {'json', 'pyw', 'exe', 'log', 'txt', 'ico', 'cmd', 'lnk', 'tmp', 'dll', 'old'}   # file names; none of these ends a website's name
+# .py, .sh, .zip, .md, .pub and .new also end the names of real websites (crt.sh, obsidian.md): only Reality Hop's own files are kept
+KEEP_FILES = re.compile(r'(engine|install|report|version|check-backend)\.py|(heal|nft-devices)\.sh|realityhop-app\.zip|'
+                        r'sing-box-[\w.-]+\.zip|realityhop\.exe\.new|(readme|changelog)\.md')
 LINES = 400   # per log
 
 
@@ -47,7 +50,7 @@ class Scrubber:
 
     def host(self, m):
         h = m.group(0).lower()
-        return m.group(0) if h in KEEP_HOSTS or h.rsplit('.', 1)[1] in KEEP_EXT else self.tok('host', h)
+        return m.group(0) if h in KEEP_HOSTS or h.rsplit('.', 1)[1] in KEEP_EXT or KEEP_FILES.fullmatch(h) else self.tok('host', h)
 
     def ipv4(self, m):
         ip = m.group(0)
