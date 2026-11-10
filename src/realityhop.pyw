@@ -1590,9 +1590,9 @@ class Candidates(tk.Toplevel):
             self.msg = 'Nothing to test; ping first.'; return
         top = [n for n in self.nodes if n.get('ok') is not False][:N.TOP]
         self.app.say(f'candidates: this PC is testing the {len(top)} fastest, 5 at a time (about 20 seconds)...')
-        N.router_test(top)
-        ok = sorted([n for n in top if n.get('ok')], key=lambda n: n['ms'])
-        self.nodes.sort(key=lambda n: (n.get('ok') is not True, n['ms'] if n.get('ok') else 9e9, n['tcp_ms']))
+        N.router_test(top, speed=True)
+        ok = N.best_first(top)
+        self.nodes.sort(key=lambda n: (n.get('ok') is not True, N.speed_rank(n) if n.get('ok') else (9, 9e9), n['tcp_ms']))
         self.msg = (f'{len(ok)} of {len(top)} tested candidates work.'
                     + (f" Best: {ok[0]['server']} at {ok[0]['ms']} ms ({ok[0].get('where', '?')})." if ok else ' Ping again later or widen the test.'))
 
@@ -1641,7 +1641,7 @@ class Candidates(tk.Toplevel):
             self.app.work(lambda: self.finish(self.deploy(pairs)))
 
     def tested_ok(self):
-        return sorted([n for n in self.nodes if n.get('ok')], key=lambda n: n['ms'])
+        return N.best_first(self.nodes)
 
     def put_best(self):
         """Only tunnel-tested working nodes go in. Tests first when too few passed, then deploys and checks each slot."""
@@ -2308,6 +2308,8 @@ class Wizard(tk.Tk):
         self.items(['PIA → Settings → Protocols: Protocol OpenVPN, Transport TCP, Remote Port 443.',
                     'Settings → Multi-Hop: tick "Multi-hop and Obfuscation" and choose SOCKS5 Proxy.',
                     'Click EDIT: host 127.0.0.1, port 2080. Leave username and password empty. Save.',
+                    'Settings → Split Tunnel: tick Split Tunnel, Add Application ' + N.CORE + ', set it to Bypass VPN. '
+                    'Without it the VPN cannot connect: its own connection would loop back into the VPN.',
                     'Connect.'], parent=left, wrap=280, numbered=True)
         row = tk.Frame(left, bg=BG); row.pack(fill='x', pady=(6, 4))
         ttk.Button(row, text='Check PIA', command=lambda: (lambda r: self.note(r, 'ok' if 'correct' in r else 'warn'))(N.vpn_check())).pack(side='left')
@@ -2317,12 +2319,14 @@ class Wizard(tk.Tk):
                parent=left, wrap=310)
         self.p('Games or apps that should skip the VPN: use your VPN app\'s split tunnel (PIA: Settings → Split Tunnel).',
                muted=True, parent=left, wrap=310)
-        try:
-            self.img = tk.PhotoImage(file=os.path.join(N.RES, 'pia-multihop.png')).subsample(2)
-            f = tk.Frame(cols, bg=LINE); f.pack(side='left', anchor='n', padx=(18, 0))
-            tk.Label(f, image=self.img, bg=CARD, bd=0).pack(padx=1, pady=1)
-        except tk.TclError:
-            pass
+        right = tk.Frame(cols, bg=BG); right.pack(side='left', anchor='n', padx=(18, 0)); self.imgs = []
+        for name in ('pia-multihop.png', 'pia-split-tunnel.png'):
+            try:
+                self.imgs.append(tk.PhotoImage(file=os.path.join(N.RES, name)).subsample(2))
+            except tk.TclError:
+                continue
+            f = tk.Frame(right, bg=LINE); f.pack(anchor='w', pady=(0, 8))
+            tk.Label(f, image=self.imgs[-1], bg=CARD, bd=0).pack(padx=1, pady=1)
 
     def page_finish(self):
         self.h('Almost done')

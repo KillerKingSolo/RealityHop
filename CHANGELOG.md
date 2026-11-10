@@ -3,6 +3,16 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.5.1 (2026-11-09)
+
+**Why update:** Reality Hop now picks nodes by download speed, not only by ping, so your VPN no longer rides a node that gives 1 to 5 Mbps.
+
+- Fixed: the node with the lowest ping always got the traffic, even when it downloaded at 1 to 5 Mbps. Every node search (Replace, Replace all, Candidates, Rescue, the first setup) now also measures download speed through each working node and puts nodes that reach at least 100 Mbps first.
+- Changed: when your line is slower than 100 Mbps, a node needs 70% of the fastest node seen in the last 24 hours (at least 50 Mbps). On a 100 Mbps line the best node gives about 93 Mbps, so a fixed 100 would reject every node.
+- Changed: every 6 hours the background check also measures the nodes in use. A node under the minimum on two tests in a row is replaced with a spare that reaches it; with no such spare, nothing changes. Each test downloads up to about 75 MB per node.
+- Changed: the minimum is `min_mbps` in settings.json (100 by default; 0 turns the speed test off).
+- Changed: the setup and the VPN guide now show the PIA Split Tunnel rule: rh-core.exe set to Bypass VPN. Without it the VPN cannot connect.
+
 ## 1.5.0 (2026-11-09)
 
 **Why update:** it closes a command injection in the setup, keeps website names out of problem reports, and makes tunnel restarts and checks faster.

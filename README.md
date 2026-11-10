@@ -98,9 +98,12 @@ Your VPN must use **OpenVPN over TCP, port 443**. A SOCKS5 proxy carries TCP onl
 **Private Internet Access (PIA):**
 Settings → Protocols: Protocol **OpenVPN**, Transport **TCP**, Remote Port **443**. Then Settings → Multi-Hop: tick
 **Multi-hop and Obfuscation**, choose **SOCKS5 Proxy**, click **EDIT**, enter host `127.0.0.1` and port `2080`, and
-save.
+save. Then Settings → Split Tunnel: tick **Split Tunnel**, add `C:\Program Files\RealityHop\PC\rh-core.exe` and set it
+to **Bypass VPN**. Without that rule the VPN cannot connect.
 
 ![PIA Multi-Hop with the SOCKS5 proxy](docs/images/pia-multihop-socks5.png)
+
+![PIA Split Tunnel with rh-core.exe set to Bypass VPN](docs/images/pia-split-tunnel.png)
 
 **Other VPN apps:** any app with a SOCKS5 proxy setting works the same way, using OpenVPN over TCP port 443. In an
 OpenVPN config file, use `proto tcp`, the server's port `443`, and add `socks-proxy 127.0.0.1 2080`. See

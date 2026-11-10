@@ -95,10 +95,12 @@ MIRRORS = ('https://cdn.jsdelivr.net/gh/{0}@main/{1}', 'https://fastly.jsdelivr.
 TUNNEL_PROXY = 'http://127.0.0.1:2080'   # the PC tunnel's mixed inbound also speaks HTTP proxy
 DEFAULTS = {'check_min': 60, 'slow_ms': 200, 'tolerance_ms': 25, 'top': 40, 'router': 0, 'router_host': '192.168.8.1',
             'router_key': '', 'devices': '', 'auto_update': 1, 'singbox': 'stable', 'backend_files': 0,
-            'start_menu': 1, 'desktop_icon': 0, 'pc_tunnel': 1}
-LIMITS = {'check_min': (15, 1440), 'slow_ms': (50, 5000), 'tolerance_ms': (0, 1000), 'top': (10, 120)}   # as in Settings
+            'start_menu': 1, 'desktop_icon': 0, 'pc_tunnel': 1, 'min_mbps': 100}
+LIMITS = {'check_min': (15, 1440), 'slow_ms': (50, 5000), 'tolerance_ms': (0, 1000), 'top': (10, 120), 'min_mbps': (0, 1000)}   # as in Settings
 FPS = {'chrome', 'firefox', 'safari', 'ios', 'android', 'edge', '360', 'qq', 'random', 'randomized'}   # uTLS fingerprints
 TOP = 40   # candidates tested per scan (settings)
+MIN_MBPS = 100   # a node must download at least this fast to be picked first; 0 turns the speed test off (settings.json)
+SPEED_URL = 'https://cachefly.cachefly.net/100mb.test'   # CacheFly's speed test file (anycast), fetched through the node
 FRONTS = {'www.apple.com', 'swdist.apple.com', 'www.icloud.com', 'www.cloudflare.com', 'cloudflare.com', 'www.amazon.com',
           'amazon.com', 'yahoo.com', 'www.yahoo.com', 'cdnjs.com', 'www.microsoft.com', 'www.bing.com', 'www.python.org',
           'www.nvidia.com', 'www.amd.com'}
@@ -140,8 +142,8 @@ def settings_load():
         d[k] = min(max(d[k], lo), hi)
     if not host_ok(d['router_host']):   # a hand-edited file
         d['router_host'] = DEFAULTS['router_host']
-    global TOP, FULL_EVERY, SLOW
-    TOP, FULL_EVERY, SLOW = int(d['top']), int(d['check_min']) * 60, int(d['slow_ms'])
+    global TOP, FULL_EVERY, SLOW, MIN_MBPS
+    TOP, FULL_EVERY, SLOW, MIN_MBPS = int(d['top']), int(d['check_min']) * 60, int(d['slow_ms']), int(d['min_mbps'])
     return d
 
 
@@ -681,22 +683,23 @@ def handshake(nodes):
     return nodes
 
 
-def node_test(nodes):
+def node_test(nodes, speed=False):
     """The handshake test, where it measures the real path: on THIS PC with rh-core, or on the router in router-only mode
-    (and when rh-core is missing). The router has little RAM, so it tests 20 nodes per run."""
+    (and when rh-core is missing). The router has little RAM, so it tests 20 nodes per run. speed: also the download
+    test (this PC only)."""
     if router_only() or not (os.path.exists(CORE) or pc_only()):
         for i in range(0, len(nodes), 20):
             handshake(nodes[i:i + 20])
     else:
-        local_test(nodes)
+        local_test(nodes, speed)
     return nodes
 
 
-def router_test(nodes):
+def router_test(nodes, speed=False):
     """The node test (node_test) with geolocation alongside; the results go into the vault."""
     with ThreadPoolExecutor(2) as ex:
         g = ex.submit(geolocate, nodes)
-        node_test(nodes)
+        node_test(nodes, speed)
         g.result()
     vault_record(nodes)
     return nodes
@@ -738,8 +741,53 @@ def test_exe():
         return CORE
 
 
-def local_test(nodes):
-    """The handshake test, run on this PC: one sing-box instance, one port per node, 5 fetches at a time."""
+def mbps(port):
+    """Download speed through one test port, timed from the first byte, so the handshake and the node's latency do not
+    count. At most 6 s; gives up after 3 s under a quarter of floor(). None without an HTTP 200 (says nothing about
+    the node's speed)."""
+    r = run([CURL, '-s', '--ssl-no-revoke', '--socks5-hostname', f'127.0.0.1:{port}', '-o', os.devnull, '-m', '6',
+             '--speed-time', '3', '--speed-limit', str(max(floor(), 4) * 31250),
+             '-w', ' %{http_code} %{size_download} %{time_total} %{time_starttransfer}', SPEED_URL], timeout=20)
+    try:
+        code, size, total, start = r.stdout.split()[-4:]; size, total, start = float(size), float(total), float(start)
+    except ValueError:
+        return None
+    if code != '200':   # an HTTP error or no answer in time: the handshake test judges whether the node works
+        return None
+    return round(size * 8 / 1e6 / max(total - start, 0.1)) if start else 0
+
+
+def floor():
+    """The speed a node must reach: MIN_MBPS, or 70% of the fastest node seen in the last 24 hours when that is slower.
+    The best node fills this PC's line, so a 100 Mbps line still gets a working floor (about 70 Mbps). Never under half
+    of MIN_MBPS, so a few slow nodes measured first cannot pull it down."""
+    t, top = this_pc().get('top_mbps') or (0, 0)
+    return max(MIN_MBPS // 2, min(MIN_MBPS, int(top * 0.7))) if top and time.time() - t < 86400 else MIN_MBPS
+
+
+def seen(m):
+    """Keep the fastest node speed of the last 24 hours (this-pc.json, shared by the window and the watcher)."""
+    t, top = this_pc().get('top_mbps') or (0, 0)
+    if m and (m > top or time.time() - t > 86400):
+        set_this_pc(top_mbps=[time.time(), m])
+
+
+def speed_rank(n):
+    """Sort key for working nodes: at least floor() first (lowest latency first), then not speed-tested, then the rest
+    fastest download first."""
+    m = n.get('mbps')
+    if not MIN_MBPS or m is None:
+        return (1, n.get('ms') or 9e9)
+    return (0, n.get('ms') or 9e9) if m >= floor() else (2, -m)
+
+
+def best_first(nodes):
+    return sorted([n for n in nodes if n.get('ok')], key=speed_rank)
+
+
+def local_test(nodes, speed=False):
+    """The handshake test, run on this PC: one sing-box instance, one port per node, 5 fetches at a time. speed: then the
+    download test, one node at a time in latency order (they share this PC's line), until 6 reach floor()."""
     import tempfile
     if not os.path.exists(CORE):
         raise RuntimeError('rh-core.exe is missing; run the setup again (Settings > Run setup again)')
@@ -768,6 +816,13 @@ def local_test(nodes):
                 nodes[i].update(ok=bool(ok), exit=parts[0] if ok else '-', ms=int(float(parts[1]) * 1000) if ok else None)
             with ThreadPoolExecutor(5) as ex:
                 list(ex.map(one, range(len(nodes))))
+            if speed and MIN_MBPS:
+                fast = 0
+                for i in sorted((i for i, n in enumerate(nodes) if n['ok']), key=lambda i: nodes[i]['ms']):
+                    if fast >= 6:
+                        break
+                    m = nodes[i]['mbps'] = mbps(23000 + i); seen(m); fast += (m or 0) >= floor()
+                    say(f"speed: {nodes[i]['server']} {'?' if m is None else m} Mbps (need {floor()})")
         finally:
             p.kill(); p.wait()
         try:
@@ -905,7 +960,7 @@ def rescue(k=6):
                 'went into the configs untested. Run the setup again.')
     test = list(pool.values())[:TOP]
     say(f"rescue: {'this PC' if os.path.exists(CORE) else 'the router'} is testing {len(test)} vault nodes...")
-    router_test(test); ok = sorted([n for n in test if n['ok']], key=lambda n: n['ms'])
+    router_test(test, speed=True); ok = best_first(test)
     say(f'rescue: {len(ok)} of {len(test)} vault nodes work')
     if len(ok) < k:
         say('rescue: too few, scanning the feed for more...')
@@ -916,7 +971,7 @@ def rescue(k=6):
             say(f'rescue: feed scan failed ({e}); using what works')
     if not ok:
         raise RuntimeError('no vault node and no feed node works right now; nothing changed')
-    best = ok[:k]; router_ok = deploy(best, test)
+    best = sorted(ok, key=speed_rank)[:k]; router_ok = deploy(best, test)
     where = 'the PC tunnel' + ('' if pc_only() else ' and on the router' if router_ok else ' (router push FAILED, press Push to router later)')
     return f"Rescue done: {len(best)} working nodes (best {best[0]['ms']} ms) are in {where}."
 
@@ -1043,7 +1098,8 @@ def pc_status(exit_ip=True):
 def table(nodes):
     say(f"\n{'#':>2} {'server':16} {'front':20} {'where':24} {'tcp':>5} {'tunnel':>7}  result")
     for i, n in enumerate(sorted(nodes, key=lambda n: (not n['ok'], n['ms'] or 9e9)), 1):
-        res = (f"PASS exit={n['exit']}" if n['ok'] else f"FAIL {n['why']}") + ('  (in use)' if n.get('inuse') else '')
+        res = ((f"PASS exit={n['exit']}" + (f"  {n['mbps']} Mbps" if n.get('mbps') is not None else '')) if n['ok'] else f"FAIL {n['why']}") \
+            + ('  (in use)' if n.get('inuse') else '')
         tun = f"{n['ms']}ms" if n['ok'] else '-'
         say(f"{i:>2} {n['server']:16} {n['sni']:20} {n.get('where', '?'):24} {str(n.get('tcp_ms') or '?'):>5} {tun:>7}  {res}")
 
@@ -1671,8 +1727,8 @@ def find_spares(top, exclude):
     c = feed(); say(f'feed: {len(c)} candidates with plausible fronts')
     live = probe([n for n in c if n['server'] not in exclude])
     say(f'answering on 443: {len(live)}, handshake-testing the {min(top, len(live))} fastest on this PC...')
-    cand = router_test(live[:top])
-    return sorted([n for n in cand if n['ok']], key=lambda n: n['ms']), cand
+    cand = router_test(live[:top], speed=True)
+    return best_first(cand), cand
 
 
 def scan(top=None):
@@ -1684,7 +1740,7 @@ def scan(top=None):
     c = [n for n in feed() if n['server'] not in used]; say(f'feed: {len(c)} candidates with plausible fronts')
     live = [n for n in probe(cur + c) if not n.get('inuse')]; say(f'answering on 443: {len(live)}, handshake-testing the {top} fastest plus the {len(cur)} in use...')
     nodes = cur + [n for n in live if n['server'] not in used][:top]
-    router_test(nodes); table(nodes)
+    router_test(nodes, speed=True); table(nodes)
     say(f"\n{sum(n['ok'] for n in nodes)} of {len(nodes)} pass")
     return nodes
 
@@ -1693,13 +1749,14 @@ def vault_spares(top, exclude):
     """Working nodes from the vault (nodes that passed a test before), tested again now, best tunnel latency first."""
     test = vault_nodes(exclude)[:top]
     if test:
-        say(f'testing {len(test)} nodes that worked before (vault)...'); router_test(test)
-    return sorted([n for n in test if n['ok']], key=lambda n: n['ms']), test
+        say(f'testing {len(test)} nodes that worked before (vault)...'); router_test(test, speed=True)
+    return best_first(test), test
 
 
-def replace(slots, top=None, vault=False):
+def replace(slots, top=None, vault=False, fast_only=False):
     """Swap the in-use nodes at the given slot indexes (0-based) for the best tested spares, from the online node list
-    or (vault=True) from the nodes that worked before, then deploy."""
+    or (vault=True) from the nodes that worked before, then deploy. fast_only: only spares that reach floor(); with
+    none, nothing changes."""
     top = top or TOP
     if router_up():
         s = router_sync()
@@ -1716,6 +1773,10 @@ def replace(slots, top=None, vault=False):
     if not spares and not vault:
         say('no working spare in the node list; trying the nodes that worked before (vault)')
         spares, tested, vault = *vault_spares(top, ex), True
+    if fast_only:
+        spares = [s for s in spares if (s.get('mbps') or 0) >= floor()]
+        if not spares:
+            say(f'no spare reaches {floor()} Mbps; the slow nodes stay'); return []
     if not spares:
         raise RuntimeError(f"no working spare found {'among the nodes that worked before' if vault else 'in the online node list'}; "
                            'nothing changed')
@@ -1723,7 +1784,8 @@ def replace(slots, top=None, vault=False):
         say(f'only {len(spares)} working spare(s) for {len(slots)} slot(s); replacing what can be replaced')
     swaps = []
     for i, s in zip(slots, spares):
-        say(f"vless-{i + 1}: {cur[i]['server']} -> {s['server']}  ({s['ms']}ms, {s.get('where', '?')})")
+        say(f"vless-{i + 1}: {cur[i]['server']} -> {s['server']}  ({s['ms']}ms" + (f", {s['mbps']} Mbps" if s.get('mbps') is not None else '')
+            + f", {s.get('where', '?')})")
         swaps.append((f'vless-{i + 1}', cur[i]['server'], s)); cur[i] = s
     kept = [n for n in cur if n.get('ms') is None]
     if kept and (os.path.exists(CORE) or router_only()):
@@ -1779,7 +1841,7 @@ def put(slot, node, deploy_now=True):
 
 
 def apply(nodes, k):
-    best = sorted([n for n in nodes if n['ok']], key=lambda n: n['ms'])[:k]
+    best = best_first(nodes)[:k]
     if len(best) < 2:
         raise RuntimeError('fewer than 2 passing nodes, not applying')
     deploy(best, nodes)
@@ -1909,6 +1971,8 @@ def watch_cycle(st, background=True):
     elif dead:
         swaps = replace([i for i, n in enumerate(cur) if n['tag'] in dead])
         out = 'Replaced ' + ', '.join(f'{t} ({o} -> {n["server"]})' for t, o, n in swaps) + '.'
+    if not out and MIN_MBPS and os.path.exists(CORE) and not router_only() and time.time() - st.get('speed_t', 0) > 6 * 3600:
+        st['speed_t'] = time.time(); out = slow_fix(cur)
     if out:
         say(out); notify(out); hist_add(event=('replace' if out.startswith('Replaced') else 'rescue', out))
     else:
@@ -1918,6 +1982,21 @@ def watch_cycle(st, background=True):
         if v:
             router_test(v); say(f"vault refresh: {sum(n['ok'] for n in v)} of {len(v)} still work")
     return out
+
+
+def slow_fix(cur):
+    """In-use nodes under floor() on two download tests in a row are swapped for spares that reach it. Every 6 hours
+    from the check (up to 50 MB per node). Returns a sentence when something changed, else None."""
+    t = [dict(n) for n in cur]; node_test(t, speed=True)
+    slow = [i for i, n in enumerate(t) if n['ok'] and n.get('mbps') is not None and n['mbps'] < floor()]
+    if slow:
+        say(f"under {floor()} Mbps: {', '.join(cur[i]['tag'] for i in slow)}; testing them again...")
+        again = [dict(cur[i]) for i in slow]; node_test(again, speed=True)
+        slow = [i for i, n in zip(slow, again) if n['ok'] and n.get('mbps') is not None and n['mbps'] < floor()]
+    if not slow:
+        say(f'speed check: no working node is under {floor()} Mbps'); return None
+    swaps = replace(slow, fast_only=True)
+    return ('Replaced ' + ', '.join(f'{t} ({o} -> {n["server"]})' for t, o, n in swaps) + f' (under {floor()} Mbps).') if swaps else None
 
 
 def tray_mark(st, res, dead=None):
@@ -2269,7 +2348,7 @@ def setup_pc():
     prepare(); res.append(f'rh-core: sing-box {core_version() or "MISSING"} (official releases, {settings_load()["singbox"]} channel, updated daily)')
     if not nodes_of(PC_CFG):
         say('finding the first nodes: downloading the public node list and testing the fastest candidates on this PC...')
-        nodes = scan(); best = sorted([n for n in nodes if n['ok']], key=lambda n: n['ms'])[:6]
+        nodes = scan(); best = best_first(nodes)[:6]
         if len(best) < 2:
             raise RuntimeError('fewer than 2 working nodes found; check that this PC has internet and press Install again')
         write_configs(best); write_txt(nodes, best)
