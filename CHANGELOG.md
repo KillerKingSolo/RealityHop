@@ -3,6 +3,17 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.5.2 (2026-11-09)
+
+**Why update:** faster speed tests, Replace all keeps your fast nodes, and the background watcher comes back after you quit it.
+
+- Fixed: after Quit in the tray menu, opening Reality Hop did not start the background watcher (and its tray icon) again. It does now, when "run in the background at logon" is on.
+- Fixed: Replace all 6 in Candidates replaced every slot even when fewer candidates were fast, and could put in nodes that sent nothing back in the speed test. It now uses only nodes that reach the minimum speed and replaces only that many slots; a node with no answer counts as 0 Mbps.
+- Fixed: Candidates did not close after Replace all when the check ran while the restarted tunnel was still starting. It now waits for the tunnel, always closes, and shows a failed slot in the main window.
+- Fixed: the window sometimes checked the PC tunnel two or three times after an action: the watcher sent the window's own earlier result back to it.
+- Changed: the speed test runs up to 8 nodes at once first; only nodes it cannot judge get a test of their own. A 40-node scan takes about 35 s instead of 41 to 56 s.
+- Changed: the PIA Split Tunnel rule for rh-core.exe is needed only when All Other Apps is set to Use VPN. The setup and the guides now say so.
+
 ## 1.5.1 (2026-11-09)
 
 **Why update:** Reality Hop now picks nodes by download speed, not only by ping, so your VPN no longer rides a node that gives 1 to 5 Mbps.

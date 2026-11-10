@@ -741,20 +741,48 @@ def test_exe():
         return CORE
 
 
-def mbps(port):
+def mbps(port, secs=4, give_up=True):
     """Download speed through one test port, timed from the first byte, so the handshake and the node's latency do not
-    count. At most 6 s; gives up after 3 s under a quarter of floor(). None without an HTTP 200 (says nothing about
-    the node's speed)."""
-    r = run([CURL, '-s', '--ssl-no-revoke', '--socks5-hostname', f'127.0.0.1:{port}', '-o', os.devnull, '-m', '6',
-             '--speed-time', '3', '--speed-limit', str(max(floor(), 4) * 31250),
+    count. At most secs; give_up: stops after 2 s under a quarter of floor(). 0 when nothing came through the node;
+    None when the test file answered with an HTTP error."""
+    stop = ['--speed-time', '2', '--speed-limit', str(max(floor(), 4) * 31250)] if give_up else []
+    r = run([CURL, '-s', '--ssl-no-revoke', '--socks5-hostname', f'127.0.0.1:{port}', '-o', os.devnull, '-m', str(secs), *stop,
              '-w', ' %{http_code} %{size_download} %{time_total} %{time_starttransfer}', SPEED_URL], timeout=20)
     try:
         code, size, total, start = r.stdout.split()[-4:]; size, total, start = float(size), float(total), float(start)
     except ValueError:
         return None
-    if code != '200':   # an HTTP error or no answer in time: the handshake test judges whether the node works
+    if code == '000':   # nothing came through the node in time: as slow as it gets
+        return 0
+    if code != '200':   # the test file's own HTTP error says nothing about the node
         return None
     return round(size * 8 / 1e6 / max(total - start, 0.1)) if start else 0
+
+
+def speed_test(nodes, base):
+    """Download speed of the working nodes (test ports base + index). First up to 8 at once, 4 s: a node that reaches
+    floor() even while sharing this PC's line passes, and one under an eighth of it is slow. Sharing is not fair (a
+    nearby node takes more), so every node in between gets a test of its own, best first, until 6 pass."""
+    ok = sorted((i for i, n in enumerate(nodes) if n['ok']), key=lambda i: nodes[i]['ms'])[:24]
+    share, fast = {}, 0
+    for k in range(0, len(ok), 8):
+        group = ok[k:k + 8]
+        with ThreadPoolExecutor(len(group)) as ex:
+            share.update(zip(group, ex.map(lambda i: mbps(base + i, 4, False), group)))
+    seen(max((m or 0 for m in share.values()), default=0))
+    alone = []
+    for i in ok:
+        m = share[i]
+        if m is not None and (m >= floor() or m < floor() / 8):
+            nodes[i]['mbps'] = m; fast += m >= floor()
+        else:
+            alone.append(i)
+    for i in sorted(alone, key=lambda i: -(share[i] or 0)):
+        if fast >= 6:
+            break
+        m = nodes[i]['mbps'] = mbps(base + i); seen(m); fast += (m or 0) >= floor()
+    say('speed: ' + ', '.join(f"{nodes[i]['server']} {'?' if nodes[i].get('mbps') is None else nodes[i]['mbps']}" for i in ok)
+        + f' Mbps (need {floor()})')
 
 
 def floor():
@@ -787,7 +815,7 @@ def best_first(nodes):
 
 def local_test(nodes, speed=False):
     """The handshake test, run on this PC: one sing-box instance, one port per node, 5 fetches at a time. speed: then the
-    download test, one node at a time in latency order (they share this PC's line), until 6 reach floor()."""
+    download test (speed_test)."""
     import tempfile
     if not os.path.exists(CORE):
         raise RuntimeError('rh-core.exe is missing; run the setup again (Settings > Run setup again)')
@@ -817,12 +845,7 @@ def local_test(nodes, speed=False):
             with ThreadPoolExecutor(5) as ex:
                 list(ex.map(one, range(len(nodes))))
             if speed and MIN_MBPS:
-                fast = 0
-                for i in sorted((i for i, n in enumerate(nodes) if n['ok']), key=lambda i: nodes[i]['ms']):
-                    if fast >= 6:
-                        break
-                    m = nodes[i]['mbps'] = mbps(23000 + i); seen(m); fast += (m or 0) >= floor()
-                    say(f"speed: {nodes[i]['server']} {'?' if m is None else m} Mbps (need {floor()})")
+                speed_test(nodes, 23000)
         finally:
             p.kill(); p.wait()
         try:

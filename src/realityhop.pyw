@@ -544,6 +544,7 @@ class App(tk.Tk):
         self.q, self.busy, self.streak, self.sel, self.cand = queue.Queue(), False, {}, None, None
         self.lists, self.pcs, self.router = {'pc': [], 'phone': []}, None, None
         self.pc_pending, self.want_restart, self.pending, self.router_stale = False, False, None, False
+        self.sent = []   # tray states this window wrote: the watcher echoes them back
         self.status_text, self.status_state = 'Reading the configs and testing from this PC...', 'unk'
         self.update_rel = self.upd_win = self.cur = None; self.jobs, self.run, self.upd_wait = [], 0, False
         self.ready = threading.Event()   # set once the main loop runs
@@ -578,6 +579,8 @@ class App(tk.Tk):
         self.after(150, self.drain); self.after(400, lambda: self.work(self.first_check)); self.after(1500, self.auto_tick); self.after(5000, self.watchdog)
         self.tray_seen = None; self.after(5000, self.follow_tray)
         threading.Thread(target=self.find_update, daemon=True).start(); self.after(30000, self.maybe_core_update)
+        if N.startup_on() and not N.stopped() and not N.port_taken(N.WATCH_PORT):
+            install.start_watcher()   # quit from the tray menu: opening the window brings it back
         self.after(0, self.ready.set)   # last: nothing runs it before the main loop does
 
     def ui(self, fn, *args):
@@ -852,7 +855,8 @@ class App(tk.Tk):
             at = os.path.getmtime(N.TRAY_LAST)
             if at != self.tray_seen and not self.busy:
                 first = self.tray_seen is None; self.tray_seen = at; t = json.load(open(N.TRAY_LAST))
-                if not first and self.icon_key and (t['last'][0], tuple(t.get('segs') or ())) != self.icon_key:
+                key = (t['last'][0], tuple(t.get('segs') or ()))
+                if not first and self.icon_key and key != self.icon_key and key not in self.sent:   # not this window's own result coming back
                     self.icon_key = None   # so the result goes to the tray even when the icon stays the same
                     self.work(self.check_local, 'both')
         except (OSError, ValueError, KeyError, TypeError, IndexError):
@@ -1155,6 +1159,7 @@ class App(tk.Tk):
             try:
                 self.iconbitmap(default=N.tray_icon_file(self.status_state, segs)); self.icon_key = key
                 if self.status_state != 'unk' and set(segs) - {'unk'}:   # the watcher shows the same in the tray
+                    self.sent = (self.sent + [key])[-8:]
                     N.jsave(N.TRAY_GUI, {'last': [self.status_state, f"{len(segs) - segs.count('bad') - segs.count('unk')} of {len(segs)} nodes working",
                                                   time.strftime('%H:%M')], 'segs': segs})
             except Exception:
@@ -1661,6 +1666,9 @@ class Candidates(tk.Toplevel):
         ok = self.tested_ok()
         if not ok:
             self.msg = 'No candidate passed the test; nothing changed. Ping again later.'; return
+        fast = [n for n in ok if (n.get('mbps') or 0) >= N.floor()]
+        if fast:   # only nodes that reach the minimum speed; fewer of them replace fewer slots (the slowest)
+            ok = fast
         cur = self.app.lists[MAIN]
         def speed(i):   # dead slots first, then the slowest
             ms = cur[i].get('pc_ms') or cur[i].get('phone_ms') if i < len(cur) else None
@@ -1674,11 +1682,12 @@ class Candidates(tk.Toplevel):
         self.finish(dead)
 
     def finish(self, dead):
+        """The nodes are in: the dialog closes either way. A slot that failed in the tunnel shows in the main window."""
         if dead:
-            self.msg = (f"{', '.join(f'vless-{i + 1}' for i in dead)} did not work through the PC tunnel after the restart. "
-                        'Ping and test again, then put another node there.')
-        else:
-            self.app.after(0, self.close)
+            self.app.status_text = (f"{', '.join(f'vless-{i + 1}' for i in dead)} did not work through the PC tunnel after the "
+                                    'restart. Open Candidates and put another node there.')
+            self.app.status_state = 'warn'
+        self.app.after(0, self.close)
 
     def deploy(self, pairs):
         """Writes the pairs, deploys, checks the PC tunnel. Returns the slot indexes whose new node failed there."""
@@ -1686,12 +1695,14 @@ class Candidates(tk.Toplevel):
         used = {n['server'] for _, n in pairs}
         self.nodes = [x for x in self.nodes if x['server'] not in used]; self.order = []
         N.deploy_files()
+        if not RONLY:
+            N.wait_api(20)   # the check below must not run while the restarted tunnel is still starting
         self.app.after_deploy(' '.join(f"{tag}: {old} → {new['server']}" + (f" ({new['ms']} ms, tested)." if new.get('ok') else ' (not tunnel-tested).')
                                        for tag, old, new in swaps), False)
         if RONLY:
             return []
-        by = {n['server']: n for n in self.app.lists['pc']}
-        return [i for i, n in pairs if by.get(n['server'], {}).get('pc_ms') is None]
+        by = {n['server']: n for n in self.app.lists['pc']}   # pc_why None: not tested (stale set), not a failure
+        return [i for i, n in pairs if by.get(n['server'], {}).get('pc_ms') is None and by.get(n['server'], {}).get('pc_why') not in (None, 'api down')]
 
     def put_slot(self, slot):
         sel = self.tree.selection()
@@ -2308,8 +2319,8 @@ class Wizard(tk.Tk):
         self.items(['PIA → Settings → Protocols: Protocol OpenVPN, Transport TCP, Remote Port 443.',
                     'Settings → Multi-Hop: tick "Multi-hop and Obfuscation" and choose SOCKS5 Proxy.',
                     'Click EDIT: host 127.0.0.1, port 2080. Leave username and password empty. Save.',
-                    'Settings → Split Tunnel: tick Split Tunnel, Add Application ' + N.CORE + ', set it to Bypass VPN. '
-                    'Without it the VPN cannot connect: its own connection would loop back into the VPN.',
+                    'Only if Split Tunnel has All Other Apps on Use VPN: Settings → Split Tunnel, Add Application '
+                    + N.CORE + ', set it to Bypass VPN. Without it the VPN cannot connect.',
                     'Connect.'], parent=left, wrap=280, numbered=True)
         row = tk.Frame(left, bg=BG); row.pack(fill='x', pady=(6, 4))
         ttk.Button(row, text='Check PIA', command=lambda: (lambda r: self.note(r, 'ok' if 'correct' in r else 'warn'))(N.vpn_check())).pack(side='left')

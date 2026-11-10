@@ -19,15 +19,16 @@ is the normal HTTPS port, the least likely to be blocked.
 1. PIA → **Settings → Protocols**: Protocol **OpenVPN**, Transport **TCP**, Remote Port **443**.
 2. **Settings → Multi-Hop**: tick **Multi-hop and Obfuscation** and choose **SOCKS5 Proxy**.
 3. Click **EDIT**, enter host `127.0.0.1` and port `2080`, leave the username and password empty, and save.
-4. **Settings → Split Tunnel**: tick **Split Tunnel**, click **Add Application**, pick
-   `C:\Program Files\RealityHop\PC\rh-core.exe` and set it to **Bypass VPN**. Leave **All Other Apps** on **Use VPN**.
+4. Only if Split Tunnel has **All Other Apps** set to **Use VPN**: **Settings → Split Tunnel**, click
+   **Add Application**, pick `C:\Program Files\RealityHop\PC\rh-core.exe` and set it to **Bypass VPN**.
 5. Connect.
 
 ![PIA Multi-Hop with the SOCKS5 proxy](images/pia-multihop-socks5.png)
 
-**Why rh-core.exe must bypass the VPN:** rh-core.exe carries the VPN's own connection to the node. Without the bypass,
-PIA routes that connection back into the VPN, which is not up yet, and the VPN cannot connect. Only rh-core.exe needs
-the rule; RealityHop.exe does not.
+**Why rh-core.exe must bypass the VPN:** rh-core.exe carries the VPN's own connection to the node. When all other apps
+use the VPN, PIA routes that connection back into the VPN, which is not up yet, and the VPN cannot connect. Only
+rh-core.exe needs the rule; RealityHop.exe does not. With All Other Apps set to Bypass VPN, rh-core.exe already
+bypasses it and needs no rule.
 
 ![PIA Split Tunnel with rh-core.exe set to Bypass VPN](images/pia-split-tunnel.png)
 
