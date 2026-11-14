@@ -13,11 +13,21 @@
 
 [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes) listesinden ücretsiz genel düğümler alır, bunları kendisi test eder, çalışan en hızlıları kullanır ve çökenleri kendiliğinden değiştirir.
 
-![Kurulum sihirbazı](../images/setup-welcome.png)
+![Kurulum sihirbazı](../images/tr/setup-welcome.png)
 
 ## Nasıl çalışır
 
 VPN uygulaması → PC'nizdeki Reality Hop (SOCKS5 `127.0.0.1:2080`) → genel REALITY düğümü (cloudflare.com'a HTTPS gibi görünür) → VPN sunucusu → internet. VPN'inizin kendi şifrelemesi tüm yol boyunca içeride kalır.
+
+## Ekran görüntüleri
+
+| ![Ana pencere](../images/tr/main-window.png) | ![Adaylar](../images/tr/candidates.png) |
+|---|---|
+| **Ana pencere:** her düğüm canlı tünel üzerinden test edilir, son 24 saat, router tüneli. | **Adaylar:** genel listeden düğümler, PC'nizde ping atılıp test edilir; herhangi birini bir yuvaya koyun. |
+| ![Düğüm ayrıntıları](../images/tr/node-details.png) | ![Sorun bildir](../images/tr/report.png) |
+| **Düğüm ayrıntıları:** düğümün nerede olduğu, testlerde nasıl olduğu, 24 saatlik ping'i. | **Sorun bildir:** kişisel her şeyi ayıklanmış günlükler, bir GitHub issue'suna hazır. |
+| ![Router cihazları](../images/tr/devices.png) | ![Ayarlar](../images/tr/settings.png) |
+| **Router cihazları:** hangi cihazların router tünelini kullanacağını ve adreslerinin nasıl sabit kalacağını seçin. | **Ayarlar:** kontroller, router özellikleri, güncellemeler, sing-box kanalı, kısayollar. |
 
 ## Kurulum
 

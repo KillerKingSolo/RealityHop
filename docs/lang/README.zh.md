@@ -13,11 +13,21 @@
 
 它从 [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes) 获取免费公共节点，自己测试，使用最快的可用节点，并自动替换失效节点。
 
-![设置向导](../images/setup-welcome.png)
+![设置向导](../images/zh/setup-welcome.png)
 
 ## 工作原理
 
 VPN 应用 → 你电脑上的 Reality Hop（SOCKS5 `127.0.0.1:2080`）→ 公共 REALITY 节点（看起来像访问 cloudflare.com 的 HTTPS）→ VPN 服务器 → 互联网。你的 VPN 自身的加密全程保留在里面。
+
+## 截图
+
+| ![主窗口](../images/zh/main-window.png) | ![候选节点](../images/zh/candidates.png) |
+|---|---|
+| **主窗口:** 每个节点都通过运行中的隧道测试，显示最近 24 小时和路由器隧道。 | **候选节点:** 来自公共列表的节点，在你的电脑上测 ping 和测试；可以把任意一个放进槽位。 |
+| ![节点详情](../images/zh/node-details.png) | ![报告问题](../images/zh/report.png) |
+| **节点详情:** 节点所在位置、测试结果、24 小时内的 ping。 | **报告问题:** 去除了所有个人信息的日志，可直接附到 GitHub issue。 |
+| ![路由器设备](../images/zh/devices.png) | ![设置](../images/zh/settings.png) |
+| **路由器设备:** 选择哪些设备走路由器隧道，以及如何固定它们的地址。 | **设置:** 检查、路由器功能、更新、sing-box 通道、快捷方式。 |
 
 ## 安装
 

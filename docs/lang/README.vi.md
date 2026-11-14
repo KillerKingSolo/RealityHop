@@ -13,11 +13,21 @@
 
 Nó lấy các nút công khai miễn phí từ [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), tự kiểm tra, dùng các nút nhanh nhất đang hoạt động và tự thay các nút chết.
 
-![Trình hướng dẫn cài đặt](../images/setup-welcome.png)
+![Trình hướng dẫn cài đặt](../images/vi/setup-welcome.png)
 
 ## Cách hoạt động
 
 Ứng dụng VPN → Reality Hop trên PC của bạn (SOCKS5 `127.0.0.1:2080`) → nút REALITY công khai (trông như HTTPS tới cloudflare.com) → máy chủ VPN → internet. Lớp mã hóa riêng của VPN vẫn nằm bên trong suốt đường đi.
+
+## Ảnh chụp màn hình
+
+| ![Cửa sổ chính](../images/vi/main-window.png) | ![Ứng viên](../images/vi/candidates.png) |
+|---|---|
+| **Cửa sổ chính:** mọi nút được kiểm tra qua đường hầm đang chạy, 24 giờ qua, đường hầm router. | **Ứng viên:** các nút từ danh sách công khai, được ping và kiểm tra trên PC của bạn; đặt bất kỳ nút nào vào một ô. |
+| ![Chi tiết nút](../images/vi/node-details.png) | ![Báo cáo sự cố](../images/vi/report.png) |
+| **Chi tiết nút:** nút ở đâu, kết quả kiểm tra, ping của nó trong 24 giờ. | **Báo cáo sự cố:** nhật ký đã ẩn mọi thông tin cá nhân, sẵn sàng cho một issue trên GitHub. |
+| ![Thiết bị của router](../images/vi/devices.png) | ![Cài đặt](../images/vi/settings.png) |
+| **Thiết bị của router:** chọn thiết bị nào dùng đường hầm router và cách giữ cố định địa chỉ của chúng. | **Cài đặt:** kiểm tra, tính năng router, cập nhật, kênh sing-box, lối tắt. |
 
 ## Cài đặt
 

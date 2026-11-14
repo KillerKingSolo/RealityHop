@@ -13,11 +13,21 @@
 
 Toma nodos públicos gratuitos de [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), los prueba él mismo, usa los más rápidos que funcionan y sustituye los caídos por sí solo.
 
-![Asistente de configuración](../images/setup-welcome.png)
+![Asistente de configuración](../images/es/setup-welcome.png)
 
 ## Cómo funciona
 
 App VPN → Reality Hop en tu PC (SOCKS5 `127.0.0.1:2080`) → nodo REALITY público (parece HTTPS a cloudflare.com) → servidor VPN → internet. El cifrado de tu VPN sigue intacto dentro durante todo el camino.
+
+## Capturas de pantalla
+
+| ![Ventana principal](../images/es/main-window.png) | ![Candidatos](../images/es/candidates.png) |
+|---|---|
+| **Ventana principal:** cada nodo probado a través del túnel activo, las últimas 24 horas, el túnel del router. | **Candidatos:** nodos de la lista pública, con ping y probados en tu PC; pon cualquiera en una ranura. |
+| ![Detalles del nodo](../images/es/node-details.png) | ![Informar de un problema](../images/es/report.png) |
+| **Detalles del nodo:** dónde está un nodo, cómo responde a las pruebas, su ping en 24 horas. | **Informar de un problema:** los registros sin nada personal, listos para un issue de GitHub. |
+| ![Dispositivos del router](../images/es/devices.png) | ![Ajustes](../images/es/settings.png) |
+| **Dispositivos del router:** elige qué dispositivos usan el túnel del router y cómo mantener fija su dirección. | **Ajustes:** comprobaciones, funciones del router, actualizaciones, el canal de sing-box, accesos directos. |
 
 ## Instalar
 
