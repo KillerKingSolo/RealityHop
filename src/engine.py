@@ -24,6 +24,8 @@ from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse, parse_qs
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import version
+import i18n
+from i18n import T
 VERSION = version.VERSION
 
 APP = 'RealityHop'      # file, folder and repository name
@@ -93,12 +95,12 @@ FEEDS = ('https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tl
 # the same file on CDN mirrors, for when GitHub is blocked; {0} = owner/repo, {1} = path
 MIRRORS = ('https://cdn.jsdelivr.net/gh/{0}@main/{1}', 'https://fastly.jsdelivr.net/gh/{0}@main/{1}')
 TUNNEL_PROXY = 'http://127.0.0.1:2080'   # the PC tunnel's mixed inbound also speaks HTTP proxy
-DEFAULTS = {'check_min': 60, 'slow_ms': 200, 'tolerance_ms': 25, 'top': 40, 'router': 0, 'router_host': '192.168.8.1',
+DEFAULTS = {'check_min': 60, 'slow_ms': 200, 'tolerance_ms': 25, 'top': 50, 'router': 0, 'router_host': '192.168.8.1',
             'router_key': '', 'devices': '', 'auto_update': 1, 'singbox': 'stable', 'backend_files': 0,
-            'start_menu': 1, 'desktop_icon': 0, 'pc_tunnel': 1, 'min_mbps': 100}
+            'start_menu': 1, 'desktop_icon': 0, 'pc_tunnel': 1, 'min_mbps': 100, 'lang': ''}
 LIMITS = {'check_min': (15, 1440), 'slow_ms': (50, 5000), 'tolerance_ms': (0, 1000), 'top': (10, 120), 'min_mbps': (0, 1000)}   # as in Settings
 FPS = {'chrome', 'firefox', 'safari', 'ios', 'android', 'edge', '360', 'qq', 'random', 'randomized'}   # uTLS fingerprints
-TOP = 40   # candidates tested per scan (settings)
+TOP = 50   # candidates tested per scan (settings)
 MIN_MBPS = 100   # a node must download at least this fast to be picked first; 0 turns the speed test off (settings.json)
 SPEED_URL = 'https://cachefly.cachefly.net/100mb.test'   # CacheFly's speed test file (anycast), fetched through the node
 FRONTS = {'www.apple.com', 'swdist.apple.com', 'www.icloud.com', 'www.cloudflare.com', 'cloudflare.com', 'www.amazon.com',
@@ -133,6 +135,8 @@ def host_ok(h):
 
 def settings_load():
     raw, d = jload(SETTINGS), {}
+    if raw.get('top') == 40 and not this_pc().get('top50'):   # 40 was the default up to 1.5.2: move it to 50 once
+        raw['top'] = 50; jsave(SETTINGS, raw, indent=1); set_this_pc(top50=True)
     for k, v in DEFAULTS.items():
         try:
             d[k] = type(v)(raw.get(k, v))
@@ -142,6 +146,9 @@ def settings_load():
         d[k] = min(max(d[k], lo), hi)
     if not host_ok(d['router_host']):   # a hand-edited file
         d['router_host'] = DEFAULTS['router_host']
+    if d['lang'] not in i18n.CODES:   # '' until a language is picked: the Windows display language
+        d['lang'] = ''
+    i18n.use(d['lang'])
     global TOP, FULL_EVERY, SLOW, MIN_MBPS
     TOP, FULL_EVERY, SLOW, MIN_MBPS = int(d['top']), int(d['check_min']) * 60, int(d['slow_ms']), int(d['min_mbps'])
     return d
@@ -429,7 +436,7 @@ def gh_get(url, timeout=30):
     The retry also covers a download that stalls partway, as DPI filters do. TLS stays end to end with GitHub."""
     try:
         with urllib.request.urlopen(url, timeout=timeout, context=tls()) as r:
-            return r.read()
+            return read_all(r, timeout * 6)
     except Exception as e:
         if router_only() or not port_open(2080):
             raise
@@ -437,7 +444,20 @@ def gh_get(url, timeout=30):
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({'http': TUNNEL_PROXY, 'https': TUNNEL_PROXY}),
                                          urllib.request.HTTPSHandler(context=tls()))
     with opener.open(url, timeout=timeout * 3) as r:
-        return r.read()
+        return read_all(r, timeout * 6)
+
+
+def read_all(r, limit):
+    """The whole reply, at most limit seconds in all. The socket timeout only covers a silent connection; a filter that
+    lets a few bytes through now and then could keep a download, and the check waiting on it, going for hours."""
+    end, out = time.time() + limit, bytearray()
+    while True:
+        b = r.read(65536)
+        if not b:
+            return bytes(out)
+        out += b
+        if time.time() > end:
+            raise TimeoutError(f'download too slow, stopped after {limit} s')
 
 
 _TLS = []
@@ -814,38 +834,44 @@ def best_first(nodes):
 
 
 def local_test(nodes, speed=False):
-    """The handshake test, run on this PC: one sing-box instance, one port per node, 5 fetches at a time. speed: then the
+    """The handshake test, run on this PC: one sing-box instance, one port per node, 10 fetches at a time. speed: then the
     download test (speed_test)."""
     import tempfile
     if not os.path.exists(CORE):
         raise RuntimeError('rh-core.exe is missing; run the setup again (Settings > Run setup again)')
+    if not nodes:
+        return nodes
     for n in nodes:
         n.pop('ok', None)
+    base = free_base(len(nodes))
     with tempfile.TemporaryDirectory() as d:
         cfg = {'log': {'level': 'error', 'output': os.path.join(d, 'log')},
-               'inbounds': [{'type': 'mixed', 'tag': f'in-{i}', 'listen': '127.0.0.1', 'listen_port': 23000 + i} for i in range(len(nodes))],
+               'inbounds': [{'type': 'mixed', 'tag': f'in-{i}', 'listen': '127.0.0.1', 'listen_port': base + i} for i in range(len(nodes))],
                'outbounds': [outbound19(n, f'n-{i}') for i, n in enumerate(nodes)] + [{'type': 'direct', 'tag': 'direct'}],
                'route': {'rules': [{'inbound': [f'in-{i}'], 'outbound': f'n-{i}'} for i in range(len(nodes))],
                          'final': 'direct', 'auto_detect_interface': True}}
         if store_ok():
             cfg['certificate'] = CERT_STORE
-        json.dump(cfg, open(os.path.join(d, 'c.json'), 'w'))
+        with open(os.path.join(d, 'c.json'), 'w') as f:
+            json.dump(cfg, f)
         p = subprocess.Popen([test_exe(), 'run', '-c', os.path.join(d, 'c.json')], stdin=subprocess.DEVNULL,
                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **NOWIN)
         try:
-            time.sleep(2)
-            if p.poll() is not None:
-                raise RuntimeError('the local test instance did not start')
+            end = time.time() + 10   # listening within a moment; a slow PC gets longer instead of failing every node
+            while not port_open(base + len(nodes) - 1):
+                if p.poll() is not None or time.time() > end:
+                    raise RuntimeError('the local test instance did not start')
+                time.sleep(0.1)
             def one(i):
-                r = run([CURL, '-s', '--ssl-no-revoke', '--socks5-hostname', f'127.0.0.1:{23000 + i}', '-m', '10',
+                r = run([CURL, '-s', '--ssl-no-revoke', '--socks5-hostname', f'127.0.0.1:{base + i}', '-m', '10',
                          '-w', ' %{time_total}', 'https://api.ipify.org'], timeout=20)
                 parts = r.stdout.split()
                 ok = len(parts) == 2 and re.match(r'^\d+\.\d+\.\d+\.\d+$', parts[0])
                 nodes[i].update(ok=bool(ok), exit=parts[0] if ok else '-', ms=int(float(parts[1]) * 1000) if ok else None)
-            with ThreadPoolExecutor(5) as ex:
+            with ThreadPoolExecutor(10) as ex:
                 list(ex.map(one, range(len(nodes))))
             if speed and MIN_MBPS:
-                speed_test(nodes, 23000)
+                speed_test(nodes, base)
         finally:
             p.kill(); p.wait()
         try:
@@ -858,6 +884,15 @@ def local_test(nodes, speed=False):
             n.update(ok=False, exit='-', ms=None, why=next((x.group(0).lower() for x in m if x), 'no-response'))
         n.setdefault('where', '?')
     return nodes
+
+
+def free_base(k):
+    """First port of k free loopback ports in a row for a test instance. A fixed range failed the whole test when
+    another program, or a second test from the window and the watcher at once, held one of its ports."""
+    for base in range(23000, 33000, 500):
+        if not any(port_taken(base + i) for i in range(k)):
+            return base
+    raise RuntimeError('no free local ports for the node test')
 
 
 # ---- vault: every node that ever passed a router test, kept across scans for when the feed cannot be reached
@@ -1977,6 +2012,7 @@ def watch_cycle(st, background=True):
     if dead:
         say('re-checking in 30 s so one dropped probe does not cost a node...'); time.sleep(30)
         res = test(); dead = [t for t, ms in res.items() if ms is None]
+        say(f"re-check: {len(res) - len(dead)} of {len(res)} nodes working" + (f"; dead: {', '.join(dead)}" if dead else ''))
     if dead and (os.path.exists(CORE) or router_only()):   # second opinion: a fresh test instance, not the running tunnel
         again = [dict(n) for n in cur if n['tag'] in dead]; node_test(again)
         fine = [n['tag'] for n in again if n['ok']]
@@ -2025,8 +2061,8 @@ def slow_fix(cur):
 def tray_mark(st, res, dead=None):
     """The tray state from test results {tag: ms or None}."""
     dead = [t for t, ms in res.items() if ms is None] if dead is None else dead
-    st['last'] = ('bad' if len(dead) == len(res) else 'warn' if dead else 'ok', f'{len(res) - len(dead)} of {len(res)} nodes working',
-                  time.strftime('%H:%M'))
+    st['last'] = ('bad' if len(dead) == len(res) else 'warn' if dead else 'ok',
+                  T('{ok} of {n} nodes working', ok=len(res) - len(dead), n=len(res)), time.strftime('%H:%M'))
     st['segs'] = ['bad' if t in dead else 'warn' if (ms or 0) > SLOW else 'ok' for t, ms in res.items()]
 
 
@@ -2159,14 +2195,14 @@ def watch():
     tray = Tray({1: gui_open, 2: lambda: ask('check'), 4: lambda: ask('restart'), 3: lambda: ask('rescue'), 9: quit_})
 
     def show():
-        state, text, at = st.get('last', ('unk', 'not checked yet', ''))
+        state, text, at = st.get('last', ('unk', T('not checked yet'), ''))
         pia['drops'] = [t for t in pia['drops'] if t > time.time() - 3600]
         drops = len(pia['drops'])
         if 'last' in st:
             jsave(TRAY_LAST, {'last': list(st['last']), 'segs': list(st.get('segs', ()))})
         tray.update(state, f"Reality Hop  ·  {text}" + (f'  ·  {at}' if at else '')
-                    + (f"  ·  PIA dropped {drops}x in the last hour" if drops else '')
-                    + ('' if core_mode() else '  ·  rh-core missing'), st.get('segs', ()))
+                    + ('  ·  ' + T('PIA dropped {n}x in the last hour', n=drops) if drops else '')
+                    + ('' if core_mode() else '  ·  ' + T('rh-core missing')), st.get('segs', ()))
 
     def follow_window():
         """The window does the checks while it is open and writes what it shows here; the tray shows the same."""
@@ -2204,14 +2240,14 @@ def watch():
                         say(f"installing Reality Hop {rel['ver']}"); install.apply_update(rel)
                         tray.remove(); lock.close(); install.start_watcher(); os._exit(0)
                     elif rel:
-                        notify(f"Reality Hop {rel['ver']} is available; open Reality Hop to install it.")
+                        notify(T('Reality Hop {ver} is available; open Reality Hop to install it.', ver=rel['ver']))
                 except Exception as e:
                     say(f'app update check failed: {e}')
             pia_bad = pia['bad_since'] is not None
             if 'restart' in want:
                 want.discard('restart'); say('restart requested from the tray')
                 ok = core_restart(); hist_add(event=('restart', 'PC tunnel restarted from the tray'))
-                notify('PC tunnel restarted.' if ok else 'PC tunnel did not come back; open Reality Hop.')
+                notify(T('PC tunnel restarted.') if ok else T('PC tunnel did not come back; open Reality Hop.'))
                 tray_recheck(st)
             elif 'rescue' in want:
                 want.discard('rescue'); out = rescue(); say(out); notify(out); hist_add(event=('rescue', out)); last_full = now
@@ -2342,14 +2378,12 @@ and the router's local API secret.
 '''
 
 
-def vpn_check():
-    """One line about the VPN app: PIA is read from its own settings file (OpenVPN over TCP 443 through SOCKS5
-    127.0.0.1:2080); other apps cannot be checked."""
+def vpn_state():
+    """PIA read from its own settings file: (found, [what is set wrong]). Other apps cannot be checked."""
     try:
         st = json.load(open(PIA_SETTINGS))
     except (OSError, ValueError):
-        return ('VPN app: PIA not found. Point your VPN app at SOCKS5 127.0.0.1:2080 and use OpenVPN over TCP port 443 '
-                '(see the VPN step in the setup)')
+        return False, []
     pc, wrong = st.get('proxyCustom') or {}, []
     if st.get('method') != 'openvpn':
         wrong.append('protocol is not OpenVPN')
@@ -2359,9 +2393,18 @@ def vpn_check():
         wrong.append('remote port is not 443')
     if not (st.get('proxyType') == 'custom' and st.get('proxyEnabled', True) and pc.get('host') == '127.0.0.1' and pc.get('port') == 2080):
         wrong.append('the SOCKS5 proxy is not 127.0.0.1:2080')
+    return True, wrong
+
+
+def vpn_check(t=lambda s, **k: s.format(**k) if k else s):
+    """One line about the VPN app (OpenVPN over TCP 443 through SOCKS5 127.0.0.1:2080). t translates; English by default."""
+    found, wrong = vpn_state()
+    if not found:
+        return t('VPN app: PIA not found. Point your VPN app at SOCKS5 127.0.0.1:2080 and use OpenVPN over TCP port 443 '
+                 '(see the VPN step in the setup)')
     if not wrong:
-        return 'VPN app: PIA uses OpenVPN over TCP 443 through SOCKS5 127.0.0.1:2080, correct'
-    return f"VPN app: SET THIS IN PIA BY HAND ({', '.join(wrong)}): " + PIA_HOW
+        return t('VPN app: PIA uses OpenVPN over TCP 443 through SOCKS5 127.0.0.1:2080, correct')
+    return t('VPN app: SET THIS IN PIA BY HAND ({wrong}): ', wrong=', '.join(t(w) for w in wrong)) + t(PIA_HOW)
 
 
 def setup_pc():
@@ -2629,7 +2672,7 @@ class Tray:
         def menu():
             h = u32.CreatePopupMenu()
             for i, t in MENU:
-                u32.AppendMenuW(h, 0x800 if t is None else 0, i, t)   # MF_SEPARATOR / MF_STRING
+                u32.AppendMenuW(h, 0x800 if t is None else 0, i, t and T(t))   # MF_SEPARATOR / MF_STRING
             pt = W.POINT(); u32.GetCursorPos(ctypes.byref(pt)); u32.SetForegroundWindow(self.hwnd)
             cmd = u32.TrackPopupMenu(h, 0x100 | 0x80, pt.x, pt.y, 0, self.hwnd, None)   # TPM_RETURNCMD | TPM_NONOTIFY
             u32.DestroyMenu(h)

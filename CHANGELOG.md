@@ -3,6 +3,21 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.5.3 (2026-11-13)
+
+**Why update:** Reality Hop now speaks 9 languages, tests 50 candidates instead of 40, and a node test can no longer fail or hang because of a busy port, a slow PC or a stalled download.
+
+- New: 9 languages: English, Spanish, Simplified Chinese, Russian, Ukrainian, Persian, Arabic, Turkish and Vietnamese. Pick one at the first start; change it in Settings → Language. Persian and Arabic read right to left. The activity log and problem reports stay in English.
+- New: translated guides in docs/lang, linked from the top of the README.
+- Changed: each scan tests the 50 fastest candidates instead of 40. A saved setting of 40 (the old default) moves to 50 once.
+- Changed: the node test runs 10 checks at a time instead of 5 and starts as soon as the test instance is ready, not after a fixed 2 s.
+- Fixed: on a slow PC the test instance could take longer than 2 s to start; every node then failed and working nodes could be replaced.
+- Fixed: the node test used fixed local ports; when another program or a second test held one, the whole test failed. It now picks free ports.
+- Fixed: a download that only trickled (as some filters do) had no time limit and could hold up a check for hours. Every GitHub download now stops after a set time and tries the next source.
+- Fixed: the window's activity log grew without limit when left open for days; it keeps the last 2000 lines.
+- Changed: the watcher log now shows the result of the 30 s re-check after a node fails.
+- Security: the release build uses softprops/action-gh-release 3.0.4, and the release check now refuses any GitHub Action that is not on its newest release.
+
 ## 1.5.2 (2026-11-09)
 
 **Why update:** faster speed tests, Replace all keeps your fast nodes, and the background watcher comes back after you quit it.

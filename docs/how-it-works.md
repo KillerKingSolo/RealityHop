@@ -27,7 +27,7 @@ a big website.
 2. Keep only VLESS + REALITY + XTLS-Vision, port 443, a numeric address, a well-formed key, and a front site from a
    short list of big websites.
 3. Ping port 443 of each from this PC and sort by connect time.
-4. Test the 40 fastest (Settings) with a throwaway sing-box (`rh-test.exe`) on this PC. Each node does a real REALITY
+4. Test the 50 fastest (Settings) with a throwaway sing-box (`rh-test.exe`) on this PC. Each node does a real REALITY
    handshake plus an HTTPS fetch of `api.ipify.org`, timed end to end, 5 at a time. A node that only answers on 443
    proves nothing: a rejected key is silently forwarded to the front site and looks healthy.
 5. Keep the 6 fastest that pass, ordered so `vless-1` is the fastest.

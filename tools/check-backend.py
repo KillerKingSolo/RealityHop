@@ -1,6 +1,6 @@
 """check-backend.py  -  refuses a release while the build backend is out of date.
 
-Checks the GitHub Actions in .github/workflows (newest major version), the Python version the release is built with
+Checks the GitHub Actions in .github/workflows (newest release), the Python version the release is built with
 (the newest one that PyInstaller, Pillow and setup-python all support), and any == pins in requirements.txt.
 Runs first in the release workflow, and before a v* tag is pushed (.githooks/pre-push). Exit code 1 = out of date.
 Standard library only.
@@ -25,11 +25,6 @@ def report(ok, what, detail):
         problems.append(what)
 
 
-def major(tag):
-    m = re.match(r'v?(\d+)', tag)
-    return int(m.group(1)) if m else 0
-
-
 def ver(s):
     return tuple(int(x) for x in re.findall(r'\d+', s)[:3])
 
@@ -44,7 +39,7 @@ def actions():
             seen.add((repo, tag))
             latest = get(f'https://api.github.com/repos/{repo}/releases/latest')['tag_name']
             real = get(f'https://api.github.com/repos/{repo}/commits/{tag}')['sha']
-            report(major(tag) >= major(latest) and real == sha, repo, f'uses {tag}, newest {latest}' + ('' if real == sha else f', but {tag} is commit {real}'))
+            report(ver(tag) >= ver(latest) and real == sha, repo, f'uses {tag}, newest {latest}' + ('' if real == sha else f', but {tag} is commit {real}'))
 
 
 def python():

@@ -7,6 +7,13 @@
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-orange?style=flat-square"></a>
 </p>
 
+<p align="center">
+  <b>English</b> · <a href="docs/lang/README.es.md">Español</a> · <a href="docs/lang/README.zh.md">简体中文</a> ·
+  <a href="docs/lang/README.ru.md">Русский</a> · <a href="docs/lang/README.uk.md">Українська</a> ·
+  <a href="docs/lang/README.fa.md">فارسی</a> · <a href="docs/lang/README.ar.md">العربية</a> ·
+  <a href="docs/lang/README.tr.md">Türkçe</a> · <a href="docs/lang/README.vi.md">Tiếng Việt</a>
+</p>
+
 **Get your VPN through networks that block VPNs.** Reality Hop wraps your VPN connection in a VLESS + REALITY tunnel
 ([sing-box](https://github.com/SagerNet/sing-box)). To the network it looks like ordinary HTTPS to a big website,
 such as cloudflare.com. It is made for networks that block VPNs:
@@ -62,6 +69,8 @@ inside it the whole way.
 - **Shows the sing-box build** in use (stable or test build) under the name in the window.
 - **Stop / Start for when you travel.** One button turns everything off, including the start at boot, until you press
   Start.
+- **9 languages.** English, Spanish, Simplified Chinese, Russian, Ukrainian, Persian, Arabic, Turkish and Vietnamese.
+  Pick one at the first start; change it in Settings. The activity log and problem reports stay in English.
 - **Automatic updates.** Reality Hop updates itself from this repo's Releases (SHA-256 checked).
 - **sing-box keeps itself current on its own**, daily, on the channel you choose: **stable** (default) or **test
   builds** (beta, alpha). This does not wait for a Reality Hop release.
