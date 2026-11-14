@@ -68,6 +68,7 @@ ROUTER = not N.pc_only()   # router features on: router section, router node tab
 RONLY = N.router_only()    # router-only mode: no PC tunnel, no PC section
 LISTS = ((('pc', T('PC tunnel'), 'pc-config.json', N.PC_CFG),) if not RONLY else ()) + \
     ((('phone', T('Router devices'), 'router-config.json', N.ROUTER_CFG),) if ROUTER else ())
+EN = {'pc': 'PC tunnel', 'phone': 'Router devices'}   # list names for the log, which stays in English
 MAIN = 'phone' if ROUTER else 'pc'   # the list the slot numbers are taken from
 BACKEND = bool(N.settings_load()['backend_files'])   # sidebar buttons for the PC, Router and logs folders
 PUSH_HINT = (T('Use Push to router when you are ready.') if RONLY else T('Use Push to router and Restart tunnel when you are ready.')
@@ -1016,7 +1017,7 @@ class App(tk.Tk):
                 n['where'] = p.get('where') or where.get(n['server'], '?')
                 for k in ('pc_ms', 'pc_why', 'phone_ms', 'phone_why'):
                     n[k] = p.get(k)
-            self.say(f'{label}: {len(nodes)} nodes in {rel}; testing 443 from this PC...'); N.tcp_probe(nodes)
+            self.say(f'{EN[key]}: {len(nodes)} nodes in {rel}; testing 443 from this PC...'); N.tcp_probe(nodes)
             self.lists[key] = nodes
         if which in ('pc', 'both') and not RONLY:
             self.say('PC: asking the PC tunnel...'); self.pcs = N.pc_status(exit_ip=False)
@@ -2525,7 +2526,7 @@ if __name__ == '__main__':
                       f"API {'up' if st['api'] else 'down'}, using {st['now'] or '?'}, exit {st['exit'] or '?'}")
                 if st['api']:
                     N.check_pc(nodes)
-            print(f'\n{label}  ({rel})')
+            print(f'\n{EN[key]}  ({rel})')
             for n in nodes:
                 tun = n.get('pc_ms') if n.get('pc_ms') is not None else (n.get('pc_why') or '-')
                 print(f"  {n['tag']:8} {n['server']:16} {n['sni']:20} {where.get(n['server'], '?'):26} 443: {ms(n['tcp_ms'], 'no answer'):>10}   tunnel: {tun}")

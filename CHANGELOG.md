@@ -3,6 +3,12 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.5.6 (2026-11-14)
+
+**Why update:** the activity log and problem reports stay fully in English, so support can read them in every language.
+
+- Fixed: in Persian, Arabic and the other translations, the node check wrote "PC tunnel" and "Router devices" into the activity log in the chosen language. It now writes them in English, like the rest of the log.
+
 ## 1.5.5 (2026-11-14)
 
 **Why update:** the node tables now show which site each node disguises your traffic as.
