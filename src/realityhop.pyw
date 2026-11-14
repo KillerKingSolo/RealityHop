@@ -57,8 +57,8 @@ ROWFG = {'ok': '#5fd38d', 'bad': '#ff6b6d', 'warn': '#f5b84a', 'unk': MUTED, 'br
 HOVER = '#1d1d23'
 MIN_W, MIN_H = 1060, 560   # smallest main window; shorter than the content, it scrolls
 PILL = {'ok': '#123222', 'bad': '#3a1214', 'warn': '#3a2a0c', 'unk': '#1f1f25'}
-COLS = (('slot', 70), ('server', 135), ('where', 190), ('tcp', 90), ('tunnel', 95), ('verdict', 420))
-COL_MIN = {'slot': 60, 'server': 115, 'where': 150, 'tcp': 75, 'tunnel': 75}   # node table columns when the window is narrow
+COLS = (('slot', 70), ('server', 135), ('front', 115), ('where', 190), ('tcp', 90), ('tunnel', 95), ('verdict', 420))
+COL_MIN = {'slot': 60, 'server': 115, 'front': 90, 'where': 150, 'tcp': 75, 'tunnel': 75}   # node table columns when the window is narrow
 HEAD = {'slot': T('SLOT'), 'server': T('SERVER'), 'front': T('FRONT'), 'where': T('LOCATION'), 'tcp': T('443 PING'),
         'tunnel': T('TUNNEL'), 'verdict': T('STATUS'), 'num': '#', 'result': T('RESULT')}
 EVENTS = {'drop': ('#ff4d4f', T('PIA Dropped')), 'back': ('#5fd38d', T('PIA Back')), 'replace': ('#f5a524', T('Node Replaced')),
@@ -212,6 +212,17 @@ def dark_titlebar(win, show=True):
 
 def ms(v, none='-'):
     return f'{v} ms' if v is not None else none
+
+
+BRANDS = {'icloud': 'Apple iCloud', 'cdnjs': 'cdnjs (Cloudflare)', 'amd': 'AMD', 'nvidia': 'NVIDIA'}
+
+
+def brand(sni):
+    """The site a node's traffic poses as, by name: www.cloudflare.com -> Cloudflare."""
+    parts = (sni or '').split('.')
+    if len(parts) < 2:
+        return sni or '?'
+    return BRANDS.get(parts[-2], parts[-2].capitalize())
 
 
 def fit_cols(t, w):
@@ -1174,7 +1185,7 @@ class App(tk.Tk):
                     '   ·   ' + T('in use by {who}', who=' + '.join(active)) if active else '')
                 tag = 'broken' if state == 'bad' and n.get('tcp_ms') is None else state
                 t.insert('', 'end', iid=f"{key}:{n['tag']}", tags=('odd' if i % 2 else 'even', tag),
-                         values=(n['tag'], n['server'], n.get('where', '?'), ms(n.get('tcp_ms'), T('none')), ms(tun, '-'), text))
+                         values=(n['tag'], n['server'], brand(n.get('sni')), n.get('where', '?'), ms(n.get('tcp_ms'), T('none')), ms(tun, '-'), text))
             if self.sel and self.sel[0] == key and t.exists(f'{key}:{self.sel[1]}'):
                 t.selection_set(f'{key}:{self.sel[1]}')
 

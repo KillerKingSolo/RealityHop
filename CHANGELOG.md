@@ -3,6 +3,12 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.5.5 (2026-11-14)
+
+**Why update:** the node tables now show which site each node disguises your traffic as.
+
+- New: a FRONT column in the node tables on the main tab names the site the node poses as, for example Cloudflare, Yahoo, Apple or Microsoft. The node details window still shows the full address.
+
 ## 1.5.4 (2026-11-13)
 
 **Why update:** at some window sizes, opening Settings froze the window and used half a CPU core. That no longer happens.
