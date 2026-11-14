@@ -790,9 +790,17 @@ class App(tk.Tk):
             tk.Label(t, text=label, bg=CARD, fg=DIM, font=(UIB, 8)).pack(anchor='w', padx=16, pady=(14, 0))
             v = tk.Label(t, text='-', bg=CARD, fg=FG, font=(UIB, 17)); v.pack(anchor='w', padx=16)
             sub = tk.Label(t, text='', bg=CARD, fg=MUTED, font=(UI, 9), anchor='w', justify=JL); sub.pack(anchor='w', padx=16, pady=(0, 14))
-            t.bind('<Configure>', lambda e, s=sub: s.configure(wraplength=max(60, e.width - 32)))   # long hints wrap instead of being cut off
             self.tiles[k] = (v, sub)
             sub.bind('<Button-1>', lambda e, k=k: self.tile_act.get(k) and self.tile_act[k]())
+        def wrap_tiles(e, n=len(kinds)):
+            # long hints wrap instead of being cut off; the width comes from the row, not the tile: a tile's width
+            # depends on its hint, so wrapping to it could flip a line break and the width back and forth for ever
+            slot = e.width // n   # uniform columns: equal slots, padding included
+            for i, (_, s) in enumerate(self.tiles.values()):
+                w = max(60, slot - (0 if i == 0 else 6) - (0 if i == n - 1 else 6) - 2 - 32)
+                if getattr(s, 'wrap', None) != w:
+                    s.wrap = w; s.configure(wraplength=w)
+        tiles.bind('<Configure>', wrap_tiles)
         self.tile_act = {}   # a tile hint that names a button runs that button when clicked
 
         self.status = strip(main, self.status_text, pad)

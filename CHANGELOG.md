@@ -3,6 +3,12 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.5.4 (2026-11-13)
+
+**Why update:** at some window sizes, opening Settings froze the window and used half a CPU core. That no longer happens.
+
+- Fixed: the overview tiles could resize each other in an endless loop when one hint sat exactly on a line-break boundary (for example a 1300 px wide window, 1000 px tall or less). The window then froze when Settings opened.
+
 ## 1.5.3 (2026-11-13)
 
 **Why update:** Reality Hop now speaks 9 languages, tests 50 candidates instead of 40, and a node test can no longer fail or hang because of a busy port, a slow PC or a stalled download.
