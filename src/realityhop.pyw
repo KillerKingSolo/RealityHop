@@ -1319,6 +1319,8 @@ class App(tk.Tk):
         for n in self.lists['phone']:
             n['phone_ms'] = n['phone_why'] = None
         self.check_local('both')
+        if ok:
+            self.read_router_now()
         self.status_text, self.status_state = sentence, 'ok' if ok and 'FAILED' not in sentence else 'warn'
 
     def do_replace_all(self):
@@ -1338,11 +1340,26 @@ class App(tk.Tk):
         for n in self.lists['phone']:
             n['phone_ms'] = n['phone_why'] = None
         self.check_local('both')
+        if N.PUSHED:
+            self.read_router_now()
         if not N.PUSHED:
             self.status_text, self.status_state = sentence + ' ' + (T('Router NOT updated (not reachable).') if RONLY else
                                                                     T('PC tunnel updated; router NOT updated (not reachable).')), 'warn'; return
         self.status_text, self.status_state = sentence + ' ' + (T('PC tunnel updated.') if N.pc_only() else T('Router updated.') if RONLY
                                                                 else T('Router and PC tunnel updated.')), 'ok'
+
+    def read_router_now(self):
+        """After a push the router picks its node a few seconds later: ask now, and once more 20 s later."""
+        if not ROUTER:
+            return
+        self.router_now = N.router_now(); self.rn_gen = gen = getattr(self, 'rn_gen', 0) + 1
+        def later():
+            time.sleep(20)
+            if gen == self.rn_gen and self.router is None:   # no newer push, no full router test since
+                now = N.router_now()
+                if now and gen == self.rn_gen and self.router is None:
+                    self.router_now = now; self.after(0, self.render)
+        threading.Thread(target=later, daemon=True).start()
 
     def push_phone(self):
         if messagebox.askyesno(T('Push to router'), T('Send router-config.json and the device list to the router over SSH and '
@@ -1353,6 +1370,8 @@ class App(tk.Tk):
         out = N.push(); self.say(out); ok = 'sing-box service: running' in out
         self.router = self.router_now = None; self.router_stale = not ok
         self.check_local('phone')
+        if ok:
+            self.read_router_now()
         self.status_text = T('Router updated and running.') if ok else T('Router NOT updated (see the activity log). router-config.json stays ready for the next try.')
         self.status_state = 'ok' if ok else 'bad'
 
@@ -1513,7 +1532,9 @@ class SettingsDialog(tk.Toplevel):
                           ('Nodes come from github.com/rtwo2/FastNodes', 'https://github.com/rtwo2/FastNodes'),
                           ('Tunnel engine: github.com/SagerNet/sing-box', 'https://github.com/SagerNet/sing-box')):
             link(c2, T(text), url).pack(anchor='w', padx=16)
-        row2 = tk.Frame(c2, bg=CARD); row2.pack(fill='x', padx=16, pady=(4, 14))
+        row2 = tk.Frame(c2, bg=CARD); row2.pack(fill='x', padx=16, pady=(4, 4))
+        self.upd_note = tk.Label(c2, text='', bg=CARD, fg=MUTED, font=(UI, 9), justify=JL, wraplength=500)   # the update check's answer
+        self.upd_note.pack(anchor='e' if i18n.RTL else 'w', padx=16, pady=(0, 10))
         self.upd_btn = ttk.Button(row2, text=T('Check for updates'), style='Outline.TButton', command=self.check_updates)
         self.upd_btn.pack(side='left', padx=(0, 8))
         for text, cmd in (('Run setup again', lambda: (self.destroy(), app.rerun_setup())),
@@ -1532,6 +1553,8 @@ class SettingsDialog(tk.Toplevel):
 
     def check_updates(self):
         """Asks GitHub on a thread: on a network that blocks GitHub the answer takes up to a minute, and the window froze."""
+        # each click asks again; the answer shows under the button, no dialog to dismiss, and only the newest click's answer counts
+        self.upd_gen = gen = getattr(self, 'upd_gen', 0) + 1
         def ask():
             try:
                 res = install.check_update() if N.FROZEN else None
@@ -1540,17 +1563,16 @@ class SettingsDialog(tk.Toplevel):
             self.app.after(0, done, res)
 
         def done(res):
-            if not self.winfo_exists():
+            if gen != self.upd_gen or not self.winfo_exists():
                 return
-            self.upd_btn.state(['!disabled'])
             if isinstance(res, Exception):
-                messagebox.showerror(T('Updates'), T('Could not reach GitHub: {e}', e=res), parent=self)
+                self.upd_note.configure(text=T('Could not reach GitHub: {e}', e=res), fg=STATE['bad'])
             elif res:
                 self.app.update_rel = res; self.destroy(); self.app.do_update()
             else:
-                messagebox.showinfo(T('Updates'), T('Reality Hop {ver} is the newest version.', ver=N.VERSION) if N.FROZEN else
-                                    T('Running from source: update with git pull.'), parent=self)
-        self.upd_btn.state(['disabled']); threading.Thread(target=ask, daemon=True).start()
+                self.upd_note.configure(text=(T('Reality Hop {ver} is the newest version.', ver=N.VERSION) if N.FROZEN else
+                                              T('Running from source: update with git pull.')) + time.strftime('  %H:%M:%S'), fg=MUTED)
+        self.upd_note.configure(text=T('Checking') + '...', fg=MUTED); threading.Thread(target=ask, daemon=True).start()
 
     def uninstall(self):
         if not messagebox.askyesno(T('Uninstall Reality Hop'), T('Remove Reality Hop from this PC?\n\nThe tunnel, the background watcher, the '

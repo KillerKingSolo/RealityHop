@@ -3,6 +3,13 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.5.8 (2026-11-14)
+
+**Why update:** "in use by Router" now shows right after a node change, and Check for updates can be clicked again and again.
+
+- Fixed: after Replace all, a fix, Push to router or Rescue, the tables did not show the router's node until the next Check now. The app now asks the router right after the push, and once more 20 s later in case the router switched node.
+- Changed: Check for updates stays clickable and asks GitHub on every click. The answer shows under the buttons, with the time, instead of in a box you had to close.
+
 ## 1.5.7 (2026-11-14)
 
 **Why update:** the node tables now show correctly when the PC and the router use the same node.
