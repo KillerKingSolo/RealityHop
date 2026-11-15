@@ -613,6 +613,7 @@ class App(tk.Tk):
         self.title(N.NAME); self.geometry('1440x1040'); self.minsize(MIN_W, MIN_H); self.configure(bg=BG)
         self.q, self.busy, self.streak, self.sel, self.cand = queue.Queue(), False, {}, None, None
         self.lists, self.pcs, self.router = {'pc': [], 'phone': []}, None, None
+        self.router_now = None   # the router's active node from Check now, when no full router test ran
         self.pc_pending, self.want_restart, self.pending, self.router_stale = False, False, None, False
         self.sent = []   # tray states this window wrote: the watcher echoes them back
         self.status_text, self.status_state = T('Reading the configs and testing from this PC...'), 'unk'
@@ -1049,6 +1050,7 @@ class App(tk.Tk):
             s = N.router_sync()
             if s:
                 self.say(s); N.hist_add(event=('heal', s))
+            self.router_now = N.router_now()
         self.check_local('both')
         if RONLY:
             self.check_router()
@@ -1169,6 +1171,10 @@ class App(tk.Tk):
         return state, label
 
     def render(self):
+        def server(lst, tag):   # slot names differ between the two lists: compare addresses, not slots
+            return next((n['server'] for n in self.lists[lst] if n['tag'] == tag), None) if tag else None
+        pc_srv = server('pc', self.pcs and self.pcs.get('now'))
+        r_srv = server('phone', self.router[0].get('now') if self.router else self.router_now)
         for key, label, *_ in LISTS:
             t = self.trees[key]; t.delete(*t.get_children())
             for i, n in enumerate(self.lists[key]):
@@ -1178,12 +1184,12 @@ class App(tk.Tk):
                     pc = n if key == 'pc' else next((m for m in self.lists['pc'] if m['server'] == n['server']), None)
                     tun = pc.get('pc_ms') if pc and pc.get('pc_why') is not None else None
                 active = []
-                if self.pcs and self.pcs.get('now') == n['tag']:
+                if pc_srv and n['server'] == pc_srv:
                     active.append(T('PC'))
-                if self.router and self.router[0].get('now') == n['tag']:
-                    active.append(T('router'))
+                if r_srv and n['server'] == r_srv:
+                    active.append(T('Router'))
                 text = {'ok': '●  ', 'warn': '◐  ', 'bad': '✕  '}.get(state, '○  ') + text + (
-                    '   ·   ' + T('in use by {who}', who=' + '.join(active)) if active else '')
+                    '   ·   ' + T('in use by {who}', who=' & '.join(active)) if active else '')
                 tag = 'broken' if state == 'bad' and n.get('tcp_ms') is None else state
                 t.insert('', 'end', iid=f"{key}:{n['tag']}", tags=('odd' if i % 2 else 'even', tag),
                          values=(n['tag'], n['server'], brand(n.get('sni')), n.get('where', '?'), ms(n.get('tcp_ms'), T('none')), ms(tun, '-'), text))
@@ -1309,7 +1315,7 @@ class App(tk.Tk):
 
     def do_rescue(self):
         sentence = N.rescue(); ok = sentence.startswith('Rescue done')
-        self.router = None; self.router_stale = not ok; self.pc_pending = self.want_restart = True
+        self.router = self.router_now = None; self.router_stale = not ok; self.pc_pending = self.want_restart = True
         for n in self.lists['phone']:
             n['phone_ms'] = n['phone_why'] = None
         self.check_local('both')
@@ -1321,14 +1327,14 @@ class App(tk.Tk):
 
     def after_files(self, sentence):
         """Configs changed, nothing deployed."""
-        self.router = None
+        self.router = self.router_now = None
         for n in self.lists['phone']:
             n['phone_ms'] = n['phone_why'] = None
         self.check_local('both')
         self.status_text, self.status_state = sentence + ' ' + T('Nothing deployed yet.') + ' ' + PUSH_HINT, 'warn'
 
     def after_deploy(self, sentence, ask):
-        self.router = None; self.router_stale = not N.PUSHED; self.pc_pending, self.want_restart = True, ask
+        self.router = self.router_now = None; self.router_stale = not N.PUSHED; self.pc_pending, self.want_restart = True, ask
         for n in self.lists['phone']:
             n['phone_ms'] = n['phone_why'] = None
         self.check_local('both')
@@ -1345,7 +1351,7 @@ class App(tk.Tk):
 
     def do_push_phone(self):
         out = N.push(); self.say(out); ok = 'sing-box service: running' in out
-        self.router = None; self.router_stale = not ok
+        self.router = self.router_now = None; self.router_stale = not ok
         self.check_local('phone')
         self.status_text = T('Router updated and running.') if ok else T('Router NOT updated (see the activity log). router-config.json stays ready for the next try.')
         self.status_state = 'ok' if ok else 'bad'
@@ -1409,7 +1415,7 @@ class App(tk.Tk):
     def auto_run(self):
         if self.auto_fix.get():
             out = N.watch_cycle(self.wstate, background=False)
-            self.router = None; self.check_local('both')
+            self.router = self.router_now = None; self.check_local('both')
             if out:
                 self.status_text, self.status_state = T('Auto-repair:') + ' ' + out, 'ok'
             return

@@ -954,6 +954,15 @@ def vault_nodes(exclude=()):
 
 
 # ---- when this PC has no internet: the router still does (it reaches the nodes directly)
+def router_now():
+    """The node the router tunnel uses now (its tag), or None. One quick API call, no node tests."""
+    try:
+        out = ssh('sh -s', f'curl -s -m 5 -H "Authorization: Bearer {secret(ROUTER_CFG)}" {API}/proxies/auto\n', timeout=20)
+        return json.loads(out).get('now')
+    except Exception:
+        return None
+
+
 def router_up():
     if pc_only():
         return False
