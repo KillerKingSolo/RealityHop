@@ -22,3 +22,6 @@ history.json
 last.json
 tray.json
 tray-window.json
+
+# router-core build output
+router-core/out/

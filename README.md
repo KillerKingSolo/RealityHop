@@ -130,7 +130,7 @@ OpenVPN config file, use `proto tcp`, the server's port `443`, and add `socks-pr
 | Nodes&nbsp;→&nbsp;**Rescue** | Use when every node is dead. Tests the vault of known-good nodes and puts the best 6 in. |
 | Help&nbsp;→&nbsp;**Report&nbsp;a&nbsp;problem** | Makes a redacted report of the logs and opens a GitHub issue for you to attach it to. |
 | Files&nbsp;(optional) | **Open backend folder** (`PC`, `Router`, `logs`, `anonymous-logs`) and **Open logs folder**. |
-| **Settings** | Check interval, slow threshold, switching margin, router features on/off, sing-box stable or test builds, show backend files, updates, run setup again, uninstall. |
+| **Settings** | Check interval, slow threshold, switching margin, router features on/off, sing-box stable or test builds (PC and router), show backend files, updates, run setup again, uninstall. |
 
 **Uninstall:** Control Panel → Programs → Uninstall a program → Reality Hop. Windows Settings → Apps → Installed apps
 → Reality Hop and Reality Hop's own Settings → Uninstall do the same.
@@ -145,6 +145,12 @@ OpenVPN config file, use `proto tcp`, the server's port `443`, and add `socks-pr
   releases. Stable is the newest full release; test builds are the newest of all, alpha and beta included. The SHA-256
   checksum is checked, and the new build must accept the config before it replaces the old one. On your PC it runs as
   `rh-core.exe`.
+- **Router engine:** Reality Hop's own build of sing-box for arm64 routers, made from the official source with
+  everything the router does not use left out (18 MB instead of 27 MB for GL.iNet's 1.9.7 package). It follows the
+  PC's channel unless Settings gives the router its own. Reality Hop asks before it updates the router, keeps the old
+  build in the router's RAM, and puts it back if the new one does not start. The router's Plug-ins page keeps showing
+  GL.iNet's 1.9.7 package; the sidebar shows the version that really runs. How it is built and checked:
+  [`router-core/`](router-core/README.md).
 - **Protocol:** VLESS with REALITY and XTLS-Vision, from [XTLS](https://github.com/XTLS).
 
 ## Privacy and security
@@ -153,7 +159,7 @@ OpenVPN config file, use `proto tcp`, the server's port `443`, and add `socks-pr
   encrypted VPN traffic and its destination, the VPN server. Keep the VPN on top. Do not send private traffic through
   Reality Hop without a VPN.
 - **What Reality Hop contacts:**
-  - GitHub, for the node list, the sing-box releases and the Reality Hop releases.
+  - GitHub, for the node list, the sing-box releases, the router builds and the Reality Hop releases.
   - `api.ipify.org`, fetched through each node when it is tested.
   - `www.gstatic.com/generate_204`, the latency test through the tunnel.
   - `ip-api.com`, for node locations, asked through the tunnel.

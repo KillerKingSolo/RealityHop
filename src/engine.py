@@ -96,7 +96,7 @@ FEEDS = ('https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tl
 MIRRORS = ('https://cdn.jsdelivr.net/gh/{0}@main/{1}', 'https://fastly.jsdelivr.net/gh/{0}@main/{1}')
 TUNNEL_PROXY = 'http://127.0.0.1:2080'   # the PC tunnel's mixed inbound also speaks HTTP proxy
 DEFAULTS = {'check_min': 60, 'slow_ms': 200, 'tolerance_ms': 25, 'top': 50, 'router': 0, 'router_host': '192.168.8.1',
-            'router_key': '', 'devices': '', 'auto_update': 1, 'singbox': 'stable', 'backend_files': 0,
+            'router_key': '', 'devices': '', 'auto_update': 1, 'singbox': 'stable', 'router_singbox': '', 'backend_files': 0,
             'start_menu': 1, 'desktop_icon': 0, 'pc_tunnel': 1, 'min_mbps': 100, 'lang': ''}
 LIMITS = {'check_min': (15, 1440), 'slow_ms': (50, 5000), 'tolerance_ms': (0, 1000), 'top': (10, 120), 'min_mbps': (0, 1000)}   # as in Settings
 FPS = {'chrome', 'firefox', 'safari', 'ios', 'android', 'edge', '360', 'qq', 'random', 'randomized'}   # uTLS fingerprints
@@ -146,6 +146,8 @@ def settings_load():
         d[k] = min(max(d[k], lo), hi)
     if not host_ok(d['router_host']):   # a hand-edited file
         d['router_host'] = DEFAULTS['router_host']
+    if d['router_singbox'] not in ('', 'stable', 'testing'):   # '' = the PC's channel
+        d['router_singbox'] = ''
     if d['lang'] not in i18n.CODES:   # '' until a language is picked: the Windows display language
         d['lang'] = ''
     i18n.use(d['lang'])
@@ -250,7 +252,7 @@ def run(cmd, stdin=None, timeout=240, **kw):
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, **NOWIN, **kw)
     _procs.add(p)
     try:
-        out, err = p.communicate(stdin.encode() if stdin is not None else None, timeout=timeout)
+        out, err = p.communicate(stdin.encode() if isinstance(stdin, str) else stdin, timeout=timeout)
     except subprocess.TimeoutExpired:
         p.kill(); p.communicate()
         raise RuntimeError(f'{os.path.basename(cmd[0])} took longer than {timeout} s and was stopped')
@@ -437,6 +439,8 @@ def gh_get(url, timeout=30):
     try:
         with urllib.request.urlopen(url, timeout=timeout, context=tls()) as r:
             return read_all(r, timeout * 6)
+    except urllib.error.HTTPError:
+        raise   # GitHub itself answered (404, rate limit): through the tunnel it answers the same
     except Exception as e:
         if router_only() or not port_open(2080):
             raise
@@ -572,6 +576,25 @@ def outbound19(n, tag):  # works on the router's sing-box 1.9 and on the PC's cu
             'flow': 'xtls-rprx-vision', 'packet_encoding': 'xudp',
             'tls': {'enabled': True, 'server_name': n['sni'], 'utls': {'enabled': True, 'fingerprint': n['fp']},
                     'reality': {'enabled': True, 'public_key': n['pbk'], 'short_id': n['sid']}}}
+
+
+def router_cfg_new(c):
+    """router-config.json (the sing-box 1.9 schema, which GL.iNet's package runs) in the schema of sing-box 1.12 and
+    newer: DNS server types, sniffing and DNS hijack as route actions. Push picks the one the router's sing-box reads."""
+    c = json.loads(json.dumps(c))
+    c['dns']['servers'] = [{'type': 'https', 'tag': s['tag'], 'server': urlparse(s['address']).hostname, 'detour': s['detour']}
+                           if '://' in s.get('address', '') else s for s in c['dns']['servers']]
+    rules = []
+    for i in c['inbounds']:
+        if i.pop('sniff', None):
+            rules.append({'inbound': [i['tag']], 'action': 'sniff'})
+        if i.pop('override_address', None):
+            i.pop('override_port', None); rules.append({'inbound': [i['tag']], 'action': 'hijack-dns'})
+    dns_out = {o['tag'] for o in c['outbounds'] if o.get('type') == 'dns'}
+    c['outbounds'] = [o for o in c['outbounds'] if o.get('type') != 'dns']
+    c['route']['rules'] = rules + [r for r in c['route']['rules'] if r.get('outbound') not in dns_out]
+    c['route'].setdefault('default_domain_resolver', c['dns']['final'])
+    return c
 
 
 def from_outbound(o):
@@ -1243,6 +1266,17 @@ def nft_script():
             .replace('@V6@', ''))
 
 
+OLD_SB = r"sing-box version 2>/dev/null | head -1 | grep -qE 'version 1\.([0-9]|1[01])\.'"   # before 1.12: the old schema
+
+
+def router_cfg_sh(sb='sing-box'):
+    """Shell lines that leave router-config.json in /tmp/sb-new.json, in the schema the router's sing-box reads."""
+    c = json.load(open(ROUTER_CFG, encoding='utf-8'))
+    return ("cat > /tmp/sb-new.json <<'SBEOF'\n" + json.dumps(c, indent=2) + "\nSBEOF\n"
+            "cat > /tmp/sb-new12.json <<'SBEOF'\n" + json.dumps(router_cfg_new(c), indent=2) + "\nSBEOF\n"
+            f"if {OLD_SB.replace('sing-box', sb, 1)}; then rm -f /tmp/sb-new12.json; else mv /tmp/sb-new12.json /tmp/sb-new.json; fi\n")
+
+
 def push():
     """Upload router-config.json and the device firewall rule, check the config on the router, restart its sing-box,
     install the self-repair. Runs over Windows' own ssh; nothing else is needed on this PC."""
@@ -1251,8 +1285,7 @@ def push():
     os.makedirs(ROUTER_DIR, exist_ok=True)   # copies of what goes to the router, for anyone who wants to read them
     open(os.path.join(ROUTER_DIR, 'nft-devices.sh'), 'w', encoding='utf-8', newline='\n').write(nft_script())
     shutil.copy(HEAL_SH, os.path.join(ROUTER_DIR, 'heal.sh'))
-    script = ("cat > /tmp/sb-new.json <<'SBEOF'\n" + open(ROUTER_CFG, encoding='utf-8').read() + "\nSBEOF\n"
-              "sing-box check -c /tmp/sb-new.json || { echo 'CONFIG REJECTED, nothing deployed'; exit 1; }\n"
+    script = (router_cfg_sh() + "sing-box check -c /tmp/sb-new.json || { echo 'CONFIG REJECTED, nothing deployed'; exit 1; }\n"
               "cat > /tmp/nft-devices.sh <<'NFTEOF'\n" + nft_script() + "NFTEOF\n" + PUSH_SH
               + f"echo '{'all' if all_devices() else ' '.join(devices())}' > /etc/sing-box/rh-devices\n"   # for the other PCs
               "echo \"pushed-md5 $(md5sum /etc/sing-box/config.json | cut -c1-32)\"\n")
@@ -1480,6 +1513,14 @@ def core_release():
     if not rels:
         raise RuntimeError('no sing-box release for Windows found on GitHub')
     return max(rels, key=lambda r: vkey(r['tag_name']))
+
+
+def core_versions():
+    """The newest sing-box for this PC on each channel: {'stable': '1.14.4', 'testing': '1.15.0-alpha.13'}, one GitHub call."""
+    rels = [r for r in json.loads(gh_get('https://api.github.com/repos/SagerNet/sing-box/releases?per_page=40', 30))
+            if not r.get('draft') and any(a['name'] == f"sing-box-{r['tag_name'].lstrip('v')}-windows-amd64.zip" for a in r.get('assets', []))]
+    newest = lambda rs: max((r['tag_name'].lstrip('v') for r in rs), key=vkey, default=None)
+    return {'stable': newest([r for r in rels if not r.get('prerelease')]), 'testing': newest(rels)}
 
 
 def core_update(force=False):
@@ -2378,7 +2419,8 @@ Report a problem in the window; it takes everything personal out.
 '''
 ROUTER_README = '''Reality Hop: router tunnel files (GL.iNet, only used with router features on)
 
-router-config.json   the sing-box config that Push to router sends to the router (/etc/sing-box/config.json)
+router-config.json   the sing-box config that Push to router sends to the router (/etc/sing-box/config.json); written
+                     for GL.iNet's sing-box 1.9, converted on the push when the router runs sing-box 1.12 or newer
 nft-devices.sh       the firewall rule sent to the router: it diverts only the chosen devices into sing-box
 heal.sh              the router's self-repair, run there by cron every 30 minutes
 
@@ -2448,17 +2490,145 @@ def setup_pc():
 def router_info():
     """Model, firmware, sing-box version and helper tools on the router (over ssh)."""
     out = ssh('cat /tmp/sysinfo/model 2>/dev/null; echo "|"; cat /etc/glversion 2>/dev/null; echo "|"; '
-              'sing-box version 2>/dev/null | head -1; echo "|"; for t in jq curl; do command -v $t >/dev/null && echo $t; done', timeout=30)
-    model, fw, sb, tools = (out.split('|') + ['', '', '', ''])[:4]
+              'sing-box version 2>/dev/null | head -1; echo "|"; for t in jq curl; do command -v $t >/dev/null && echo $t; done; '
+              f'echo "|"; cat {RC_MARK} 2>/dev/null', timeout=30)
+    model, fw, sb, tools, mark = (out.split('|') + [''] * 5)[:5]
     m = re.search(r'(\d+)\.(\d+)\.(\d+)', sb)
     return {'model': model.strip() or '?', 'firmware': fw.strip() or '?', 'singbox': m.group(0) if m else None,
-            'too_new': bool(m) and (int(m.group(1)), int(m.group(2))) >= (1, 13), 'tools': set(tools.split())}
+            'too_new': bool(m) and not mark.strip() and (int(m.group(1)), int(m.group(2))) >= (1, 15), 'tools': set(tools.split())}
 
 
 def router_install():
     """Install sing-box, jq and curl from the router's package feed (GL.iNet: same as APPLICATIONS > Plug-ins)."""
     return ssh('opkg update >/dev/null 2>&1; opkg install sing-box jq curl 2>&1 | tail -4; sing-box version 2>/dev/null | head -1',
                timeout=600).strip()
+
+
+RC_MARK = '/etc/sing-box/rh-core'   # on the router: "<channel> <version> <sha256>" of the Reality Hop build it runs
+RC_ARCH = {'aarch64': 'arm64'}      # router `uname -m` -> the Reality Hop router builds that exist
+
+
+def router_channel():
+    """The router's sing-box channel, 'stable' or 'preview': its own setting, or the PC's (Settings)."""
+    s = settings_load()
+    return 'preview' if (s['router_singbox'] or s['singbox']) == 'testing' else 'stable'
+
+
+def router_core_release(channel):
+    """Reality Hop's router build of sing-box on a channel: (manifest, binary asset). From this repo's rolling release
+    router-core-<channel>, built by GitHub Actions from router-core/. The manifest and GitHub's digest must agree."""
+    rel = json.loads(gh_get(f'https://api.github.com/repos/{REPO}/releases/tags/router-core-{channel}', 30))
+    assets = {a['name']: a for a in rel.get('assets', [])}
+    m = json.loads(gh_get(assets['manifest-arm64.json']['browser_download_url'], 30))
+    a = assets.get(m.get('asset'))
+    if (not a or not re.fullmatch(r'[0-9a-f]{64}', m.get('sha256', '')) or a.get('digest') != 'sha256:' + m['sha256']
+            or m.get('channel') != channel or not re.fullmatch(r'\d+\.\d+\.\d+(-[a-z]+\.?\d*)?', m.get('singbox', ''))):   # goes into a shell script
+        raise RuntimeError('the router build and its manifest disagree on GitHub; not offered')
+    return m, a
+
+
+def router_core_versions():
+    """The newest Reality Hop router build on each channel: {'stable': '1.14.4', 'preview': ...}; None where unknown."""
+    out = {}
+    for ch in ('stable', 'preview'):
+        try:
+            out[ch] = router_core_release(ch)[0]['singbox']
+        except Exception:
+            out[ch] = None
+    return out
+
+
+def router_core_state():
+    """What the router runs: {'ver', 'mark': [channel, version, sha256] of a Reality Hop build or None, 'arch'}."""
+    out = ssh(f'sing-box version 2>/dev/null | head -1; echo "|"; cat {RC_MARK} 2>/dev/null; echo "|"; uname -m', timeout=30)
+    sb, mark, arch = (out.split('|') + [''] * 3)[:3]
+    m, mk = re.search(r'version (\S+)', sb), mark.split()
+    st = {'ver': m.group(1) if m else None, 'mark': mk if len(mk) == 3 else None, 'arch': RC_ARCH.get(arch.strip())}
+    set_this_pc(router_core=st)   # the window shows the last known one before the router answers
+    return st
+
+
+def router_core_due():
+    """True when the daily look for a new router build is due (router features on and the tunnel pushed once)."""
+    t = this_pc()
+    return not pc_only() and bool(t.get('router_md5')) and time.time() - t.get('rc_checked', 0) > 24 * 3600
+
+
+def router_core_offer():
+    """(state, manifest, asset) when the router should be offered a Reality Hop build it does not run yet, else None.
+    Not for a router other than arm64, and not again within 3 days for a build the person put off (Later)."""
+    set_this_pc(rc_checked=time.time())
+    st = router_core_state()
+    if not st['ver'] or not st['arch']:
+        return None
+    m, a = router_core_release(router_channel())
+    if st['mark'] and st['mark'][2] == m['sha256']:
+        return None
+    later = this_pc().get('rc_later') or {}
+    if later.get('sha') == m['sha256'] and time.time() - later.get('at', 0) < 3 * 86400:
+        return None
+    return st, m, a
+
+
+def router_core_later(m):
+    set_this_pc(rc_later={'sha': m['sha256'], 'at': time.time()})
+
+
+# Runs on the router with the new build in /tmp/rh-core.new (RAM). Nothing changes until the build has run, taken the
+# router config and the old binary is safe in RAM; if the new one does not start, the old binary and config go back.
+RC_INSTALL = r"""trap '' HUP PIPE INT TERM   # a dropped ssh connection must not stop this halfway through the swap
+N=/tmp/rh-core.new; B=/usr/bin/sing-box; O=/tmp/rh-core.old
+fail() { echo "ROUTER BUILD: $*"; rm -f $N /tmp/sb-new.json; rmdir /tmp/heal.lock 2>/dev/null; exit 1; }
+mkdir /tmp/heal.lock 2>/dev/null || fail 'the self-repair is running; try again in a few minutes'
+[ "$(sha256sum $N | cut -c1-64)" = "@SHA@" ] || fail 'the upload is damaged; nothing changed'
+chmod +x $N; $N version 2>&1 | head -1 | grep -qF 'version @VER@' || fail 'the new build does not run on this router; nothing changed'
+@CFG@$N check -c /tmp/sb-new.json || fail 'the new build rejects the router config; nothing changed'
+cp $B $O 2>/dev/null || fail 'not enough free RAM to keep the old build; nothing changed'
+cp /etc/sing-box/config.json /tmp/rh-config.old
+/etc/init.d/sing-box stop; sleep 1; rm -f $B
+if cp $N $B 2>/dev/null && chmod +x $B; then
+  cp /tmp/sb-new.json /etc/sing-box/config.json; /etc/init.d/sing-box start; sleep 8
+  if pgrep -f '/etc/sing-box/config[.]json' >/dev/null && curl -s -m 5 -H 'Authorization: Bearer @API@' http://127.0.0.1:9090/version | grep -q version; then
+    echo '@CH@ @VER@ @SHA@' > @MARK@; opkg flag hold sing-box >/dev/null 2>&1
+    rm -f $O /tmp/rh-config.old $N /tmp/sb-new.json; rmdir /tmp/heal.lock
+    echo 'ROUTER BUILD: installed'; echo "pushed-md5 $(md5sum /etc/sing-box/config.json | cut -c1-32)"; exit 0
+  fi
+  echo 'ROUTER BUILD: the new build did not start:'; logread 2>/dev/null | grep -i sing-box | tail -5
+else
+  echo 'ROUTER BUILD: not enough flash space for the new build'
+fi
+/etc/init.d/sing-box stop; rm -f $B; cp $O $B; chmod +x $B; cp /tmp/rh-config.old /etc/sing-box/config.json
+/etc/init.d/sing-box start; rm -f $O /tmp/rh-config.old $N /tmp/sb-new.json; rmdir /tmp/heal.lock
+echo 'ROUTER BUILD: the previous sing-box and config are back'; exit 1
+"""
+
+
+def rc_script(m):
+    return (RC_INSTALL.replace('@CFG@', router_cfg_sh('$N')).replace('@SHA@', m['sha256']).replace('@VER@', m['singbox'])
+            .replace('@API@', secret(ROUTER_CFG)).replace('@CH@', m['channel']).replace('@MARK@', RC_MARK))
+
+
+def router_core_install(m, a):
+    """Download the router build, check its SHA-256, upload it into the router's RAM and swap it in (RC_INSTALL).
+    Returns (installed, the router's answer)."""
+    say(f"downloading the router's sing-box {m['singbox']} ({a['size'] // 1_000_000} MB) from github.com/{REPO}...")
+    b = gh_get(a['browser_download_url'], 180)
+    if hashlib.sha256(b).hexdigest() != m['sha256']:
+        raise RuntimeError('the router build does not match its checksum; not installed')
+    say('router: uploading the new sing-box into RAM (nothing changes yet)...')
+    ssh('cat > /tmp/rh-core.new', b, timeout=300)
+    say('router: checking the new build, then swapping it in (the tunnel drops for about 10 s)...')
+    out = ssh('sh -s', rc_script(m), timeout=240).strip()
+    md5 = re.search(r'^pushed-md5 ([0-9a-f]{32})$', out, re.M)
+    if md5:
+        router_synced(md5.group(1))
+    ok = 'ROUTER BUILD: installed' in out
+    try:
+        router_core_state()
+    except Exception:
+        pass
+    hist_add(event=('restart', f"router sing-box {m['singbox']} ({m['channel']}) " + ('installed' if ok else 'not installed')))
+    return ok, re.sub(r'\n?pushed-md5 \S*', '', out)
 
 
 def router_clients():

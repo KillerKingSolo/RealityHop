@@ -1,0 +1,146 @@
+name: router-core
+
+# Reality Hop's router build of sing-box (router-core/).
+# Daily: when sing-box (stable or preview) or Go has a new release, build and test it on Linux and open a pull request
+# with the new router-core/version.json. Nothing reaches a router until that pull request is merged.
+# On main (a merge, or any change in router-core/): build what version.json pins, fail unless every SHA-256 matches,
+# test, and put the files on the rolling releases router-core-stable and router-core-preview, where Reality Hop looks.
+
+on:
+  schedule:
+    - cron: '23 5 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['router-core/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: router-core
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      new: ${{ steps.plan.outputs.new }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Plan (newest sing-box and Go, or what version.json pins)
+        id: plan
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" = push ]; then
+            echo "go=$(python3 -c "import json; print(json.load(open('router-core/version.json'))['go'])")" >> "$GITHUB_OUTPUT"
+            echo "new=no" >> "$GITHUB_OUTPUT"; echo "run=yes" >> "$GITHUB_OUTPUT"
+          else
+            python3 router-core/build.py --plan | tee -a "$GITHUB_OUTPUT"
+            grep -q '^new=yes' "$GITHUB_OUTPUT" && echo "run=yes" >> "$GITHUB_OUTPUT" || echo "run=no" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        if: steps.plan.outputs.run == 'yes'
+        with:
+          go-version: ${{ steps.plan.outputs.go }}
+          cache: false
+
+      - name: Build (the new versions, or check the pinned ones)
+        if: steps.plan.outputs.run == 'yes'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MODE: ${{ steps.plan.outputs.new == 'yes' && '--update' || '--verify' }}
+        run: python3 router-core/build.py "$MODE"
+
+      - name: Test both channels on Linux
+        if: steps.plan.outputs.run == 'yes'
+        run: |
+          python3 router-core/build.py --test stable
+          python3 router-core/build.py --test preview
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.plan.outputs.run == 'yes'
+        with:
+          name: router-core
+          path: |
+            router-core/version.json
+            router-core/out/stable/
+            router-core/out/preview/
+
+  propose:
+    needs: build
+    if: needs.build.outputs.new == 'yes' && github.event_name != 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: router-core
+          path: /tmp/rc
+
+      - name: Open a pull request with the new version.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          cp /tmp/rc/version.json router-core/version.json
+          read -r S P G <<< "$(python3 -c "import json; v=json.load(open('router-core/version.json')); print(v['stable']['singbox'], v['preview']['singbox'], v['go'])")"
+          B="router-core/$S-$P-go$G"
+          if git ls-remote --exit-code --heads "https://github.com/$REPO.git" "$B" >/dev/null; then echo "$B is open already"; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$B"; git add router-core/version.json
+          git commit -m "router-core: sing-box $S (stable), $P (preview), Go $G"
+          git push "https://x-access-token:$GH_TOKEN@github.com/$REPO.git" "HEAD:refs/heads/$B"
+          {
+            echo "New upstream versions for Reality Hop's router build of sing-box. Built and tested on Linux by this workflow."
+            echo
+            echo "| Channel | sing-box | SHA-256 (linux/arm64) |"
+            echo "|---|---|---|"
+            python3 -c "import json; v=json.load(open('router-core/version.json')); [print(f\"| {c} | {v[c]['singbox']} | \`{v[c]['sha256']['arm64']}\` |\") for c in ('stable','preview')]"
+            echo
+            echo "Go $G. Release notes: https://github.com/SagerNet/sing-box/releases"
+            echo
+            echo "Merging publishes these builds to router-core-stable and router-core-preview. Reality Hop then offers them to routers (the person confirms each update)."
+          } > /tmp/body.md
+          gh pr create --repo "$REPO" --head "$B" --base main --title "router-core: sing-box $S / $P, Go $G" --body-file /tmp/body.md
+
+  publish:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: router-core
+          path: rc
+
+      - name: Put the builds on the rolling releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          for ch in stable preview; do
+            t="router-core-$ch"; d="rc/out/$ch"
+            notes=$(python3 -c "import json,sys; m=json.load(open('$d/manifest-arm64.json')); print(f\"Reality Hop's router build of sing-box {m['singbox']} ({m['channel']}), from the official source at commit {m['source_commit']}, Go {m['go']}, built from router-core/ at $SHA.\n\nSHA-256 of {m['asset']}: \`{m['sha256']}\`\n\nNot a Reality Hop app release. Reality Hop offers it to routers by itself; see router-core/README.md.\")")
+            if ! gh release view "$t" --repo "$REPO" >/dev/null 2>&1; then
+              gh release create "$t" --repo "$REPO" --target "$SHA" --prerelease --latest=false --title "Router sing-box ($ch)" --notes "$notes"
+            fi
+            gh release upload "$t" --repo "$REPO" --clobber "$d/rh-router-core-linux-arm64" "$d/manifest-arm64.json"
+            gh release edit "$t" --repo "$REPO" --prerelease --latest=false --notes "$notes"
+          done

@@ -1,0 +1,215 @@
+{
+  "log": {
+    "level": "warn",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "https",
+        "tag": "quad9",
+        "server": "9.9.9.9",
+        "detour": "auto"
+      }
+    ],
+    "final": "quad9",
+    "strategy": "prefer_ipv4"
+  },
+  "inbounds": [
+    {
+      "type": "tproxy",
+      "tag": "tproxy-in",
+      "listen": "::",
+      "listen_port": 7895
+    },
+    {
+      "type": "direct",
+      "tag": "dns-in",
+      "listen": "127.0.0.1",
+      "listen_port": 5354
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "vless-1",
+      "server": "203.0.113.1",
+      "server_port": 443,
+      "uuid": "00000000-0000-0000-0000-000000000001",
+      "flow": "xtls-rprx-vision",
+      "packet_encoding": "xudp",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.example.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE",
+          "short_id": "abcd"
+        }
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "vless-2",
+      "server": "203.0.113.2",
+      "server_port": 443,
+      "uuid": "00000000-0000-0000-0000-000000000002",
+      "flow": "xtls-rprx-vision",
+      "packet_encoding": "xudp",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.example.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI",
+          "short_id": "abcd"
+        }
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "vless-3",
+      "server": "203.0.113.3",
+      "server_port": 443,
+      "uuid": "00000000-0000-0000-0000-000000000003",
+      "flow": "xtls-rprx-vision",
+      "packet_encoding": "xudp",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.example.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM",
+          "short_id": "abcd"
+        }
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "vless-4",
+      "server": "203.0.113.4",
+      "server_port": 443,
+      "uuid": "00000000-0000-0000-0000-000000000004",
+      "flow": "xtls-rprx-vision",
+      "packet_encoding": "xudp",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.example.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "BAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ",
+          "short_id": "abcd"
+        }
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "vless-5",
+      "server": "203.0.113.5",
+      "server_port": 443,
+      "uuid": "00000000-0000-0000-0000-000000000005",
+      "flow": "xtls-rprx-vision",
+      "packet_encoding": "xudp",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.example.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "BQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQU",
+          "short_id": "abcd"
+        }
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "vless-6",
+      "server": "203.0.113.6",
+      "server_port": 443,
+      "uuid": "00000000-0000-0000-0000-000000000006",
+      "flow": "xtls-rprx-vision",
+      "packet_encoding": "xudp",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.example.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgY",
+          "short_id": "abcd"
+        }
+      }
+    },
+    {
+      "type": "urltest",
+      "tag": "auto",
+      "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3",
+        "vless-4",
+        "vless-5",
+        "vless-6"
+      ],
+      "url": "https://www.gstatic.com/generate_204",
+      "interval": "10m",
+      "tolerance": 25
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "inbound": [
+          "tproxy-in"
+        ],
+        "action": "sniff"
+      },
+      {
+        "inbound": [
+          "dns-in"
+        ],
+        "action": "hijack-dns"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "direct"
+      }
+    ],
+    "final": "auto",
+    "auto_detect_interface": true,
+    "default_mark": 255,
+    "default_domain_resolver": "quad9"
+  },
+  "experimental": {
+    "clash_api": {
+      "external_controller": "127.0.0.1:9090",
+      "secret": "test"
+    }
+  }
+}

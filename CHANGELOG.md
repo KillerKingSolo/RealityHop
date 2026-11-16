@@ -3,6 +3,16 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.6.0 (2026-11-15)
+
+**Why update:** the router can now run a current sing-box, built small enough for its flash, instead of GL.iNet's 1.9.7.
+
+- New: Reality Hop's own router build of sing-box (arm64 routers). Same official source, with everything the router does not use left out: 18 MB instead of 27 MB. Stable (1.14.4) and test builds (1.15.0-alpha.13).
+- New: Reality Hop checks for a new router build once a day and asks before it updates the router. The update checks the SHA-256, tests the new build against the router config, keeps the old build in the router's RAM and puts it back if the new one does not start.
+- New: Settings sets the router's channel: Same as this PC, Stable or Test builds. The sidebar shows the sing-box version on the PC and on the router.
+- Changed: Push to router sends the config in the format the router's sing-box reads (the 1.12+ format for new builds, the old one for GL.iNet's package). DNS stays Quad9 over HTTPS through the tunnel.
+- Note: the router's Plug-ins page keeps showing GL.iNet's 1.9.7 package. The sidebar shows the version that really runs. See router-core/README.md.
+
 ## 1.5.8 (2026-11-14)
 
 **Why update:** "in use by Router" now shows right after a node change, and Check for updates can be clicked again and again.

@@ -349,7 +349,7 @@ class Tip:
         cls.win.update_idletasks()
         x = min(w.winfo_rootx(), w.winfo_screenwidth() - cls.win.winfo_width() - 8)
         y = w.winfo_rooty() + w.winfo_height() + 4
-        if y + cls.win.winfo_height() > w.winfo_screenheight() - 48:
+        if getattr(w, 'tip_above', False) or y + cls.win.winfo_height() > w.winfo_screenheight() - 48:   # tip_above: the answer shows below
             y = w.winfo_rooty() - cls.win.winfo_height() - 4
         cls.win.geometry(f'+{x}+{y}')
 
@@ -617,7 +617,7 @@ class App(tk.Tk):
         self.pc_pending, self.want_restart, self.pending, self.router_stale = False, False, None, False
         self.sent = []   # tray states this window wrote: the watcher echoes them back
         self.status_text, self.status_state = T('Reading the configs and testing from this PC...'), 'unk'
-        self.update_rel = self.upd_win = self.cur = None; self.jobs, self.run, self.upd_wait = [], 0, False
+        self.update_rel = self.upd_win = self.rc_win = self.cur = None; self.jobs, self.run, self.upd_wait = [], 0, False
         self.ready = threading.Event()   # set once the main loop runs
         N.say = self.say; self.flog = N.file_log('window'); self.wstate, self.started = {}, 0
         self.lock = socket.socket()
@@ -649,7 +649,7 @@ class App(tk.Tk):
         self.bind('<Button-1>', self.click_off, add='+')
         self.after(150, self.drain); self.after(400, lambda: self.work(self.first_check)); self.after(1500, self.auto_tick); self.after(5000, self.watchdog)
         self.tray_seen = None; self.after(5000, self.follow_tray)
-        threading.Thread(target=self.find_update, daemon=True).start(); self.after(30000, self.maybe_core_update)
+        threading.Thread(target=self.find_update, daemon=True).start(); self.after(30000, self.maybe_core_update); self.after(45000, self.maybe_router_core)
         if N.startup_on() and not N.stopped() and not N.port_taken(N.WATCH_PORT):
             install.start_watcher()   # quit from the tray menu: opening the window brings it back
         self.after(0, self.ready.set)   # last: nothing runs it before the main loop does
@@ -679,6 +679,32 @@ class App(tk.Tk):
             self.show_core(); self.check_local('pc')
             self.status_text, self.status_state = T('sing-box {ver} installed; the tunnel is running on it.', ver=ver), 'ok'
 
+    def maybe_router_core(self, force=False):
+        """Reality Hop's router build of sing-box: once a day, and at once after the router's channel changes, see whether
+        the router runs the newest build of its channel. If not, ask (RouterCoreDialog); it never installs unasked."""
+        if not force:
+            self.after(6 * 3600 * 1000, self.maybe_router_core)   # router_core_due keeps the look daily
+        if not ROUTER or not (force or N.router_core_due()) or (self.rc_win and self.rc_win.winfo_exists()):
+            return
+        def look():
+            try:
+                offer = N.router_core_offer(); self.show_router_core(N.this_pc().get('router_core'))
+            except Exception as e:   # router or GitHub out of reach: tomorrow again
+                self.say(f"router sing-box check failed: {e}"); return
+            if offer:
+                self.after(0, lambda: setattr(self, 'rc_win', RouterCoreDialog(self, *offer)))
+        threading.Thread(target=look, daemon=True).start()
+
+    def router_core_install(self, m, a):
+        ok, out = N.router_core_install(m, a)
+        for line in out.splitlines():
+            self.say('router: ' + line)
+        self.status_text, self.status_state = ((T("The router runs sing-box {ver} now.", ver=m['singbox']), 'ok') if ok else
+                                               (T("The router's sing-box was not updated; it runs as before. See the activity log."), 'warn'))
+        self.show_router_core(N.this_pc().get('router_core'))
+        if ok:
+            self.check_local('phone')
+
     def find_update(self):
         try:
             rel = install.check_update()
@@ -707,13 +733,21 @@ class App(tk.Tk):
         # sidebar: every action, grouped
         self.side_sc = Scroll(self, SIDE, width=262); self.side_sc.pack(side='left', fill='y'); side = self.side = self.side_sc.inner
         tk.Frame(self, bg=LINE, width=1).pack(side='left', fill='y')
-        brand = ttk.Frame(side, style='Side.TFrame'); brand.pack(fill='x', padx=18, pady=(20, 4))
+        brand = ttk.Frame(side, style='Side.TFrame'); brand.pack(fill='x', padx=18, pady=(8, 4))
         tk.Label(brand, text='●', bg=SIDE, fg=ACC, font=(UIB, 14)).pack(side='left')
         ttk.Label(brand, text=T(' Reality Hop'), style='Brand.TLabel').pack(side='left')
         ttk.Label(side, text=(T('Router only') if RONLY else T('PC + router') if ROUTER else T('PC only')) + '  ·  '
                   + (f'v{N.VERSION}' if N.core_mode() or RONLY else T('rh-core MISSING')), style='SideMuted.TLabel').pack(anchor='w', padx=20)
-        self.core_lbl = ttk.Label(side, text=T('sing-box ...'), style='SideMuted.TLabel'); self.core_lbl.pack(anchor='w', padx=20, pady=(0, 14))
-        threading.Thread(target=self.show_core, daemon=True).start()
+        self.core_lbl = ttk.Label(side, text=T('sing-box ...'), style='SideMuted.TLabel', wraplength=230)
+        if ROUTER:   # two versions: one heading, then a short line each, so neither is cut off
+            ttk.Label(side, text='sing-box', style='SideMuted.TLabel').pack(anchor='w', padx=20)
+        if not RONLY:
+            self.core_lbl.pack(anchor='w', padx=20, pady=(0, 0 if ROUTER else 14))
+            threading.Thread(target=self.show_core, daemon=True).start()
+        self.rcore_lbl = ttk.Label(side, text='', style='SideMuted.TLabel', wraplength=230)
+        if ROUTER:   # the router's sing-box: the last known one at once, then asked over ssh
+            self.rcore_lbl.pack(anchor='w', padx=20, pady=(0, 14)); self.show_router_core(N.this_pc().get('router_core'))
+            threading.Thread(target=self.ask_router_core, daemon=True).start()
 
         def group(title, glyph, shape):
             f = tk.Frame(side, bg='#17171c'); f.pack(fill='x', padx=10, pady=(16, 4))
@@ -875,10 +909,28 @@ class App(tk.Tk):
         self.geometry(f'{min(1440, self.winfo_screenwidth() - 40)}x{h}'); self.minsize(MIN_W, MIN_H)   # smaller scrolls
 
     def show_core(self):
-        """Under the name: the sing-box build on this PC and whether it is a stable release or a test build."""
-        ver = N.core_version(); m = re.search(r'alpha|beta|rc', ver or '')
-        text = f"sing-box {ver} · {T('test build') if m else T('stable')}" if ver else T('sing-box: not installed')   # fits the sidebar
+        """Under the name: the sing-box version on this PC (an alpha or beta says so in the version itself)."""
+        ver = N.core_version()
+        text = f"sing-box {ver}" if ver else T('sing-box: not installed')
+        if ROUTER and ver:
+            text = f"{T('PC')}: {ver}"
         self.ui(lambda: self.core_lbl.configure(text=text))
+
+    def ask_router_core(self):
+        try:
+            self.show_router_core(N.router_core_state())
+        except Exception:   # router out of reach: the last known version stays
+            pass
+
+    def show_router_core(self, st):
+        """Under it: the router's sing-box version; GL.iNet's package says so. st: router_core_state()."""
+        if not st or not st.get('ver'):
+            return
+        text = f"{T('Router')}: {st['ver']}" + ('' if st.get('mark') else f" · {T('GL.iNet package')}")
+        if threading.current_thread() is threading.main_thread():
+            self.rcore_lbl.configure(text=text)
+        else:
+            self.ui(lambda: self.rcore_lbl.configure(text=text))
 
     def toggle_log(self):
         self.log_shown = not self.log_shown
@@ -1513,19 +1565,35 @@ class SettingsDialog(tk.Toplevel):
         ttk.Combobox(row, textvariable=self.lang_var, values=names, state='readonly', width=16).pack(side='left', padx=10)
         c2 = card(self, fill='x', padx=22, pady=(14, 0)); c2.configure(bg=CARD)
         self.router_var, self.upd_var = tk.BooleanVar(value=bool(cur['router'])), tk.BooleanVar(value=bool(cur['auto_update']))
-        self.beta_var, self.files_var = tk.BooleanVar(value=cur['singbox'] == 'testing'), tk.BooleanVar(value=bool(cur['backend_files']))
+        self.files_var = tk.BooleanVar(value=bool(cur['backend_files']))
         self.menu_var, self.desk_var = tk.BooleanVar(value=bool(cur['start_menu'])), tk.BooleanVar(value=bool(cur['desktop_icon']))
         self.channel, self.icons = cur['singbox'], (cur['start_menu'], cur['desktop_icon'])
         self.ronly_var = tk.BooleanVar(value=RONLY)
         for text, var in (('Router features (GL.iNet): show the router section', self.router_var),
                           ('Router only: no tunnel on this PC; the router tunnels your devices', self.ronly_var),
                           ('Install Reality Hop updates automatically', self.upd_var),
-                          ('sing-box test builds (beta, alpha) instead of stable; updated daily either way', self.beta_var),
                           ('Show backend files: buttons for the PC, Router and logs folders', self.files_var),
                           ('Show Reality Hop in the Start menu and Windows search', self.menu_var),
                           ('Desktop icon', self.desk_var)):
             t = Toggle(c2, T(text), var); t.configure(bg=CARD); t.c.configure(bg=CARD); t.lab.configure(bg=CARD, font=(UI, 10))
             t.pack(anchor='w', padx=16, pady=(10, 0))
+        # sing-box channels: each choice shows the version it gives and marks the one running; updated daily either way
+        sb = tk.Frame(c2, bg=CARD); sb.pack(anchor='w', fill='x', padx=16, pady=(12, 0))
+        self.pc_keys, self.rc_keys, self.pc_cb, self.rc_cb = ('stable', 'testing'), ('', 'stable', 'testing'), None, None
+        self.sb_vers, self.rc_was = {'pc': {}, 'router': {}}, N.router_channel()
+        self.pc_now, self.rc_now = (None if RONLY else N.core_version()), N.this_pc().get('router_core') or {}
+        for key, label, keys, now in (('pc', "PC's sing-box", self.pc_keys, cur['singbox']),
+                                      ('router', "Router's sing-box", self.rc_keys, cur['router_singbox'])):
+            if (key == 'pc' and RONLY) or (key == 'router' and not ROUTER):
+                continue
+            r = sb.grid_size()[1]
+            tk.Label(sb, text=T(label), bg=CARD, fg=FG, font=(UI, 10)).grid(row=r, column=0, sticky='w', pady=3)
+            cb = ttk.Combobox(sb, state='readonly', width=54); cb.grid(row=r, column=1, sticky='w', padx=10, pady=3)
+            cb['values'] = [''] * len(keys); cb.current(keys.index(now)); cb.bind('<<ComboboxSelected>>', self.sb_fill)
+            setattr(self, 'pc_cb' if key == 'pc' else 'rc_cb', cb)
+        self.sb_note = tk.Label(c2, text='', bg=CARD, fg=MUTED, font=(UI, 9), justify=JL, wraplength=560)
+        self.sb_note.pack(anchor='e' if i18n.RTL else 'w', padx=16); self.sb_fill()
+        threading.Thread(target=self.sb_ask, daemon=True).start()
         tk.Label(c2, text=f'{N.NAME} {N.VERSION}', bg=CARD, fg=MUTED, font=(UI, 9)).pack(anchor='w', padx=16, pady=(12, 2))
         for text, url in ((f'github.com/{N.REPO}', f'https://github.com/{N.REPO}'),
                           ("What's new (changelog)", f'https://github.com/{N.REPO}/blob/main/CHANGELOG.md'),
@@ -1536,7 +1604,7 @@ class SettingsDialog(tk.Toplevel):
         self.upd_note = tk.Label(c2, text='', bg=CARD, fg=MUTED, font=(UI, 9), justify=JL, wraplength=500)   # the update check's answer
         self.upd_note.pack(anchor='e' if i18n.RTL else 'w', padx=16, pady=(0, 10))
         self.upd_btn = ttk.Button(row2, text=T('Check for updates'), style='Outline.TButton', command=self.check_updates)
-        self.upd_btn.pack(side='left', padx=(0, 8))
+        self.upd_btn.pack(side='left', padx=(0, 8)); self.upd_btn.tip_above = True   # its answer shows right below it
         for text, cmd in (('Run setup again', lambda: (self.destroy(), app.rerun_setup())),
                           *((('Change router', self.change_router),) if ROUTER else ()), ('Uninstall', self.uninstall)):
             ttk.Button(row2, text=T(text), style='Outline.TButton', command=cmd).pack(side='left', padx=(0, 8))
@@ -1544,6 +1612,44 @@ class SettingsDialog(tk.Toplevel):
         ttk.Button(row, text=T('Save'), style='Accent.TButton', command=self.save).pack(side='right')
         ttk.Button(row, text=T('Defaults'), command=lambda: [v.set(N.DEFAULTS[k]) for k, v in self.vars.items()]).pack(side='right', padx=8)
         dark_titlebar(self)
+
+    def sb_ask(self):
+        """The newest version on each channel, from GitHub (on a thread: a blocked GitHub takes a while)."""
+        vers = {'pc': {}, 'router': {}}
+        try:
+            vers['pc'] = {} if RONLY else N.core_versions()
+        except Exception:
+            pass
+        if ROUTER:
+            vers['router'] = N.router_core_versions()
+        self.app.after(0, lambda: self.winfo_exists() and (self.sb_vers.update(vers), self.sb_fill()))
+
+    def pc_sel(self):
+        return self.pc_keys[self.pc_cb.current()] if self.pc_cb else N.settings_load()['singbox']
+
+    def sb_fill(self, *_):
+        """Choice texts with versions, '(installed)' on the running one, and what Save changes (upgrade or downgrade)."""
+        names = {'': T('Same as this PC'), 'stable': T('Stable'), 'testing': T('Test builds (beta, alpha)')}
+        def opt(k, ver, now):
+            return names[k] + (f'  ·  {ver}' + (f"  ({T('installed')})" if ver == now else '') if ver else '')
+        def change(what, old, new):
+            if not old or not new or old == new:
+                return ''
+            how = T('upgrade') if N.vkey(new) > N.vkey(old) else T('downgrade')
+            return T('{what}: {old} → {new} ({how})', what=what, old=old, new=new, how=how)
+        notes, pv, rv = [], self.sb_vers['pc'], self.sb_vers['router']
+        if self.pc_cb:
+            i = self.pc_cb.current(); self.pc_cb['values'] = [opt(k, pv.get(k), self.pc_now) for k in self.pc_keys]; self.pc_cb.current(i)
+            notes.append(change(T("PC's sing-box"), self.pc_now, pv.get(self.pc_keys[i])))
+        if self.rc_cb:
+            pc_ch = 'preview' if self.pc_sel() == 'testing' else 'stable'
+            ch = lambda k: pc_ch if k == '' else 'preview' if k == 'testing' else 'stable'
+            ours = self.rc_now.get('ver') if self.rc_now.get('mark') else None   # '(installed)' only on a Reality Hop build
+            i = self.rc_cb.current(); self.rc_cb['values'] = [opt(k, rv.get(ch(k)), ours) for k in self.rc_keys]; self.rc_cb.current(i)
+            notes.append(change(T("Router's sing-box"), self.rc_now.get('ver'), rv.get(ch(self.rc_keys[i]))))
+        notes = [n for n in notes if n]
+        self.sb_note.configure(text='\n'.join([T('When you save:')] + notes) if notes else '')
+        self.sb_note.pack_configure(pady=(4, 0) if notes else 0)
 
     def change_router(self):
         if messagebox.askyesno(T('Change router'), T('For a new router, a reset router or a new router address.\n\nReality Hop '
@@ -1587,7 +1693,8 @@ class SettingsDialog(tk.Toplevel):
     def save(self):
         try:
             d = N.settings_save(dict({k: v.get() for k, v in self.vars.items()}, router=int(self.router_var.get()),
-                                     auto_update=int(self.upd_var.get()), singbox='testing' if self.beta_var.get() else 'stable',
+                                     auto_update=int(self.upd_var.get()), singbox=self.pc_sel(),
+                                     router_singbox=self.rc_keys[self.rc_cb.current()] if self.rc_cb else N.settings_load()['router_singbox'],
                                      backend_files=int(self.files_var.get()), start_menu=int(self.menu_var.get()),
                                      desktop_icon=int(self.desk_var.get()), pc_tunnel=int(not self.ronly_var.get())))
         except (tk.TclError, ValueError):
@@ -1626,6 +1733,8 @@ class SettingsDialog(tk.Toplevel):
         if channel:
             self.app.say(f"sing-box channel: {d['singbox']}; installing that build now...")
             self.app.work(self.app.core_update)
+        if ROUTER and N.router_channel() != self.rc_was:   # the router's channel changed: offer that build now
+            self.app.after(2000, lambda: self.app.maybe_router_core(force=True))
 
 
 class Candidates(tk.Toplevel):
@@ -1989,6 +2098,36 @@ class UpdateDialog(tk.Toplevel):
         self.app.work(self.app.apply_update, self.rel)
 
 
+class RouterCoreDialog(tk.Toplevel):
+    """Reality Hop's router build of sing-box is ready: what the router runs now, what it would get, update or later."""
+    def __init__(self, app, st, m, a):
+        super().__init__(app); self.app, self.m, self.a = app, m, a
+        self.configure(bg=BG); self.title(T("Router's sing-box")); self.resizable(False, False); self.transient(app)
+        ch = lambda c: T('Stable') if c == 'stable' else T('Test builds (beta, alpha)')
+        tk.Label(self, text=T("Update the router's sing-box?"), bg=BG, fg=FG, font=(UIB, 16)).pack(anchor='w', padx=24, pady=(20, 10))
+        c = card(self, fill='x', padx=24)
+        now = (T('Reality Hop build, {channel}', channel=ch(st['mark'][0])) if st['mark'] else T('GL.iNet package'))
+        for i, (k, v) in enumerate(((T('On the router now'), f"sing-box {st['ver']}  ·  {now}"),
+                                    (T('New'), f"sing-box {m['singbox']}  ·  " + T('Reality Hop build, {channel}', channel=ch(m['channel']))),
+                                    (T('Download'), f"{a['size'] / 1e6:.1f} MB"))):
+            tk.Label(c, text=k, bg=CARD, fg=MUTED, font=(UI, 10)).grid(row=i, column=0, sticky='w', padx=(16, 20), pady=6)
+            tk.Label(c, text=v, bg=CARD, fg=FG, font=(UIB if i == 1 else UI, 10)).grid(row=i, column=1, sticky='w', padx=(0, 16))
+        tk.Label(self, text=T('A smaller sing-box made for routers: only what Reality Hop uses, built from the official source. '
+                              'The tunnel on the router drops for about 10 seconds. If the new build does not start, the old one '
+                              'goes back by itself.'), bg=BG, fg=MUTED, font=(UI, 9), justify=JL, wraplength=520).pack(anchor='w', padx=24, pady=(12, 0))
+        row = tk.Frame(self, bg=BG); row.pack(fill='x', padx=24, pady=18)
+        ttk.Button(row, text=T('Update router'), style='Accent.TButton', command=self.install).pack(side='left')
+        ttk.Button(row, text=T('Later'), command=self.later).pack(side='left', padx=8)
+        link(row, T('How it is built'), f'https://github.com/{N.REPO}/tree/main/router-core', bg=BG).pack(side='right')
+        self.protocol('WM_DELETE_WINDOW', self.later); dark_titlebar(self); self.lift(); self.focus_force()
+
+    def install(self):
+        self.destroy(); self.app.work(self.app.router_core_install, self.m, self.a)
+
+    def later(self):
+        N.router_core_later(self.m); self.destroy()
+
+
 class ReportDialog(tk.Toplevel):
     """Report a problem: an anonymous copy of the three logs plus a short summary, shown before anything leaves this PC."""
     def __init__(self, app):
@@ -2114,7 +2253,7 @@ class Wizard(tk.Tk):
         wide = max(tkf.Font(font=(UIB, 10)).measure(T(n)) for _, n in self.STEPS) + 50
         side = tk.Frame(self, bg=SIDE, width=max(230, wide)); side.pack(side='left', fill='y'); side.pack_propagate(False)
         tk.Frame(self, bg=LINE, width=1).pack(side='left', fill='y')
-        brand = tk.Frame(side, bg=SIDE); brand.pack(fill='x', padx=18, pady=(20, 4))
+        brand = tk.Frame(side, bg=SIDE); brand.pack(fill='x', padx=18, pady=(8, 4))
         tk.Label(brand, text='●', bg=SIDE, fg=ACC, font=(UIB, 14)).pack(side='left')
         tk.Label(brand, text=T(' Reality Hop'), bg=SIDE, fg=FG, font=(UIB, 15)).pack(side='left')
         tk.Label(side, text=T('setup') + f'  ·  v{N.VERSION}', bg=SIDE, fg=MUTED, font=(UI, 9)).pack(anchor='w', padx=20, pady=(0, 22))
@@ -2399,7 +2538,7 @@ class Wizard(tk.Tk):
         elif i['too_new']:
             self.ok.add('box'); self.after(0, self.nav)
             self.after(0, self.note, T("sing-box {ver} is installed. Reality Hop's router config is written for sing-box 1.9 to "
-                                       '1.12; this newer version may reject it. If Push to router fails, please open an issue on GitHub.',
+                                       '1.14; this newer version may reject it. If Push to router fails, please open an issue on GitHub.',
                                        ver=i['singbox']), 'warn')
         else:
             self.done_ok('box', T('{model}: sing-box {ver}, jq and curl are installed. Press Next.', model=i['model'], ver=i['singbox']))

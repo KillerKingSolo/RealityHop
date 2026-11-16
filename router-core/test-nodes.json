@@ -1,0 +1,125 @@
+{
+  "log": {
+    "level": "error"
+  },
+  "inbounds": [
+    {
+      "type": "mixed",
+      "tag": "in-0",
+      "listen": "127.0.0.1",
+      "listen_port": 21000
+    },
+    {
+      "type": "mixed",
+      "tag": "in-1",
+      "listen": "127.0.0.1",
+      "listen_port": 21001
+    },
+    {
+      "type": "mixed",
+      "tag": "in-2",
+      "listen": "127.0.0.1",
+      "listen_port": 21002
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "n-0",
+      "server": "203.0.113.1",
+      "server_port": 443,
+      "uuid": "00000000-0000-0000-0000-000000000001",
+      "flow": "xtls-rprx-vision",
+      "packet_encoding": "xudp",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.example.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE",
+          "short_id": "abcd"
+        }
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "n-1",
+      "server": "203.0.113.2",
+      "server_port": 443,
+      "uuid": "00000000-0000-0000-0000-000000000002",
+      "flow": "xtls-rprx-vision",
+      "packet_encoding": "xudp",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.example.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI",
+          "short_id": "abcd"
+        }
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "n-2",
+      "server": "203.0.113.3",
+      "server_port": 443,
+      "uuid": "00000000-0000-0000-0000-000000000003",
+      "flow": "xtls-rprx-vision",
+      "packet_encoding": "xudp",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.example.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM",
+          "short_id": "abcd"
+        }
+      }
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "ip_is_private": true,
+        "outbound": "direct"
+      },
+      {
+        "inbound": [
+          "in-0"
+        ],
+        "outbound": "n-0"
+      },
+      {
+        "inbound": [
+          "in-1"
+        ],
+        "outbound": "n-1"
+      },
+      {
+        "inbound": [
+          "in-2"
+        ],
+        "outbound": "n-2"
+      }
+    ],
+    "final": "direct",
+    "auto_detect_interface": true
+  }
+}
