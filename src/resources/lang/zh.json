@@ -512,5 +512,8 @@
  "upgrade": "升级",
  "downgrade": "降级",
  "{what}: {old} → {new} ({how})": "{what}：{old} → {new}（{how}）",
- "When you save:": "保存后："
+ "When you save:": "保存后：",
+ "Router not connected": "路由器未连接",
+ "Not connected": "未连接",
+ "Not on the router's network; press Test on router": "不在路由器的网络中；请按“在路由器上测试”"
 }

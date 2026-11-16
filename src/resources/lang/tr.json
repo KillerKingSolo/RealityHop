@@ -512,5 +512,8 @@
  "upgrade": "yükseltme",
  "downgrade": "düşürme",
  "{what}: {old} → {new} ({how})": "{what}: {old} → {new} ({how})",
- "When you save:": "Kaydettiğinizde:"
+ "When you save:": "Kaydettiğinizde:",
+ "Router not connected": "Router bağlı değil",
+ "Not connected": "Bağlı değil",
+ "Not on the router's network; press Test on router": "Router ağında değilsiniz; Router'da test et'e basın"
 }

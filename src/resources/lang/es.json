@@ -512,5 +512,8 @@
  "upgrade": "actualización",
  "downgrade": "versión anterior",
  "{what}: {old} → {new} ({how})": "{what}: {old} → {new} ({how})",
- "When you save:": "Al guardar:"
+ "When you save:": "Al guardar:",
+ "Router not connected": "Router no conectado",
+ "Not connected": "No conectado",
+ "Not on the router's network; press Test on router": "No estás en la red del router; pulsa Probar en el router"
 }

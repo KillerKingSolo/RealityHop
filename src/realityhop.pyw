@@ -614,6 +614,8 @@ class App(tk.Tk):
         self.q, self.busy, self.streak, self.sel, self.cand = queue.Queue(), False, {}, None, None
         self.lists, self.pcs, self.router = {'pc': [], 'phone': []}, None, None
         self.router_now = None   # the router's active node from Check now, when no full router test ran
+        self.router_away = None   # why the router cannot be reached (router_here), None when it can or nobody asked yet
+        self.rcore_text = ''
         self.pc_pending, self.want_restart, self.pending, self.router_stale = False, False, None, False
         self.sent = []   # tray states this window wrote: the watcher echoes them back
         self.status_text, self.status_state = T('Reading the configs and testing from this PC...'), 'unk'
@@ -926,11 +928,16 @@ class App(tk.Tk):
         """Under it: the router's sing-box version; GL.iNet's package says so. st: router_core_state()."""
         if not st or not st.get('ver'):
             return
-        text = f"{T('Router')}: {st['ver']}" + ('' if st.get('mark') else f" · {T('GL.iNet package')}")
+        self.rcore_text = f"{T('Router')}: {st['ver']}" + ('' if st.get('mark') else f" · {T('GL.iNet package')}")
         if threading.current_thread() is threading.main_thread():
-            self.rcore_lbl.configure(text=text)
+            self.show_rcore()
         else:
-            self.ui(lambda: self.rcore_lbl.configure(text=text))
+            self.ui(self.show_rcore)
+
+    def show_rcore(self):
+        away = T('Router not connected') if self.router_away else ''
+        self.rcore_lbl.configure(text='\n'.join(t for t in (self.rcore_text, away) if t),
+                                 foreground=STATE['warn'] if away else '')
 
     def toggle_log(self):
         self.log_shown = not self.log_shown
@@ -1098,6 +1105,8 @@ class App(tk.Tk):
     def first_check(self):
         """Check now: first the router's nodes when another PC changed them, then everything this PC can see; in router-only
         mode also the router's own test, the only tunnel there is."""
+        if ROUTER:
+            self.router_seen()
         if ROUTER and N.router_up():
             s = N.router_sync()
             if s:
@@ -1110,6 +1119,7 @@ class App(tk.Tk):
     def check_router(self):
         """The router's own tunnel tests every node over SSH; also compares its config with router-config.json.
         First takes the router's nodes when another PC (or the self-repair) changed them."""
+        self.router_seen()
         s = N.router_sync()
         if s:
             self.say(s); N.hist_add(event=('heal', s)); self.check_local('both')
@@ -1120,6 +1130,12 @@ class App(tk.Tk):
         self.router = (r, time.strftime('%H:%M')); self.lists['phone'] = nodes
         self.router_stale = N.router_stale(r.get('cfg'))
         self.count('phone'); self.judge()
+
+    def router_seen(self):
+        """Remember whether the router answers on this network; the tile, the card and the sidebar show it."""
+        ok, why = N.router_here()
+        self.router_away = None if ok else why
+        self.ui(self.show_rcore)
 
     def verdict(self, key, n):
         """(state, sentence) for one row. Router result > PC tunnel result > plain 443 reachability."""
@@ -1261,7 +1277,10 @@ class App(tk.Tk):
             v.configure(text=T('Down'), fg=STATE['bad']); sub.configure(text=T('Nothing on 127.0.0.1:2080'))
         if ROUTER:
             v, sub = self.tiles['router']; r = self.router
-            if r is None:
+            if self.router_away:
+                v.configure(text=T('Not connected'), fg=STATE['warn'])
+                self.tile_link('router', T("Not on the router's network; press Test on router"), lambda: self.work(self.check_router))
+            elif r is None:
                 v.configure(text='-', fg=MUTED); self.tile_link('router', T('Press Test on router'), lambda: self.work(self.check_router))
             elif r[0]['service']:
                 v.configure(text=T('Older config') if self.router_stale else T('Running'), fg=STATE['warn' if self.router_stale else 'ok'])
@@ -1285,7 +1304,8 @@ class App(tk.Tk):
 
         for key, st in (('pc', self.pending), ('phone', self.router_stale)):
             if key in self.card_status:
-                self.card_status[key].configure(text=(T('config newer than what runs') if st else ''), fg=STATE['warn'])
+                text = [T('Router not connected')] if key == 'phone' and self.router_away else []
+                self.card_status[key].configure(text='  ·  '.join(text + ([T('config newer than what runs')] if st else [])), fg=STATE['warn'])
         self.draw_history()
         set_pill(self.head_pill, T({'ok': 'All good', 'warn': 'Attention', 'bad': 'Problem', 'unk': 'Checking'}[self.status_state]),
                  self.status_state)

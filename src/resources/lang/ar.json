@@ -512,5 +512,8 @@
  "upgrade": "ترقية",
  "downgrade": "رجوع لإصدار أقدم",
  "{what}: {old} → {new} ({how})": "{what}: {old} → {new} ({how})",
- "When you save:": "عند الحفظ:"
+ "When you save:": "عند الحفظ:",
+ "Router not connected": "الراوتر غير متصل",
+ "Not connected": "غير متصل",
+ "Not on the router's network; press Test on router": "لست على شبكة الراوتر؛ اضغط اختبار على الراوتر"
 }

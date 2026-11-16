@@ -3,6 +3,12 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.6.1 (2026-11-16)
+
+**Why update:** the window now says when the router cannot be reached, instead of showing old router results as if they were current.
+
+- Fixed: away from the router's network, the router parts of the window showed nothing or stale data. Now the Router tunnel tile shows "Not connected", the Router devices card shows "Router not connected", and the sidebar shows it under the router's sing-box version. All three clear on the next check once the router answers again.
+
 ## 1.6.0 (2026-11-15)
 
 **Why update:** the router can now run a current sing-box, built small enough for its flash, instead of GL.iNet's 1.9.7.

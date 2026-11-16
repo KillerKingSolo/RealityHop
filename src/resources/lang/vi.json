@@ -512,5 +512,8 @@
  "upgrade": "nâng cấp",
  "downgrade": "hạ cấp",
  "{what}: {old} → {new} ({how})": "{what}: {old} → {new} ({how})",
- "When you save:": "Khi bạn lưu:"
+ "When you save:": "Khi bạn lưu:",
+ "Router not connected": "Router chưa kết nối",
+ "Not connected": "Chưa kết nối",
+ "Not on the router's network; press Test on router": "Không ở trong mạng của router; nhấn Kiểm tra trên router"
 }

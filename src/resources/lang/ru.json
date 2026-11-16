@@ -512,5 +512,8 @@
  "upgrade": "обновление",
  "downgrade": "откат",
  "{what}: {old} → {new} ({how})": "{what}: {old} → {new} ({how})",
- "When you save:": "После сохранения:"
+ "When you save:": "После сохранения:",
+ "Router not connected": "Роутер не подключен",
+ "Not connected": "Не подключен",
+ "Not on the router's network; press Test on router": "Нет подключения к сети роутера; нажмите «Проверить на роутере»"
 }

@@ -512,5 +512,8 @@
  "upgrade": "ارتقا",
  "downgrade": "بازگشت به نسخهٔ قبلی",
  "{what}: {old} → {new} ({how})": "{what}: {old} → {new} ({how})",
- "When you save:": "پس از ذخیره:"
+ "When you save:": "پس از ذخیره:",
+ "Router not connected": "روتر وصل نیست",
+ "Not connected": "وصل نیست",
+ "Not on the router's network; press Test on router": "روی شبکه روتر نیستید؛ «آزمایش روی روتر» را بزنید"
 }
