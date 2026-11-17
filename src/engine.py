@@ -121,6 +121,34 @@ NOWIN = {'creationflags': subprocess.CREATE_NO_WINDOW} if os.name == 'nt' else {
 DETACH = {'start_new_session': True} if MAC else {'creationflags': getattr(subprocess, 'DETACHED_PROCESS', 0)}   # outlives this process
 SYS32 = os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32')
 say = print   # the GUI points this at its log pane
+DEBUG = bool(getattr(version, 'DEBUG', False))   # test builds only: the release workflow sets it on manual runs
+BUILD = getattr(version, 'BUILD', '')            # a test build's commit, shown next to the version
+_dbg = []
+
+
+def dbg(*a):
+    """Test builds: details for logs/debug.log (2 x 1 MB at most), with the calls that led here. Release builds: nothing."""
+    if not DEBUG:
+        return
+    try:
+        import traceback
+        if not _dbg:
+            _dbg.append(file_log('debug'))
+        who = ' < '.join(f.name for f in traceback.extract_stack()[-4:-1][::-1])
+        _dbg[0](f'[{threading.current_thread().name}] {who}: ' + ' '.join(str(x) for x in a))
+    except Exception:
+        pass
+
+
+def rh_procs():
+    """For debug.log: the Reality Hop, sing-box and piactl processes (with state and parent on macOS)."""
+    try:
+        if MAC:
+            return [f'{p} {c[:150]}' for p, c in macos.ps('stat,ppid,command')
+                    if any(k in c for k in ('rh-core', 'rh-test', 'RealityHop', 'realityhop', 'engine.py', 'piactl'))]
+        return [f'{p} {n}' for p, n in procs() if n.lower().startswith(('rh-', 'realityhop', 'piactl', 'sb-core'))]
+    except Exception as e:
+        return [f'(process list failed: {e})']
 
 
 def winexe(name):
@@ -305,7 +333,7 @@ def file_log(name):
 def logs_close():
     """Let go of the open log files (the data folder is about to move); file_log opens them again."""
     import logging
-    for name in ('window', 'watch'):
+    for name in ('window', 'watch', 'debug'):
         lg = logging.getLogger(name)
         for h in lg.handlers[:]:
             lg.removeHandler(h); h.close()
@@ -460,19 +488,27 @@ def lan_ip(x):
 def gh_get(url, timeout=30):
     """A whole download from GitHub (url or Request): direct first, then through the PC tunnel, which gets past a block.
     The retry also covers a download that stalls partway, as DPI filters do. TLS stays end to end with GitHub."""
+    u, t = getattr(url, 'full_url', url), time.time()
     try:
         with urllib.request.urlopen(url, timeout=timeout, context=tls()) as r:
-            return read_all(r, timeout * 6)
-    except urllib.error.HTTPError:
+            b = read_all(r, timeout * 6); dbg(f'download direct ok {len(b)} B {time.time() - t:.1f} s', u); return b
+    except urllib.error.HTTPError as e:
+        dbg(f'download direct HTTP {e.code} {time.time() - t:.1f} s', u)
         raise   # GitHub itself answered (404, rate limit): through the tunnel it answers the same
     except Exception as e:
+        dbg(f'download direct FAILED {time.time() - t:.1f} s: {type(e).__name__} {getattr(e, "reason", e)!r}', u,
+            f'tunnel port open: {port_open(2080)}')
         if router_only() or not port_open(2080):
             raise
         say(f'direct download failed ({e}); retrying through the tunnel')
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({'http': TUNNEL_PROXY, 'https': TUNNEL_PROXY}),
                                          urllib.request.HTTPSHandler(context=tls()))
-    with opener.open(url, timeout=timeout * 3) as r:
-        return read_all(r, timeout * 6)
+    t = time.time()
+    try:
+        with opener.open(url, timeout=timeout * 3) as r:
+            b = read_all(r, timeout * 6); dbg(f'download via tunnel ok {len(b)} B {time.time() - t:.1f} s', u); return b
+    except Exception as e:
+        dbg(f'download via tunnel FAILED {time.time() - t:.1f} s: {type(e).__name__} {e}', u); raise
 
 
 def read_all(r, limit):
@@ -1433,21 +1469,28 @@ def core_mode():
 
 def core_stop():
     """Stop every rh-core: the boot task's copy (only the task can stop it) and our own; wait until 2080 is free."""
+    t = time.time(); dbg('stop: before', rh_procs(), 'port 2080:', port_owner(2080) if DEBUG else '')
     if not MAC and boot_task_exists():
         run(['schtasks', '/end', '/tn', BOOT_TASK], timeout=20)
     kill_name(os.path.basename(CORE))
-    for _ in range(100):   # 10 s at most; it is gone within a moment
+    for i in range(100):   # 10 s at most; it is gone within a moment
         if not core_running() and not port_taken(2080):
-            return True
+            dbg(f'stop: done in {time.time() - t:.1f} s'); return True
+        if DEBUG and i % 20 == 5:
+            dbg(f'stop: waiting {time.time() - t:.1f} s: rh-core pids {pids(os.path.basename(CORE))}, port 2080 taken '
+                f'{port_taken(2080)} by {port_owner(2080)}', rh_procs())
         time.sleep(0.1)
+    dbg(f'stop: GAVE UP after {time.time() - t:.1f} s: rh-core pids {pids(os.path.basename(CORE))}, port 2080 taken '
+        f'{port_taken(2080)} by {port_owner(2080)}', rh_procs())
     return False
 
 
 def core_direct():
     os.makedirs(LOGS, exist_ok=True)
     if MAC:
-        subprocess.Popen([CORE, 'run', '-c', PC_CFG], cwd=os.path.dirname(CORE), stdin=subprocess.DEVNULL,
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        p = subprocess.Popen([CORE, 'run', '-c', PC_CFG], cwd=os.path.dirname(CORE), stdin=subprocess.DEVNULL,
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        dbg('start: rh-core pid', p.pid)
         return
     subprocess.Popen([CORE, 'run', '-c', PC_CFG], cwd=os.path.dirname(CORE), stdin=subprocess.DEVNULL,
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -1505,6 +1548,7 @@ def core_restart():
     If the task-started copy does not come up, a direct start is the fallback, so the tunnel is never left down."""
     if router_only():
         say('router-only mode: no tunnel on this PC'); return True
+    t0 = time.time(); dbg('restart requested; stopped:', stopped(), 'running:', core_running())
     owner = port_blocker()
     if owner:
         say('PC tunnel: ' + blocker_hint(owner)); hist_add(event=('error', f'{owner} holds port 2080'))
@@ -1513,7 +1557,9 @@ def core_restart():
         say('an old rh-core would not stop; trying anyway')
     how = core_start()
     if core_up():
+        dbg(f'restart: up in {time.time() - t0:.1f} s ({how})', rh_procs())
         say(f'PC tunnel restarted ({how})'); return True
+    dbg(f'restart: NOT up after {time.time() - t0:.1f} s ({how})', rh_procs())
     if how == 'task':
         say('the boot task did not bring rh-core up; starting it directly instead')
         core_stop(); core_direct()
@@ -1689,6 +1735,7 @@ def procs():
 def kill_name(name):
     """Stop every process with this exe name that this user may stop (what taskkill /F /IM did)."""
     if MAC:
+        dbg('kill', name, pids(name))
         return macos.kill(pids(name))
     import ctypes
     from ctypes import wintypes as W
@@ -2322,6 +2369,7 @@ def watch():
 
     def on_pia(state):
         prev = pia['state']; pia['state'] = state
+        dbg(f'PIA {prev or "?"} -> {state}', 'tunnel running:', core_running())
         if state in ('Connected', 'Disconnected'):
             pia['bad_since'] = None
         elif pia['bad_since'] is None:
@@ -2374,6 +2422,8 @@ def watch():
         wait_api(90)
         while True:
             CANCEL.clear(); now = time.time(); settings_load()
+            dbg('watch wake: asked', sorted(want), 'PIA', pia['state'], 'bad for', int(now - pia['bad_since']) if pia['bad_since'] else 0,
+                's; window open', port_taken(GUI_PORT), '; next full check in', int(last_full + FULL_EVERY - now), 's')
             try:
                 if core_update_due() and now - started_at > 600:   # sing-box: daily, 10 min after logon at the earliest
                     set_this_pc(core_checked=now)
@@ -2543,6 +2593,9 @@ def vpn_state():
     except (OSError, ValueError):
         return False, []
     pc, wrong = st.get('proxyCustom') or {}, []
+    dbg('PIA settings:', {k: st.get(k) for k in ('method', 'protocol', 'remotePortTCP', 'proxyType', 'proxyEnabled',
+                                                  'killswitch', 'splitTunnelEnabled', 'defaultRoute', 'allowLAN')},
+        'proxy', pc.get('host'), pc.get('port'), 'split tunnel rules:', len(st.get('splitTunnelRules') or []))
     if st.get('method') != 'openvpn':
         wrong.append('protocol is not OpenVPN')
     if st.get('protocol') != 'tcp':

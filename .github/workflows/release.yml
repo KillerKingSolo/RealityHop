@@ -37,6 +37,7 @@ jobs:
         run: |
           $v = $env:TAG.TrimStart('v')
           if ($v -match '^\d+\.\d+\.\d+$') { "VERSION = '$v'" | Set-Content -Encoding ascii src/version.py }   # a manual run keeps the version in the code
+          else { Add-Content -Encoding ascii src/version.py "BUILD = '$($env:GITHUB_SHA.Substring(0, 7))'", 'DEBUG = True' }   # a test build: its commit and debug.log
 
       - name: Build
         shell: pwsh
@@ -78,7 +79,8 @@ jobs:
           TAG: ${{ github.ref_name }}   # through the environment: a tag name must not become part of the script
         run: |
           v="${TAG#v}"
-          if echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then echo "VERSION = '$v'" > src/version.py; fi   # a manual run keeps the version in the code
+          if echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then echo "VERSION = '$v'" > src/version.py   # a manual run keeps the version in the code
+          else printf "BUILD = '%s'\nDEBUG = True\n" "${GITHUB_SHA:0:7}" >> src/version.py; fi   # a test build: its commit and debug.log
 
       - name: Build
         run: sh build-mac.sh

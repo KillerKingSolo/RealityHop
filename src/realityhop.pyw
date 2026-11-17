@@ -73,6 +73,7 @@ MAIN = 'phone' if ROUTER else 'pc'   # the list the slot numbers are taken from
 BACKEND = bool(N.settings_load()['backend_files'])   # sidebar buttons for the PC, Router and logs folders
 PUSH_HINT = (T('Use Push to router when you are ready.') if RONLY else T('Use Push to router and Restart tunnel when you are ready.')
              if ROUTER else T('Press Restart tunnel when you are ready.'))
+VLABEL = f'v{N.VERSION}' + (f' ({N.BUILD})' if N.BUILD else '')   # a test build shows its commit
 UI = 'Segoe UI Variable Text' if sys.platform == 'win32' else 'Helvetica Neue' if N.MAC else 'Segoe UI'
 UIB = 'Segoe UI Variable Display Semib' if sys.platform == 'win32' else 'HelveticaNeue-Medium' if N.MAC else 'Segoe UI Semibold'
 RCLICK = ('<Button-3>', '<Button-2>', '<Control-Button-1>') if N.MAC else ('<Button-3>',)   # the right mouse button and its Mac forms
@@ -768,7 +769,7 @@ class App(tk.Tk):
         tk.Label(brand, text='●', bg=SIDE, fg=ACC, font=(UIB, 14)).pack(side='left')
         ttk.Label(brand, text=T(' Reality Hop'), style='Brand.TLabel').pack(side='left')
         ttk.Label(side, text=(T('Router only') if RONLY else T('PC + router') if ROUTER else T('PC only')) + '  ·  '
-                  + (f'v{N.VERSION}' if N.core_mode() or RONLY else T('rh-core MISSING')), style='SideMuted.TLabel').pack(anchor='w', padx=20)
+                  + (VLABEL if N.core_mode() or RONLY else T('rh-core MISSING')), style='SideMuted.TLabel').pack(anchor='w', padx=20)
         self.core_lbl = ttk.Label(side, text=T('sing-box ...'), style='SideMuted.TLabel', wraplength=230)
         if ROUTER:   # two versions: one heading, then a short line each, so neither is cut off
             ttk.Label(side, text='sing-box', style='SideMuted.TLabel').pack(anchor='w', padx=20)
@@ -997,7 +998,9 @@ class App(tk.Tk):
         if self.busy:
             if (fn, args) != self.cur and (fn, args) not in self.jobs:
                 self.jobs.append((fn, args)); self.say('queued; it runs when the current action finishes')
+                N.dbg('action queued:', getattr(fn, '__name__', fn), args, 'behind', getattr(self.cur[0], '__name__', ''))
             return
+        N.dbg('action start:', getattr(fn, '__name__', fn), args)
         self.run += 1; run = self.run; self.cur = (fn, args)
         self.busy, self.started = True, time.time(); N.CANCEL.clear(); self.cancel_btn.state(['!disabled']); self.prog.pack(fill='x'); self.prog.start(14)
         if self.cand and self.cand.winfo_exists():
@@ -1659,7 +1662,7 @@ class SettingsDialog(tk.Toplevel):
         self.sb_note = tk.Label(c2, text='', bg=CARD, fg=MUTED, font=(UI, 9), justify=JL, wraplength=560)
         self.sb_note.pack(anchor='e' if i18n.RTL else 'w', padx=16); self.sb_fill()
         threading.Thread(target=self.sb_ask, daemon=True).start()
-        tk.Label(c2, text=f'{N.NAME} {N.VERSION}', bg=CARD, fg=MUTED, font=(UI, 9)).pack(anchor='w', padx=16, pady=(12, 2))
+        tk.Label(c2, text=f'{N.NAME} {VLABEL}', bg=CARD, fg=MUTED, font=(UI, 9)).pack(anchor='w', padx=16, pady=(12, 2))
         for text, url in ((f'github.com/{N.REPO}', f'https://github.com/{N.REPO}'),
                           ("What's new (changelog)", f'https://github.com/{N.REPO}/blob/main/CHANGELOG.md'),
                           ('Nodes come from github.com/rtwo2/FastNodes', 'https://github.com/rtwo2/FastNodes'),
@@ -2320,7 +2323,7 @@ class Wizard(tk.Tk):
         brand = tk.Frame(side, bg=SIDE); brand.pack(fill='x', padx=18, pady=(8, 4))
         tk.Label(brand, text='●', bg=SIDE, fg=ACC, font=(UIB, 14)).pack(side='left')
         tk.Label(brand, text=T(' Reality Hop'), bg=SIDE, fg=FG, font=(UIB, 15)).pack(side='left')
-        tk.Label(side, text=T('setup') + f'  ·  v{N.VERSION}', bg=SIDE, fg=MUTED, font=(UI, 9)).pack(anchor='w', padx=20, pady=(0, 22))
+        tk.Label(side, text=T('setup') + f'  ·  {VLABEL}', bg=SIDE, fg=MUTED, font=(UI, 9)).pack(anchor='w', padx=20, pady=(0, 22))
         self.step_labels = {}
         for key, name in self.STEPS:
             lab = tk.Label(side, text=T(name), bg=SIDE, fg=DIM, font=(UI, 10), anchor='w', padx=22, pady=6)

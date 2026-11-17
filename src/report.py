@@ -145,7 +145,7 @@ def section(title, lines):
 def make():
     """Write a new anonymous report and return (path, text). Keeps the last 5 reports."""
     sc = Scrubber()
-    logs = {n: [sc(l.rstrip('\n')) for l in tail(os.path.join(N.LOGS, f'{n}.log'))] for n in ('window', 'watch', 'core')}
+    logs = {n: [sc(l.rstrip('\n')) for l in tail(os.path.join(N.LOGS, f'{n}.log'))] for n in ('window', 'watch', 'core', 'debug')}
     rows = [(k, sc(v)) for k, v in summary()]
     w = max(len(k) for k, _ in rows)
     problems = [f'{n:<6}  {l}' for n in ('window', 'watch') for l in logs[n] if PROBLEM.search(l)]
@@ -156,6 +156,8 @@ def make():
     out += section(f'Watcher log (watch.log, last {LINES} lines)', logs['watch'])
     out += section(f'Window log (window.log, last {LINES} lines)', logs['window'])
     out += section(f'Tunnel engine log (core.log, last {LINES} lines, repeats grouped)', core_lines(logs['core']))
+    if logs['debug']:   # test builds only
+        out += section(f'Debug log (debug.log, last {LINES} lines)', logs['debug'])
     out += section('Redaction key', [
         'node-N    a public node from the node list',
         'lan-N     an address on your own network',
