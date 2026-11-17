@@ -84,7 +84,12 @@ sh('/usr/bin/hdiutil', 'detach', vol, '-force')
 exe = macos.app_exe(app)
 
 check('first start: language picker', launch(exe, home('first'), 'language'))
-check('setup wizard', launch(exe, home('wizard', 'en'), 'wizard'))
+h = home('wizard', 'en')   # with an rh-core signed by someone else, as sing-box from GitHub is ("a.out")
+core = os.path.join(h, 'Library', 'Application Support', 'RealityHop', 'PC', 'rh-core'); os.makedirs(os.path.dirname(core))
+shutil.copy('/bin/echo', core)
+check('setup wizard', launch(exe, h, 'wizard'))
+ident = [l for l in sh('/usr/bin/codesign', '-dv', core).stderr.splitlines() if l.startswith('Identifier=')]
+check("the app signs rh-core with Reality Hop's id at start", ident == ['Identifier=' + macos.CORE_ID], str(ident))
 check('setup wizard in Persian (right to left)', launch(exe, home('wizard-fa', 'fa'), 'wizard-fa'))
 check('watcher with menu bar icon', launch(exe, home('watcher', 'en'), 'watcher', '--watch'))
 

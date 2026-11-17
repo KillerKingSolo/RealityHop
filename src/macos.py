@@ -24,11 +24,12 @@ PIA_SETTINGS = '/Library/Preferences/com.privateinternetaccess.vpn/settings.json
 CORE_ID = 'com.realityhop.app.core'   # starts with the app's own id (com.realityhop.app): see core_sign()
 
 
-def core_sign(path):
+def core_sign(path, log=None):
     """Sign sing-box (ad hoc, no Apple ID) with Reality Hop's own id. PIA's Mac split tunnel matches a program by its
     signing id, and an id that starts with an app's id counts as that app: setting RealityHop.app to Bypass VPN then
     covers rh-core and its copy rh-test too, which its file picker cannot select (only .app bundles). A copy is signed
-    and swapped in, so a copy that runs now keeps running. True when the id is in place."""
+    and swapped in, so a copy that runs now keeps running. True when the id is in place; log(text) hears why not."""
+    say = log or (lambda *a: None)
     try:
         r = subprocess.run(['/usr/bin/codesign', '-dv', path], capture_output=True, text=True, timeout=30)
         if f'Identifier={CORE_ID}\n' in r.stderr:
@@ -38,10 +39,11 @@ def core_sign(path):
         r = subprocess.run(['/usr/bin/codesign', '--force', '--sign', '-', '--identifier', CORE_ID, tmp],
                            capture_output=True, text=True, timeout=60)
         if r.returncode:
-            os.remove(tmp); return False
-        os.replace(tmp, path); return True
-    except (OSError, subprocess.TimeoutExpired):
-        return False
+            os.remove(tmp); say(f'rh-core: codesign failed: {(r.stderr or r.stdout).strip()[:300]}'); return False
+        os.replace(tmp, path); say(f"{os.path.basename(path)}: signed as {CORE_ID}, so PIA's Reality Hop rule covers it")
+        return True
+    except (OSError, subprocess.TimeoutExpired) as e:
+        say(f"rh-core: could not sign it with Reality Hop's id: {e}"); return False
 
 
 def bundle(exe=None):
