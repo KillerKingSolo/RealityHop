@@ -119,6 +119,14 @@ jobs:
           test ! -d "$RH_SMOKE_HOME/Library/Application Support/RealityHop"
           echo "PASS  uninstall: data folder removed"
 
+      - name: Window test from source (wizard pages, Install, Finish, main window, Settings, Stop, Start, report, Uninstall)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          export RH_SMOKE_HOME="$RUNNER_TEMP/gui-home" SHOTS="$RUNNER_TEMP/shots"
+          mkdir -p "$RH_SMOKE_HOME"
+          HOME="$RH_SMOKE_HOME" python tools/mac-gui-test.py
+
       - name: Keep the screenshots
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

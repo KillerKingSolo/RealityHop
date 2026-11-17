@@ -264,10 +264,9 @@ def install(target=None):
     """Copy this exe into the install folder (C:\\Program Files\\RealityHop unless the setup picked another; one UAC
     prompt), give the folder to this Windows user alone, add the Start menu and Apps & features entries, move in the data
     that 1.0.x or the setup so far kept in %LOCALAPPDATA%, and point the logon and boot starts at the new place."""
-    import winreg
     if not N.FROZEN:
         return 'running from source: nothing to install'
-    if N.MAC:
+    if N.MAC:   # RealityHop.app is already in Applications: only its data folder is made, by the setup
         return 'nothing to install'
     sid = user_sid()
     if not sid:
