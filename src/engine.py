@@ -2551,6 +2551,8 @@ def vpn_state():
         wrong.append('remote port is not 443')
     if not (st.get('proxyType') == 'custom' and st.get('proxyEnabled', True) and pc.get('host') == '127.0.0.1' and pc.get('port') == 2080):
         wrong.append('the SOCKS5 proxy is not 127.0.0.1:2080')
+    if MAC and st.get('killswitch', 'auto') != 'off':   # auto = VPN Kill Switch, on = Advanced Kill Switch
+        wrong.append('the kill switch is on: on a Mac it blocks the tunnel (Settings → Privacy, untick both kill switches)')
     return True, wrong
 
 

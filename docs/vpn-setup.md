@@ -29,6 +29,10 @@ is the normal HTTPS port, the least likely to be blocked.
 Bypass VPN**. That one rule covers the tunnel engine too: Reality Hop signs its copy of sing-box with an id that
 starts with the app's own (`com.realityhop.app.core`), and PIA counts it as part of the app.
 
+**Mac: turn PIA's kill switch off.** Settings → Privacy: untick **VPN Kill Switch** and **Advanced Kill Switch**. With
+Multi-Hop running the VPN through Reality Hop, PIA's Mac firewall blocks rh-core's own connection to the node, and the
+VPN goes down. On Windows the kill switch works. The setup wizard's **Check PIA** button warns when it is on.
+
 **Why rh-core.exe must bypass the VPN:** rh-core.exe carries the VPN's own connection to the node. When all other apps
 use the VPN, PIA routes that connection back into the VPN, which is not up yet, and the VPN cannot connect. Only
 rh-core.exe needs the rule; RealityHop.exe does not. With All Other Apps set to Bypass VPN, rh-core.exe already

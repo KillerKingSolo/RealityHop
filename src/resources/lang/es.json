@@ -524,5 +524,7 @@
  "Downloads sing-box, finds the first nodes and starts the tunnel. About a minute.": "Descarga sing-box, encuentra los primeros nodos e inicia el túnel. Alrededor de un minuto.",
  "Makes an SSH key and adds it to the router. In a Terminal window ssh asks for the router password; Reality Hop never sees it.": "Crea una clave SSH y la añade al router. En una ventana de Terminal, ssh pide la contraseña del router; Reality Hop nunca la ve.",
  "Drag Reality Hop into the Applications folder first, then open it from there.": "Primero arrastra Reality Hop a la carpeta Aplicaciones y ábrelo desde allí.",
- "Settings → Split Tunnel → Add Application → Applications → Reality Hop → Bypass VPN.": "Settings → Split Tunnel → Add Application → Aplicaciones → Reality Hop → Bypass VPN."
+ "Settings → Split Tunnel → Add Application → Applications → Reality Hop → Bypass VPN.": "Settings → Split Tunnel → Add Application → Aplicaciones → Reality Hop → Bypass VPN.",
+ "Settings → Privacy: untick VPN Kill Switch and Advanced Kill Switch. On a Mac they block the tunnel.": "Settings → Privacy: desmarca VPN Kill Switch y Advanced Kill Switch. En un Mac bloquean el túnel.",
+ "the kill switch is on: on a Mac it blocks the tunnel (Settings → Privacy, untick both kill switches)": "el kill switch está activado: en un Mac bloquea el túnel (Settings → Privacy, desmarca ambos kill switch)"
 }
