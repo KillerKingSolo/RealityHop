@@ -515,5 +515,13 @@
  "When you save:": "Після збереження:",
  "Router not connected": "Роутер не підключено",
  "Not connected": "Не підключено",
- "Not on the router's network; press Test on router": "Немає підключення до мережі роутера; натисніть «Перевірити на роутері»"
+ "Not on the router's network; press Test on router": "Немає підключення до мережі роутера; натисніть «Перевірити на роутері»",
+ "Start tunnel at login": "Запускати тунель під час входу",
+ "macOS 12 or newer, Intel or Apple silicon.": "macOS 12 або новіша, Intel або Apple silicon.",
+ "Start everything again on this Mac?\n\n- the PC tunnel (rh-core) starts now and at every login\n- the background watcher and menu bar icon start now and at every login\n\nAfterwards turn the VPN app's proxy back on (PIA: Settings → Multi-Hop, tick \"Multi-hop and Obfuscation\", SOCKS5 127.0.0.1:2080).": "Знову запустити все на цьому Mac?\n\n- тунель ПК (rh-core) запускається зараз і під час кожного входу\n- фоновий спостерігач і значок у рядку меню запускаються зараз і під час кожного входу\n\nПотім знову ввімкніть проксі у VPN-застосунку (PIA: Settings → Multi-Hop, позначте «Multi-hop and Obfuscation», SOCKS5 127.0.0.1:2080).",
+ "Stop everything on this Mac, for when you are somewhere else?\n\n- the PC tunnel (rh-core) stops and no longer starts at login\n- the background watcher and menu bar icon stop and no longer start at login\n- the router and your configs are not touched\n\nAfterwards turn the VPN app's proxy off (PIA: Settings → Multi-Hop, untick \"Multi-hop and Obfuscation\"), or it cannot connect. Press Start to undo.": "Зупинити все на цьому Mac, коли ви деінде?\n\n- тунель ПК (rh-core) зупиняється й більше не запускається під час входу\n- фоновий спостерігач і значок у рядку меню зупиняються й більше не запускаються під час входу\n- роутер і ваші конфігурації не змінюються\n\nПотім вимкніть проксі у VPN-застосунку (PIA: Settings → Multi-Hop, зніміть «Multi-hop and Obfuscation»), інакше він не зможе підключитися. Натисніть «Старт», щоб скасувати.",
+ "Remove Reality Hop from this Mac?\n\nThe tunnel, the background watcher, the login items and the app are removed.": "Видалити Reality Hop з цього Mac?\n\nБуде видалено тунель, фоновий спостерігач, об’єкти входу та застосунок.",
+ "Downloads sing-box, finds the first nodes and starts the tunnel. About a minute.": "Завантажує sing-box, знаходить перші вузли й запускає тунель. Близько хвилини.",
+ "Makes an SSH key and adds it to the router. In a Terminal window ssh asks for the router password; Reality Hop never sees it.": "Створює SSH-ключ і додає його на роутер. У вікні Термінала ssh запитає пароль роутера; Reality Hop його ніколи не бачить.",
+ "Drag Reality Hop into the Applications folder first, then open it from there.": "Спершу перетягніть Reality Hop у папку «Програми», потім відкрийте його звідти."
 }

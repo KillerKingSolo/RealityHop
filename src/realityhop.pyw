@@ -73,8 +73,9 @@ MAIN = 'phone' if ROUTER else 'pc'   # the list the slot numbers are taken from
 BACKEND = bool(N.settings_load()['backend_files'])   # sidebar buttons for the PC, Router and logs folders
 PUSH_HINT = (T('Use Push to router when you are ready.') if RONLY else T('Use Push to router and Restart tunnel when you are ready.')
              if ROUTER else T('Press Restart tunnel when you are ready.'))
-UI = 'Segoe UI Variable Text' if sys.platform == 'win32' else 'Segoe UI'
-UIB = 'Segoe UI Variable Display Semib' if sys.platform == 'win32' else 'Segoe UI Semibold'
+UI = 'Segoe UI Variable Text' if sys.platform == 'win32' else 'Helvetica Neue' if N.MAC else 'Segoe UI'
+UIB = 'Segoe UI Variable Display Semib' if sys.platform == 'win32' else 'HelveticaNeue-Medium' if N.MAC else 'Segoe UI Semibold'
+RCLICK = ('<Button-3>', '<Button-2>', '<Control-Button-1>') if N.MAC else ('<Button-3>',)   # the right mouse button and its Mac forms
 ICONS = None   # icon font of the sidebar groups (theme picks it)
 JL = 'right' if i18n.RTL else 'left'   # how wrapped text lines up: Persian and Arabic read right to left
 
@@ -83,8 +84,11 @@ def theme(root):
     import tkinter.font as tkf
     global UI, UIB, ICONS
     fams = set(tkf.families(root))
-    UI = UI if UI in fams else 'Segoe UI'; UIB = UIB if UIB in fams else 'Segoe UI Semibold'
-    if i18n.RTL:   # the Variable fonts have no Arabic letters: the stand-in font then draws them unjoined and out of order
+    if N.MAC:   # Tk on macOS counts 72 points to the inch, Windows 96: the same sizes would come out a quarter smaller
+        root.tk.call('tk', 'scaling', 1.3333)
+    else:
+        UI = UI if UI in fams else 'Segoe UI'; UIB = UIB if UIB in fams else 'Segoe UI Semibold'
+    if i18n.RTL and not N.MAC:   # the Variable fonts have no Arabic letters: the stand-in font then draws them unjoined and out of order
         UI, UIB = 'Segoe UI', 'Segoe UI Semibold'; rtl_wrap()
     ICONS =next((f for f in ('Segoe Fluent Icons', 'Segoe MDL2 Assets') if f in fams), None)   # Windows 11, Windows 10
     root.bind_class('TButton', '<Enter>', lambda e: Tip.enter(e.widget, str(e.widget.cget('text'))), add='+')
@@ -190,6 +194,14 @@ def rtl_wrap():
     tk.Misc._options = options; tk.Misc.rtl_on = True
 
 
+def set_icon(win, path):
+    """The window's icon from a file; macOS: the Dock icon (Tk there takes a picture, not an .ico)."""
+    if N.MAC:
+        win._icon = tk.PhotoImage(file=path); win.iconphoto(True, win._icon)
+    else:
+        win.iconbitmap(default=path)
+
+
 def smooth_resize(win):
     """Windows repaints every widget on each resize step unless these class flags are off (60 ms a step down to 6 ms)."""
     try:
@@ -204,6 +216,12 @@ def smooth_resize(win):
 
 def dark_titlebar(win, show=True):
     """Done while the window is see-through: hiding and showing it again to repaint the bar made it flash twice."""
+    if N.MAC:   # the dark window style, whatever the system appearance
+        try:
+            win.tk.call('::tk::unsupported::MacWindowStyle', 'appearance', win, 'darkaqua')
+        except tk.TclError:
+            pass
+        return
     try:
         import ctypes; win.attributes('-alpha', 0); win.update()
         hwnd = ctypes.windll.user32.GetParent(win.winfo_id())
@@ -318,6 +336,12 @@ TIPS = {
     'Install sing-box on the router': 'Installs sing-box, jq and curl on the router over SSH.',
     'Check PIA': 'Checks that PIA uses OpenVPN over TCP 443 through the SOCKS5 proxy 127.0.0.1:2080.',
 }
+
+
+if N.MAC:   # no admin prompt, and ssh runs in a Terminal window
+    TIPS.update({'Install': 'Downloads sing-box, finds the first nodes and starts the tunnel. About a minute.',
+                 'Add key to router': 'Makes an SSH key and adds it to the router. In a Terminal window ssh asks for the router '
+                                      'password; Reality Hop never sees it.'})
 
 
 def tip_text(text):
@@ -789,8 +813,8 @@ class App(tk.Tk):
         group(T('Files & help') if BACKEND else T('Help'), '\ue897', '●')   # question mark
         sbtn('Report a problem', lambda: ReportDialog(self))
         if BACKEND:
-            sbtn('Open backend folder', lambda: os.startfile(N.DATA))
-            sbtn('Open logs folder', lambda: os.startfile(N.LOGS))
+            sbtn('Open backend folder', lambda: N.open_path(N.DATA))
+            sbtn('Open logs folder', lambda: N.open_path(N.LOGS))
 
         foot = ttk.Frame(side, style='Side.TFrame'); foot.pack(side='bottom', fill='x', padx=18, pady=16)
         tk.Frame(foot, bg=LINE, height=1).pack(fill='x', pady=(0, 12))
@@ -803,7 +827,7 @@ class App(tk.Tk):
         Toggle(foot, T('Run in background at logon'), self.bg_on, lambda: self.work(N.startup, self.bg_on.get())).pack(anchor='w', pady=(10, 0))
         self.boot_on = tk.BooleanVar(value=False)
         if not RONLY:
-            Toggle(foot, T('Start tunnel at boot'), self.boot_on, lambda: self.work(self.set_boot, self.boot_on.get())).pack(anchor='w', pady=(10, 0))
+            Toggle(foot, T('Start tunnel at login') if N.MAC else T('Start tunnel at boot'), self.boot_on, lambda: self.work(self.set_boot, self.boot_on.get())).pack(anchor='w', pady=(10, 0))
         threading.Thread(target=lambda: self.ui(self.boot_on.set, N.boot_task_exists()), daemon=True).start()
         self.next_lbl = ttk.Label(foot, text='', style='SideMuted.TLabel'); self.next_lbl.pack(anchor='w', pady=(10, 0))
         ttk.Button(foot, text=T('Settings'), style='Ghost.TButton', command=self.settings).pack(anchor='w', pady=(12, 0))
@@ -879,7 +903,7 @@ class App(tk.Tk):
             tk.Frame(c, bg=LINE, height=1).pack(fill='x', pady=(12, 0))
             t = table(c, COLS, height=6, stretch='verdict'); t.pack(fill='x', padx=8, pady=(2, 8))
             t.bind('<Configure>', lambda e, t=t: fit_cols(t, e.width))
-            t.bind('<<TreeviewSelect>>', lambda e, k=key: self.select(k)); t.bind('<Button-3>', lambda e, k=key: self.popup(e, k))
+            t.bind('<<TreeviewSelect>>', lambda e, k=key: self.select(k)); [t.bind(b, lambda e, k=key: self.popup(e, k)) for b in RCLICK]
             t.bind('<Double-1>', lambda e, k=key: self.details(k, e))
             self.card_status[key], self.trees[key] = st, t
         self.status.master.bind('<Configure>', lambda e: self.status.configure(wraplength=max(300, e.width - 40)))
@@ -1328,7 +1352,7 @@ class App(tk.Tk):
         key = (self.status_state, tuple(segs))
         if key != self.icon_key:
             try:
-                self.iconbitmap(default=N.tray_icon_file(self.status_state, segs)); self.icon_key = key
+                set_icon(self, N.tray_icon_file(self.status_state, segs)); self.icon_key = key
                 if self.status_state != 'unk' and set(segs) - {'unk'}:   # the watcher shows the same in the tray
                     self.sent = (self.sent + [key])[-8:]
                     N.jsave(N.TRAY_GUI, {'last': [self.status_state, T('{ok} of {n} nodes working', ok=len(segs) - segs.count('bad') - segs.count('unk'), n=len(segs)),
@@ -1468,7 +1492,22 @@ class App(tk.Tk):
             restart_window(['--setup'] + (['--router'] if router else []))
 
     def power(self):
-        if N.stopped():
+        if N.stopped() and N.MAC:
+            if messagebox.askyesno(T('Start Reality Hop'), T('Start everything again on this Mac?\n\n'
+                                   '- the PC tunnel (rh-core) starts now and at every login\n'
+                                   '- the background watcher and menu bar icon start now and at every login\n\n'
+                                   'Afterwards turn the VPN app\'s proxy back on (PIA: Settings → Multi-Hop, tick '
+                                   '"Multi-hop and Obfuscation", SOCKS5 127.0.0.1:2080).')):
+                self.work(self.do_power, False)
+        elif N.MAC:
+            if messagebox.askyesno(T('Stop Reality Hop'), T('Stop everything on this Mac, for when you are somewhere else?\n\n'
+                                   '- the PC tunnel (rh-core) stops and no longer starts at login\n'
+                                   '- the background watcher and menu bar icon stop and no longer start at login\n'
+                                   '- the router and your configs are not touched\n\n'
+                                   'Afterwards turn the VPN app\'s proxy off (PIA: Settings → Multi-Hop, untick "Multi-hop and '
+                                   'Obfuscation"), or it cannot connect. Press Start to undo.')):
+                self.work(self.do_power, True)
+        elif N.stopped():
             if messagebox.askyesno(T('Start Reality Hop'), T('Start everything again on this PC?\n\n'
                                    '- the PC tunnel (rh-core) starts now and at every boot (one UAC prompt)\n'
                                    '- the background watcher and tray icon start now and at every logon\n\n'
@@ -1599,7 +1638,7 @@ class SettingsDialog(tk.Toplevel):
                           ('Install Reality Hop updates automatically', self.upd_var),
                           ('Show backend files: buttons for the PC, Router and logs folders', self.files_var),
                           ('Show Reality Hop in the Start menu and Windows search', self.menu_var),
-                          ('Desktop icon', self.desk_var)):
+                          ('Desktop icon', self.desk_var))[:-2 if N.MAC else None]:
             t = Toggle(c2, T(text), var); t.configure(bg=CARD); t.c.configure(bg=CARD); t.lab.configure(bg=CARD, font=(UI, 10))
             t.pack(anchor='w', padx=16, pady=(10, 0))
         # sing-box channels: each choice shows the version it gives and marks the one running; updated daily either way
@@ -1706,7 +1745,7 @@ class SettingsDialog(tk.Toplevel):
         self.upd_note.configure(text=T('Checking') + '...', fg=MUTED); threading.Thread(target=ask, daemon=True).start()
 
     def uninstall(self):
-        if not messagebox.askyesno(T('Uninstall Reality Hop'), T('Remove Reality Hop from this PC?\n\nThe tunnel, the background watcher, the '
+        if not messagebox.askyesno(T('Uninstall Reality Hop'), UNINSTALL_MAC if N.MAC else T('Remove Reality Hop from this PC?\n\nThe tunnel, the background watcher, the '
                                    'boot start (one UAC prompt), the shortcuts and the program are removed.'), parent=self):
             return
         keep = messagebox.askyesno(T('Uninstall Reality Hop'), T('Keep your settings and node vault for a later install?'), parent=self)
@@ -1783,7 +1822,7 @@ class Candidates(tk.Toplevel):
         self.tree = table(c, self.COLS, stretch='result', mode='extended')
         sb = ttk.Scrollbar(c, command=self.tree.yview); self.tree.configure(yscrollcommand=sb.set)
         sb.pack(side='right', fill='y'); self.tree.pack(fill='both', expand=True, padx=8, pady=(2, 8))
-        self.tree.bind('<<TreeviewSelect>>', self.on_select); self.tree.bind('<Button-3>', self.popup)
+        self.tree.bind('<<TreeviewSelect>>', self.on_select); [self.tree.bind(b, self.popup) for b in RCLICK]
         self.menu = menu(self)
         for i in range(6):
             self.menu.add_command(label=T('Put this one into vless-{n} and restart', n=i + 1), command=lambda i=i: self.put_one(i))
@@ -2169,7 +2208,7 @@ class ReportDialog(tk.Toplevel):
         sb.pack(side='right', fill='y'); self.txt.pack(fill='both', expand=True)
         self.txt.insert('end', T('Making the report...')); self.txt.configure(state='disabled')
         row = tk.Frame(self, bg=BG); row.pack(fill='x', padx=22, pady=16); self.btns = []
-        for text, cmd, accent in (('Open GitHub issue', self.issue, True), ('Open folder', lambda: os.startfile(N.REPORTS), False),
+        for text, cmd, accent in (('Open GitHub issue', self.issue, True), ('Open folder', lambda: N.open_path(N.REPORTS), False),
                                   ('Copy', self.copy, False)):
             b = ttk.Button(row, text=T(text), command=cmd, style='Accent.TButton' if accent else 'TButton')
             b.pack(side='left', padx=(0, 8)); b.state(['disabled']); self.btns.append(b)
@@ -2194,7 +2233,7 @@ class ReportDialog(tk.Toplevel):
 
     def issue(self):
         import webbrowser
-        webbrowser.open(report.issue_url(self.path, self.text)); os.startfile(N.REPORTS)
+        webbrowser.open(report.issue_url(self.path, self.text)); N.open_path(N.REPORTS)
 
     def copy(self):
         self.clipboard_clear(); self.clipboard_append(self.text)
@@ -2245,8 +2284,7 @@ def restart_watcher():
 def restart_window(args=()):
     """Close this window and open Reality Hop again (with args, e.g. --setup for the wizard)."""
     cmd = ([N.exe()] if N.FROZEN else [N.pythonw(), os.path.abspath(__file__)]) + list(args)
-    subprocess.Popen(cmd, cwd=N.DATA if os.path.isdir(N.DATA) else None, env=N.own_env(),
-                     creationflags=subprocess.DETACHED_PROCESS); os._exit(0)
+    subprocess.Popen(cmd, cwd=N.DATA if os.path.isdir(N.DATA) else None, env=N.own_env(), **N.DETACH); os._exit(0)
 
 
 class Wizard(tk.Tk):
@@ -2411,7 +2449,7 @@ class Wizard(tk.Tk):
             tk.Label(row, text=T(label), bg=BG, fg=MUTED, font=(UI, 9)).pack(side='left')
             link(row, text, url, BG).pack(side='left', padx=(4, 18))
         self.p(T('What you need'), bold=True)
-        self.items([T('Windows 10 or 11, 64-bit.'),
+        self.items([T('macOS 12 or newer, Intel or Apple silicon.') if N.MAC else T('Windows 10 or 11, 64-bit.'),
                     T('A VPN app that can use a SOCKS5 proxy. Private Internet Access (PIA) works out of the box; the VPN step shows how.'),
                     T('Optional: a GL.iNet router (firmware 4.x) to put other devices, such as a phone or a console, through the tunnel too.')])
         self.p(T('Public nodes are run by strangers. Your VPN still encrypts everything end to end, so a node only sees encrypted VPN '
@@ -2423,13 +2461,15 @@ class Wizard(tk.Tk):
         self.p(T('This step:'))
         self.items(([T('copies Reality Hop into its install folder and adds it to the Start menu (one admin prompt). Everything '
                      'it keeps stays in that folder (settings, nodes, logs, the tunnel engine); only your Windows account can '
-                     'open it, and Reality Hop updates itself there without asking again')] if N.FROZEN else []) +
+                     'open it, and Reality Hop updates itself there without asking again')] if N.FROZEN and not N.MAC else []) +
                    [T('downloads sing-box from its official releases (github.com/SagerNet/sing-box, about 35 MB) and checks its SHA-256 checksum'),
                     T('downloads the public node list (github.com/rtwo2/FastNodes), tests the {top} fastest candidates from this PC and keeps '
                     'the 6 fastest that work (about a minute)', top=N.TOP),
                     T('starts the tunnel on 127.0.0.1:2080')])
         self.folder = None
-        if N.FROZEN and not os.path.isfile(N.INSTALLED_EXE):   # first install: the folder can be chosen
+        if N.FROZEN and N.MAC:
+            self.p(T('Installed in {dir}.', dir=N.macos.bundle()), muted=True)
+        elif N.FROZEN and not os.path.isfile(N.INSTALLED_EXE):   # first install: the folder can be chosen
             row = tk.Frame(self.body, bg=BG); row.pack(fill='x', pady=(4, 6))
             tk.Label(row, text=T('Install folder'), bg=BG, fg=FG, font=(UI, 10)).pack(side='left')
             self.folder = tk.StringVar(value=N.INSTALL_DIR)
@@ -2444,7 +2484,7 @@ class Wizard(tk.Tk):
         t.configure(bg=BG); t.c.configure(bg=BG); t.lab.configure(bg=BG, font=(UI, 10)); t.pack(anchor='w', pady=(6, 4))
         s = N.settings_load()
         self.menu, self.desk = tk.BooleanVar(value=bool(s['start_menu'])), tk.BooleanVar(value=bool(s['desktop_icon']))
-        if N.FROZEN:
+        if N.FROZEN and not N.MAC:
             for text, var in (('Show Reality Hop in the Start menu and Windows search (press the Windows key, type Reality Hop)', self.menu),
                               ('Desktop icon', self.desk)):
                 t = Toggle(self.body, T(text), var)
@@ -2696,9 +2736,12 @@ class Wizard(tk.Tk):
         self.after(0, lambda: restart_window([]))
 
 
+UNINSTALL_MAC = T('Remove Reality Hop from this Mac?\n\nThe tunnel, the background watcher, the login items and the app are removed.')
+
+
 def uninstall_dialog():
     root = hidden_root()
-    if not messagebox.askyesno(T('Uninstall Reality Hop'), T('Remove Reality Hop from this PC?\n\nThe tunnel, the background watcher, the boot '
+    if not messagebox.askyesno(T('Uninstall Reality Hop'), UNINSTALL_MAC if N.MAC else T('Remove Reality Hop from this PC?\n\nThe tunnel, the background watcher, the boot '
                                'start (one UAC prompt), the shortcuts and the program are removed.')):
         return
     keep = messagebox.askyesno(T('Uninstall Reality Hop'), T('Keep your settings and node vault for a later install?'))
@@ -2723,6 +2766,9 @@ if __name__ == '__main__':
                 tun = n.get('pc_ms') if n.get('pc_ms') is not None else (n.get('pc_why') or '-')
                 print(f"  {n['tag']:8} {n['server']:16} {n['sni']:20} {where.get(n['server'], '?'):26} 443: {ms(n['tcp_ms'], 'no answer'):>10}   tunnel: {tun}")
         print('\nfiles newer than deployed:', N.pending_deploy())
+        sys.exit(0)
+    if N.MAC and N.FROZEN and N.macos.misplaced():   # a login item must not point into the disk image or a quarantine copy
+        hidden_root(); messagebox.showinfo(N.NAME, T('Drag Reality Hop into the Applications folder first, then open it from there.'))
         sys.exit(0)
     try:
         import ctypes; ctypes.windll.shcore.SetProcessDpiAwareness(1)
@@ -2764,7 +2810,7 @@ if __name__ == '__main__':
                 install.install()
             except Exception as e:
                 messagebox.showerror(N.NAME, str(e)); sys.exit(1)
-            subprocess.Popen([N.INSTALLED_EXE], cwd=N.DATA, env=N.own_env(), creationflags=subprocess.DETACHED_PROCESS)
+            subprocess.Popen([N.INSTALLED_EXE], cwd=N.DATA, env=N.own_env(), **N.DETACH)
             sys.exit(0)
         if not install.running_legacy():
             sys.exit(0)
@@ -2789,9 +2835,10 @@ if __name__ == '__main__':
             break
         time.sleep(0.5)
     else:   # already open (the Start menu or desktop icon clicked again): bring that one forward instead of a second copy
-        import ctypes
-        h = ctypes.windll.user32.FindWindowW('TkTopLevel', N.NAME)
-        if h:
-            ctypes.windll.user32.ShowWindowAsync(h, 9); ctypes.windll.user32.SetForegroundWindow(h)   # SW_RESTORE, no wait
+        if not N.MAC:   # macOS brings the open app forward by itself
+            import ctypes
+            h = ctypes.windll.user32.FindWindowW('TkTopLevel', N.NAME)
+            if h:
+                ctypes.windll.user32.ShowWindowAsync(h, 9); ctypes.windll.user32.SetForegroundWindow(h)   # SW_RESTORE, no wait
         sys.exit(0)
     App().mainloop()

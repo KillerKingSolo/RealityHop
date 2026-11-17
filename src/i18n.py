@@ -12,7 +12,16 @@ LANG, RTL, CAT = 'en', False, {}
 
 
 def system_lang():
-    """The Windows display language, if Reality Hop has it, else English."""
+    """The Windows display language (macOS: the first preferred language), if Reality Hop has it, else English."""
+    if sys.platform == 'darwin':
+        try:
+            import subprocess
+            out = subprocess.run(['/usr/bin/defaults', 'read', '-g', 'AppleLanguages'], capture_output=True, text=True,
+                                 timeout=10).stdout
+            code = out.strip().strip('()').split(',')[0].strip().strip('"')[:2].lower()   # ( "en-US", es ) -> en
+            return code if code in CODES else 'en'
+        except Exception:
+            return 'en'
     try:
         import ctypes
         return WIN_IDS.get(ctypes.windll.kernel32.GetUserDefaultUILanguage() & 0x3ff, 'en')

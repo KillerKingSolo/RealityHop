@@ -38,15 +38,22 @@ try:   # an open file keeps the program folder this copy runs from (app-X.Y.Z) f
     _PIN = open(os.path.join(sys._MEIPASS, 'base_library.zip'), 'rb') if FROZEN else None
 except (AttributeError, OSError):
     _PIN = None
+MAC = sys.platform == 'darwin'   # macOS: see macos.py; everything else here is the Windows build
+if MAC:
+    import macos
 _LOCAL = os.environ.get('LOCALAPPDATA') or os.path.expanduser('~')
-OLD_DATA = os.path.join(_LOCAL, APP)        # the data folder of 1.0.x (and when run from source); moved on request
+OLD_DATA = macos.SUPPORT if MAC else os.path.join(_LOCAL, APP)   # the data folder of 1.0.x (and when run from source); moved on request
 LEGACY_DIR = os.path.join(_LOCAL, 'Programs', APP)               # where 1.0.0 and 1.0.1 installed; moved on update
 DEFAULT_DIR = os.path.join(os.environ.get('ProgramW6432') or os.environ.get('ProgramFiles') or r'C:\Program Files', APP)
 UNINSTALL_KEY = r'Software\Microsoft\Windows\CurrentVersion\Uninstall\RealityHop'   # the Apps & features entry
+EXE = '' if MAC else '.exe'   # program file names: rh-core.exe on Windows, rh-core on macOS
 
 
 def install_dir():
-    """The folder Reality Hop is installed in: chosen in the setup, C:\\Program Files\\RealityHop by default."""
+    """The folder Reality Hop is installed in: chosen in the setup, C:\\Program Files\\RealityHop by default.
+    macOS: the data folder in Application Support; the app itself runs from wherever it was dragged."""
+    if MAC:
+        return macos.SUPPORT
     try:
         import winreg
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, UNINSTALL_KEY) as k:
@@ -59,6 +66,8 @@ def install_dir():
 def data_dir():
     """Everything Reality Hop keeps lives in its install folder, next to RealityHop.exe. Run from source, before the
     setup has installed it, or installed by 1.0.x and not moved yet: %LOCALAPPDATA%\\RealityHop."""
+    if MAC:
+        return macos.SUPPORT
     moved = os.path.exists(os.path.join(INSTALL_DIR, 'settings.json')) or not os.path.exists(os.path.join(OLD_DATA, 'settings.json'))
     return INSTALL_DIR if FROZEN and os.path.isfile(INSTALLED_EXE) and moved else OLD_DATA
 
@@ -76,13 +85,15 @@ def set_paths(data):
     TUNNEL_FAILS = os.path.join(DATA, 'tunnel-fails.json')   # nodes that just failed in the running PC tunnel
     LOGS = os.path.join(DATA, 'logs'); CORE_LOG = os.path.join(LOGS, 'core.log')
     TRAY_ICONS = os.path.join(DATA, 'tray-icons')   # drawn tray icons, one per ring pattern
-    CORE = os.path.join(PC_DIR, 'rh-core.exe')              # the official sing-box, under its own name: runs the PC tunnel
+    CORE = os.path.join(PC_DIR, 'rh-core' + EXE)            # the official sing-box, under its own name: runs the PC tunnel
     ROUTER_KEY = os.path.join(DATA, 'router_ed25519')       # SSH key made by the setup wizard
     THIS_PC, SETTINGS, HISTORY, LAST, TRAY_LAST, TRAY_GUI = (os.path.join(DATA, f) for f in
                                                              ('this-pc.json', 'settings.json', 'history.json', 'last.json', 'tray.json', 'tray-window.json'))
 
 
 INSTALL_DIR = install_dir(); INSTALLED_EXE = os.path.join(INSTALL_DIR, APP + '.exe')
+if MAC:   # the app runs from where it was put; it updates itself in place
+    INSTALLED_EXE = sys.executable if FROZEN else macos.app_exe(macos.DEFAULT_APP)
 set_paths(data_dir())
 HEAL_SH = os.path.join(RES, 'router', 'heal.sh')       # router self-repair, installed with every push
 NFT_SH = os.path.join(RES, 'router', 'nft-devices.sh')  # router firewall rule that diverts the chosen devices
@@ -107,13 +118,17 @@ FRONTS = {'www.apple.com', 'swdist.apple.com', 'www.icloud.com', 'www.cloudflare
           'amazon.com', 'yahoo.com', 'www.yahoo.com', 'cdnjs.com', 'www.microsoft.com', 'www.bing.com', 'www.python.org',
           'www.nvidia.com', 'www.amd.com'}
 NOWIN = {'creationflags': subprocess.CREATE_NO_WINDOW} if os.name == 'nt' else {}
+DETACH = {'start_new_session': True} if MAC else {'creationflags': getattr(subprocess, 'DETACHED_PROCESS', 0)}   # outlives this process
 SYS32 = os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32')
 say = print   # the GUI points this at its log pane
 
 
 def winexe(name):
     """Full path of a Windows program. A bare name first runs any file of that name next to RealityHop.exe or in the working
-    folder, and the first run is usually from the Downloads folder."""
+    folder, and the first run is usually from the Downloads folder. macOS: the system's own copy (/usr/bin, /usr/sbin)."""
+    if MAC:
+        return next((p for p in (f'/usr/bin/{name}', f'/usr/sbin/{name}', f'/bin/{name}', f'/sbin/{name}') if os.path.exists(p)),
+                    shutil.which(name) or name)
     return os.path.join(SYS32, {'powershell': r'WindowsPowerShell\v1.0\powershell.exe', 'ssh': r'OpenSSH\ssh.exe',
                                 'ssh-keygen': r'OpenSSH\ssh-keygen.exe'}.get(name, name + '.exe'))
 
@@ -211,7 +226,7 @@ def hist_add(pings=None, event=None):
 
 def pythonw():
     """The newest installed pythonw.exe (the watcher runs on it), or this exe when frozen."""
-    if FROZEN:
+    if FROZEN or MAC:
         return sys.executable
     cands = glob.glob(r'C:\Program Files\Python3*\pythonw.exe') + glob.glob(r'C:\Python3*\pythonw.exe') + \
         glob.glob(os.path.join(os.environ.get('LOCALAPPDATA', ''), r'Programs\Python\Python3*\pythonw.exe'))
@@ -327,7 +342,9 @@ def move_data(dst):
 
 
 def notify(msg):
-    """Windows toast, so the background watcher can tell you what it did."""
+    """Windows toast (macOS: Notification Center), so the background watcher can tell you what it did."""
+    if MAC:
+        return macos.notify(msg)
     ps = ("[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null;"
           "$t = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02);"
           "$x = $t.GetElementsByTagName('text'); $x.Item(0).AppendChild($t.CreateTextNode('Reality Hop')) > $null;"
@@ -339,6 +356,11 @@ def notify(msg):
                          stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **NOWIN)
     except OSError:
         pass
+
+
+def open_path(p):
+    """Show a folder in Explorer (macOS: Finder)."""
+    return macos.open_path(p) if MAC else os.startfile(p)
 
 
 def ssh_exe(name='ssh'):
@@ -380,6 +402,8 @@ def router_mac(host):
         socket.create_connection((host, 22), timeout=2).close()
     except OSError:
         return None
+    if MAC:
+        return macos.mac_from_arp(run(['arp', '-n', host], timeout=10).stdout)
     m = re.search(r'\b([0-9a-f]{2}(?:-[0-9a-f]{2}){5})\b', run(['arp', '-a', host], timeout=10).stdout.lower())
     return m.group(1) if m else ''
 
@@ -770,12 +794,13 @@ def pc_only():
 
 
 CURL = winexe('curl') if os.path.exists(winexe('curl')) else shutil.which('curl') or winexe('curl')
+NOREVOKE = [] if MAC else ['--ssl-no-revoke']   # Windows curl (Schannel) would ask the certificate's revocation server
 
 
 def test_exe():
     """A copy of rh-core.exe named rh-test.exe for the node tests: the tunnel checks look for rh-core.exe by name,
     and stopping the tunnel must not kill a running test. Refreshed whenever rh-core.exe changes."""
-    t = os.path.join(DATA, 'rh-test.exe')
+    t = os.path.join(DATA, 'rh-test' + EXE)
     try:
         if not os.path.exists(t) or os.path.getsize(t) != os.path.getsize(CORE) or os.path.getmtime(t) < os.path.getmtime(CORE):
             os.makedirs(DATA, exist_ok=True); shutil.copy2(CORE, t)
@@ -789,7 +814,7 @@ def mbps(port, secs=4, give_up=True):
     count. At most secs; give_up: stops after 2 s under a quarter of floor(). 0 when nothing came through the node;
     None when the test file answered with an HTTP error."""
     stop = ['--speed-time', '2', '--speed-limit', str(max(floor(), 4) * 31250)] if give_up else []
-    r = run([CURL, '-s', '--ssl-no-revoke', '--socks5-hostname', f'127.0.0.1:{port}', '-o', os.devnull, '-m', str(secs), *stop,
+    r = run([CURL, '-s', *NOREVOKE, '--socks5-hostname', f'127.0.0.1:{port}', '-o', os.devnull, '-m', str(secs), *stop,
              '-w', ' %{http_code} %{size_download} %{time_total} %{time_starttransfer}', SPEED_URL], timeout=20)
     try:
         code, size, total, start = r.stdout.split()[-4:]; size, total, start = float(size), float(total), float(start)
@@ -861,7 +886,7 @@ def local_test(nodes, speed=False):
     download test (speed_test)."""
     import tempfile
     if not os.path.exists(CORE):
-        raise RuntimeError('rh-core.exe is missing; run the setup again (Settings > Run setup again)')
+        raise RuntimeError(f'{os.path.basename(CORE)} is missing; run the setup again (Settings > Run setup again)')
     if not nodes:
         return nodes
     for n in nodes:
@@ -886,7 +911,7 @@ def local_test(nodes, speed=False):
                     raise RuntimeError('the local test instance did not start')
                 time.sleep(0.1)
             def one(i):
-                r = run([CURL, '-s', '--ssl-no-revoke', '--socks5-hostname', f'127.0.0.1:{base + i}', '-m', '10',
+                r = run([CURL, '-s', *NOREVOKE, '--socks5-hostname', f'127.0.0.1:{base + i}', '-m', '10',
                          '-w', ' %{time_total}', 'https://api.ipify.org'], timeout=20)
                 parts = r.stdout.split()
                 ok = len(parts) == 2 and re.match(r'^\d+\.\d+\.\d+\.\d+$', parts[0])
@@ -1163,7 +1188,7 @@ FAIL_HOURS = 12
 
 
 def pc_exit():
-    return run([CURL, '-s', '--ssl-no-revoke', '-m', '10', '--socks5-hostname', '127.0.0.1:2080', 'https://api.ipify.org']).stdout.strip() or None
+    return run([CURL, '-s', *NOREVOKE, '-m', '10', '--socks5-hostname', '127.0.0.1:2080', 'https://api.ipify.org']).stdout.strip() or None
 
 
 def pc_status(exit_ip=True):
@@ -1380,7 +1405,7 @@ def core_mode():
 
 def core_stop():
     """Stop every rh-core: the boot task's copy (only the task can stop it) and our own; wait until 2080 is free."""
-    if boot_task_exists():
+    if not MAC and boot_task_exists():
         run(['schtasks', '/end', '/tn', BOOT_TASK], timeout=20)
     kill_name(os.path.basename(CORE))
     for _ in range(100):   # 10 s at most; it is gone within a moment
@@ -1392,6 +1417,10 @@ def core_stop():
 
 def core_direct():
     os.makedirs(LOGS, exist_ok=True)
+    if MAC:
+        subprocess.Popen([CORE, 'run', '-c', PC_CFG], cwd=os.path.dirname(CORE), stdin=subprocess.DEVNULL,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        return
     subprocess.Popen([CORE, 'run', '-c', PC_CFG], cwd=os.path.dirname(CORE), stdin=subprocess.DEVNULL,
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                      creationflags=subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP, startupinfo=hidden())
@@ -1399,8 +1428,8 @@ def core_direct():
 
 def core_start():
     """Start rh-core hidden: through the boot task when it exists (so it lives in the same place it does after a
-    reboot), otherwise directly."""
-    if boot_task_exists() and run(['schtasks', '/run', '/tn', BOOT_TASK], timeout=20).returncode == 0:
+    reboot), otherwise directly. macOS: always directly; the login item only starts it at login."""
+    if not MAC and boot_task_exists() and run(['schtasks', '/run', '/tn', BOOT_TASK], timeout=20).returncode == 0:
         return 'task'
     core_direct(); return 'direct'
 
@@ -1509,16 +1538,22 @@ def core_release():
     rels = json.loads(gh_get('https://api.github.com/repos/SagerNet/sing-box/releases?per_page=40', 30))
     testing = settings_load()['singbox'] == 'testing'
     rels = [r for r in rels if not r.get('draft') and (testing or not r.get('prerelease'))
-            and any(a['name'] == f"sing-box-{r['tag_name'].lstrip('v')}-windows-amd64.zip" for a in r.get('assets', []))]
+            and any(a['name'] == core_asset(r['tag_name']) for a in r.get('assets', []))]
     if not rels:
-        raise RuntimeError('no sing-box release for Windows found on GitHub')
+        raise RuntimeError(f"no sing-box release for {'macOS' if MAC else 'Windows'} found on GitHub")
     return max(rels, key=lambda r: vkey(r['tag_name']))
+
+
+def core_asset(tag):
+    """The sing-box release file for this PC: windows-amd64.zip, or darwin-arm64 / darwin-amd64.tar.gz on a Mac."""
+    v = tag.lstrip('v')
+    return f'sing-box-{v}-darwin-{macos.ARCH}.tar.gz' if MAC else f'sing-box-{v}-windows-amd64.zip'
 
 
 def core_versions():
     """The newest sing-box for this PC on each channel: {'stable': '1.14.4', 'testing': '1.15.0-alpha.13'}, one GitHub call."""
     rels = [r for r in json.loads(gh_get('https://api.github.com/repos/SagerNet/sing-box/releases?per_page=40', 30))
-            if not r.get('draft') and any(a['name'] == f"sing-box-{r['tag_name'].lstrip('v')}-windows-amd64.zip" for a in r.get('assets', []))]
+            if not r.get('draft') and any(a['name'] == core_asset(r['tag_name']) for a in r.get('assets', []))]
     newest = lambda rs: max((r['tag_name'].lstrip('v') for r in rs), key=vkey, default=None)
     return {'stable': newest([r for r in rels if not r.get('prerelease')]), 'testing': newest(rels)}
 
@@ -1527,13 +1562,13 @@ def core_update(force=False):
     """Keep sing-box current on the chosen channel, also when Reality Hop itself has no new release (the watcher and the
     window check daily; switching the channel installs that channel's build at once, newer or older).
     SHA-256 checked against GitHub's digest, then the new build must accept the PC config before it replaces the old one."""
-    import tempfile, zipfile
+    import tarfile, tempfile, zipfile
     rel, channel = core_release(), settings_load()['singbox']
     ver = rel['tag_name'].lstrip('v')
     set_this_pc(core_checked=time.time(), core_channel=channel)
     if ver == core_version() and not force:
         say(f'sing-box {ver} is current ({channel})'); return None
-    a = next(x for x in rel['assets'] if x['name'] == f'sing-box-{ver}-windows-amd64.zip')
+    a = next(x for x in rel['assets'] if x['name'] == core_asset(ver))
     with tempfile.TemporaryDirectory() as d:
         z = os.path.join(d, a['name'])
         say(f"downloading sing-box {ver} ({a['size'] // 1_000_000} MB) from the official releases (github.com/SagerNet/sing-box)...")
@@ -1541,15 +1576,21 @@ def core_update(force=False):
             f.write(gh_get(a['browser_download_url'], 180))
         if a.get('digest') != 'sha256:' + hashlib.sha256(open(z, 'rb').read()).hexdigest():
             raise RuntimeError('download does not match the checksum GitHub publishes; not installed')
-        new = os.path.join(d, 'rh-core.exe')
-        with zipfile.ZipFile(z) as zf, zf.open(f'sing-box-{ver}-windows-amd64/sing-box.exe') as src, open(new, 'wb') as dst:
-            shutil.copyfileobj(src, dst)
+        new = os.path.join(d, 'rh-core' + EXE)
+        if MAC:   # one named member only: nothing else in the archive is unpacked
+            with tarfile.open(z, 'r:gz') as tf, tf.extractfile(f'sing-box-{ver}-darwin-{macos.ARCH}/sing-box') as src, \
+                    open(new, 'wb') as dst:
+                shutil.copyfileobj(src, dst)
+            os.chmod(new, 0o755)
+        else:
+            with zipfile.ZipFile(z) as zf, zf.open(f'sing-box-{ver}-windows-amd64/sing-box.exe') as src, open(new, 'wb') as dst:
+                shutil.copyfileobj(src, dst)
         chk = run([new, 'check', '-c', PC_CFG], timeout=30, cwd=os.path.dirname(CORE)) if nodes_of(PC_CFG) else None
         if chk and chk.returncode:
             raise RuntimeError(f'sing-box {ver} rejects the PC config, keeping the current build: {chk.stderr.strip()[:200]}')
         was = core_running()
         try:
-            core_stop(); shutil.copy(new, CORE)
+            core_stop(); os.makedirs(PC_DIR, exist_ok=True); shutil.copy(new, CORE)
             say(f'sing-box {ver} ({channel}) installed as {os.path.basename(CORE)}')
         finally:
             if was:
@@ -1561,6 +1602,8 @@ def core_update(force=False):
 def port_owner(port):
     """Exe name of the process listening on a local TCP port, or None. Read from Windows' own table of listening
     sockets (IPv4, then IPv6): asking PowerShell took over a second at every tunnel restart."""
+    if MAC:
+        return macos.port_owner(port)
     import ctypes
     from ctypes import wintypes as W
     get = ctypes.windll.iphlpapi.GetExtendedTcpTable
@@ -1591,6 +1634,8 @@ def pids(name):
 
 def procs():
     """[(process id, exe name)] of every process (a Windows snapshot of the process list, in this process)."""
+    if MAC:
+        return macos.procs()
     import ctypes
     from ctypes import wintypes as W
 
@@ -1615,6 +1660,8 @@ def procs():
 
 def kill_name(name):
     """Stop every process with this exe name that this user may stop (what taskkill /F /IM did)."""
+    if MAC:
+        return macos.kill(pids(name))
     import ctypes
     from ctypes import wintypes as W
     k = ctypes.windll.kernel32
@@ -1653,12 +1700,23 @@ BOOT_TASK = 'RealityHop tunnel'
 
 
 def boot_task_exists():
+    if MAC:
+        return macos.agent_exists(macos.TUNNEL)
     return run(['schtasks', '/query', '/tn', BOOT_TASK], timeout=15).returncode == 0
 
 
 def boot_task(on):
     """Windows starts rh-core at boot, before logon and before the VPN app, as this user ("do not store password" mode),
-    so the user-level watcher can still restart it. Creating or removing the task needs one UAC prompt."""
+    so the user-level watcher can still restart it. Creating or removing the task needs one UAC prompt.
+    macOS: a login item (launchd) starts it at login; no password needed."""
+    if MAC:
+        if on:
+            macos.agent_write(macos.TUNNEL, [CORE, 'run', '-c', PC_CFG], os.path.dirname(CORE))
+        else:
+            macos.agent_remove(macos.TUNNEL)
+        ok = boot_task_exists() == on
+        say(('rh-core now starts at login, before the VPN app' if on else 'login start of rh-core removed') if ok else 'not changed')
+        return ok
     if on:
         ps = boot_task_ps(CORE, PC_CFG)
     else:
@@ -1687,7 +1745,9 @@ def boot_task_ps(core, cfg):
 
 def elevated(ps):
     """Run a PowerShell snippet as administrator (one UAC prompt). Returns the exit code (2 = declined).
-    The snippet goes in as plain text, readable in the process list."""
+    The snippet goes in as plain text, readable in the process list. Never needed on macOS."""
+    if MAC:
+        return 2
     import ctypes
     from ctypes import wintypes as W
 
@@ -1723,12 +1783,16 @@ def set_stopped(on):
 
 
 def task_state():
+    if MAC:
+        return None if not boot_task_exists() else 'Ready' if macos.agent_enabled(macos.TUNNEL) else 'Disabled'
     r = run(['schtasks', '/query', '/tn', BOOT_TASK, '/xml'], timeout=15)   # the XML is the same in every Windows language
     return None if r.returncode else 'Disabled' if '<Enabled>false</Enabled>' in r.stdout else 'Ready'   # None: no task
 
 
 def boot_task_priority():
     """The boot task's priority (7, below normal, when the task does not set one), or None when there is no task."""
+    if MAC:
+        return None
     r = run(['schtasks', '/query', '/tn', BOOT_TASK, '/xml'], timeout=15)
     m = re.search(r'<Priority>(\d+)</Priority>', r.stdout or '')
     return None if r.returncode else int(m.group(1)) if m else 7
@@ -1749,7 +1813,8 @@ def manager_stop():
     at logon and the start at boot. The router and the files are not touched. Returns lines for the window."""
     set_stopped(True); out = []
     if boot_task_exists():
-        elevated(f"schtasks /end /tn '{BOOT_TASK}'; schtasks /change /tn '{BOOT_TASK}' /disable")
+        macos.agent_enable(macos.TUNNEL, False) if MAC else \
+            elevated(f"schtasks /end /tn '{BOOT_TASK}'; schtasks /change /tn '{BOOT_TASK}' /disable")
         out.append('boot start: switched off' if task_state() == 'Disabled' else
                    'boot start: NOT switched off (UAC declined); rh-core will still start at boot')
     startup(False); out.append('background watcher: stopped, no longer starts at logon')
@@ -1765,7 +1830,7 @@ def manager_start():
     """Undo Stop: boot start on again, PC tunnel running, watcher on at logon. Returns lines for the window."""
     set_stopped(False); out = []
     if boot_task_exists() and task_state() == 'Disabled':
-        elevated(f"schtasks /change /tn '{BOOT_TASK}' /enable")
+        macos.agent_enable(macos.TUNNEL, True) if MAC else elevated(f"schtasks /change /tn '{BOOT_TASK}' /enable")
         out.append('boot start: on' if task_state() != 'Disabled' else 'boot start: still OFF (UAC declined)')
     if not router_only():
         out.append('PC tunnel: running' if core_restart() else 'PC tunnel: did not come up, see the log')
@@ -1780,7 +1845,7 @@ def manager_start():
 def core_fast_start():
     """Logon fast path: if rh-core exists and nothing is on 2080, start it now; no checks, no waiting."""
     if os.path.exists(CORE) and not stopped() and not router_only() and not core_running() and not port_open(2080):
-        if boot_task_exists() and run(['schtasks', '/run', '/tn', BOOT_TASK], timeout=20).returncode == 0:
+        if not MAC and boot_task_exists() and run(['schtasks', '/run', '/tn', BOOT_TASK], timeout=20).returncode == 0:
             return True
         core_direct(); return True
     return False
@@ -1983,7 +2048,7 @@ def port_open(port):
         s.close()
 
 
-PIACTL = r'C:\Program Files\Private Internet Access\piactl.exe'
+PIACTL = macos.PIACTL if MAC else r'C:\Program Files\Private Internet Access\piactl.exe'
 FULL_EVERY = 3600       # full check of every node, hourly
 SLOW = 200              # a working node slower than this (ms) shows amber in the tray ring (settings)
 TICK = 30 * 60           # how often the watcher wakes up; between wake-ups it does nothing at all
@@ -2136,7 +2201,7 @@ def gui_open():
     """Start the Reality Hop window (or do nothing if it is already open)."""
     if not port_taken(GUI_PORT):
         cmd = [exe()] if FROZEN else [pythonw(), os.path.join(HERE, 'realityhop.pyw')]
-        subprocess.Popen(cmd, cwd=DATA, env=own_env(), creationflags=subprocess.DETACHED_PROCESS)
+        subprocess.Popen(cmd, cwd=DATA, env=own_env(), **DETACH)
 
 
 _procs_feed = []
@@ -2145,6 +2210,8 @@ KILL_FEEDS = ['powershell', '-NoProfile', '-Command', "Get-CimInstance Win32_Pro
 
 def kill_feeds():
     """Stop the stray PIA monitors. PowerShell takes a second to start, so only when a piactl runs at all."""
+    if MAC:
+        return macos.kill([p for p, c in macos.cmdlines() if 'piactl' in c and 'monitor connectionstate' in c])
     if pids('piactl.exe'):
         run(KILL_FEEDS, timeout=30)
 
@@ -2242,7 +2309,8 @@ def watch():
         for p in _procs_feed:
             p.kill()
         os._exit(0)
-    tray = Tray({1: gui_open, 2: lambda: ask('check'), 4: lambda: ask('restart'), 3: lambda: ask('rescue'), 9: quit_})
+    acts = {1: gui_open, 2: lambda: ask('check'), 4: lambda: ask('restart'), 3: lambda: ask('rescue'), 9: quit_}
+    tray = macos.Tray(acts, tray_icon_file, T) if MAC else Tray(acts)
 
     def show():
         state, text, at = st.get('last', ('unk', T('not checked yet'), ''))
@@ -2271,67 +2339,72 @@ def watch():
     pia_feed(on_pia); show()
     threading.Thread(target=follow_window, daemon=True).start()
     threading.Timer(15, tray_promote).start()   # Windows lists the icon a moment after it appears
-    wait_api(90)
-    while True:
-        CANCEL.clear(); now = time.time(); settings_load()
-        try:
-            if core_update_due() and now - started_at > 600:   # sing-box: daily, 10 min after logon at the earliest
-                set_this_pc(core_checked=now)
-                try:
-                    core_update()
-                except Exception as e:   # no internet, GitHub down...: try again tomorrow, the nodes are not the problem
-                    say(f'rh-core update check failed: {e}')
-            if FROZEN and now - last_app > 24 * 3600:
-                last_app = now
-                try:
-                    import install
-                    rel = install.check_update()
-                    if rel and settings_load()['auto_update'] and not port_taken(GUI_PORT):
-                        say(f"installing Reality Hop {rel['ver']}"); install.apply_update(rel)
-                        tray.remove(); lock.close(); install.start_watcher(); os._exit(0)
-                    elif rel:
-                        notify(T('Reality Hop {ver} is available; open Reality Hop to install it.', ver=rel['ver']))
-                except Exception as e:
-                    say(f'app update check failed: {e}')
-            pia_bad = pia['bad_since'] is not None
-            if 'restart' in want:
-                want.discard('restart'); say('restart requested from the tray')
-                ok = core_restart(); hist_add(event=('restart', 'PC tunnel restarted from the tray'))
-                notify(T('PC tunnel restarted.') if ok else T('PC tunnel did not come back; open Reality Hop.'))
-                tray_recheck(st)
-            elif 'rescue' in want:
-                want.discard('rescue'); out = rescue(); say(out); notify(out); hist_add(event=('rescue', out)); last_full = now
-                tray_recheck(st)
-            elif 'check' in want:
-                want.discard('check'); last_full = now
-                if watch_cycle(st):
-                    tray_recheck(st)   # the old state still shows the nodes that were just replaced
-            elif pia_bad and now - pia['bad_since'] >= 60 and now - last_fix > 300 and now >= hold:
-                say(f'PIA still "{pia["state"]}" after a minute; checking the nodes now')
-                last_fix = last_full = now
-                if watch_cycle(st):
+    def loop():
+        nonlocal last_full, last_fix, last_app
+        wait_api(90)
+        while True:
+            CANCEL.clear(); now = time.time(); settings_load()
+            try:
+                if core_update_due() and now - started_at > 600:   # sing-box: daily, 10 min after logon at the earliest
+                    set_this_pc(core_checked=now)
+                    try:
+                        core_update()
+                    except Exception as e:   # no internet, GitHub down...: try again tomorrow, the nodes are not the problem
+                        say(f'rh-core update check failed: {e}')
+                if FROZEN and now - last_app > 24 * 3600:
+                    last_app = now
+                    try:
+                        import install
+                        rel = install.check_update()
+                        if rel and settings_load()['auto_update'] and not port_taken(GUI_PORT):
+                            say(f"installing Reality Hop {rel['ver']}"); install.apply_update(rel)
+                            tray.remove(); lock.close(); install.start_watcher(); os._exit(0)
+                        elif rel:
+                            notify(T('Reality Hop {ver} is available; open Reality Hop to install it.', ver=rel['ver']))
+                    except Exception as e:
+                        say(f'app update check failed: {e}')
+                pia_bad = pia['bad_since'] is not None
+                if 'restart' in want:
+                    want.discard('restart'); say('restart requested from the tray')
+                    ok = core_restart(); hist_add(event=('restart', 'PC tunnel restarted from the tray'))
+                    notify(T('PC tunnel restarted.') if ok else T('PC tunnel did not come back; open Reality Hop.'))
                     tray_recheck(st)
+                elif 'rescue' in want:
+                    want.discard('rescue'); out = rescue(); say(out); notify(out); hist_add(event=('rescue', out)); last_full = now
+                    tray_recheck(st)
+                elif 'check' in want:
+                    want.discard('check'); last_full = now
+                    if watch_cycle(st):
+                        tray_recheck(st)   # the old state still shows the nodes that were just replaced
+                elif pia_bad and now - pia['bad_since'] >= 60 and now - last_fix > 300 and now >= hold:
+                    say(f'PIA still "{pia["state"]}" after a minute; checking the nodes now')
+                    last_fix = last_full = now
+                    if watch_cycle(st):
+                        tray_recheck(st)
+                    elif core_mode():
+                        say('every node checks fine; restarting the PC tunnel'); core_restart()
+                        hist_add(event=('restart', 'PC tunnel restarted because PIA could not reconnect')); tray_recheck(st)
+                elif port_taken(GUI_PORT):
+                    last_full = now   # the window does the checks while it is open
+                elif now - last_full > FULL_EVERY:
+                    last_full = now
+                    if watch_cycle(st):
+                        tray_recheck(st)
                 elif core_mode():
-                    say('every node checks fine; restarting the PC tunnel'); core_restart()
-                    hist_add(event=('restart', 'PC tunnel restarted because PIA could not reconnect')); tray_recheck(st)
-            elif port_taken(GUI_PORT):
-                last_full = now   # the window does the checks while it is open
-            elif now - last_full > FULL_EVERY:
-                last_full = now
-                if watch_cycle(st):
-                    tray_recheck(st)
-            elif core_mode():
-                core_ensure()
-            core_log_trim()
-        except Exception as e:
-            say(f'error: {e}'); st['last'] = ('bad', f'error: {e}'[:80], time.strftime('%H:%M'))
-        show(); memory_trim()
-        # sleep until the next check is due, a tray request, or a PIA change (re-checked a minute after a drop)
-        due = 60 if pia['bad_since'] is not None else max(30, min(TICK, last_full + FULL_EVERY - time.time()))
-        wake.wait(due); wake.clear()
+                    core_ensure()
+                core_log_trim()
+            except Exception as e:
+                say(f'error: {e}'); st['last'] = ('bad', f'error: {e}'[:80], time.strftime('%H:%M'))
+            show(); memory_trim()
+            # sleep until the next check is due, a tray request, or a PIA change (re-checked a minute after a drop)
+            due = 60 if pia['bad_since'] is not None else max(30, min(TICK, last_full + FULL_EVERY - time.time()))
+            wake.wait(due); wake.clear()
+    if MAC:   # AppKit (the menu bar icon) needs the main thread: the checks run in their own
+        threading.Thread(target=loop, daemon=True).start(); tray.run(); os._exit(0)
+    loop()
 
 
-PIA_SETTINGS = r'C:\Program Files\Private Internet Access\data\settings.json'
+PIA_SETTINGS = macos.PIA_SETTINGS if MAC else r'C:\Program Files\Private Internet Access\data\settings.json'
 PIA_HOW = ('PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Then Settings > Multi-Hop: tick '
            '"Multi-hop and Obfuscation", choose SOCKS5 Proxy, EDIT: host 127.0.0.1, port 2080, no username or password')
 
@@ -2349,6 +2422,8 @@ def prepare():
     official releases. Leaves anything that already exists alone."""
     for d in (PC_DIR, ROUTER_DIR, LOGS):
         os.makedirs(d, exist_ok=True)
+    if MAC:
+        macos.lockdown(DATA)
     for name, dst in (('pc-config.json', PC_CFG), ('router-config.json', ROUTER_CFG)):
         if not os.path.exists(dst):
             c = json.load(open(os.path.join(RES, name), encoding='utf-8'))
@@ -2664,6 +2739,8 @@ def add_key_console(host):
     pub = make_key(); k = pub.split()[1]
     remote = (f"mkdir -p /etc/dropbear; touch /etc/dropbear/authorized_keys; grep -q {k} /etc/dropbear/authorized_keys "
               f"|| echo {pub} >> /etc/dropbear/authorized_keys; chmod 600 /etc/dropbear/authorized_keys; echo; echo Key added. Close this window.")
+    if MAC:
+        return macos.key_console(DATA, ssh_exe(), host, remote)
     bat, esc = os.path.join(DATA, 'add-router-key.cmd'), lambda p: p.replace('%', '%%')   # % is special in a .cmd
     open(bat, 'w', encoding='utf-8').write('@echo off\r\nchcp 65001 >nul\r\ntitle Reality Hop: add key to router\r\n'
                          'echo Type the router admin password (the one for the GL.iNet web panel) and press Enter.\r\n'
@@ -2685,6 +2762,10 @@ def router_key_remove():
 
 def watcher_kill():
     """Stop every running watcher (and the PIA monitors it started)."""
+    if MAC:
+        macos.kill([p for p, c in macos.cmdlines() if '--watch' in c.split() and p != os.getpid()
+                    and ('engine.py' in c or 'RealityHop' in c)])
+        return kill_feeds()
     run(['powershell', '-NoProfile', '-Command',
          "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*--watch*' -and "
          f"($_.CommandLine -like '*engine.py*' -or $_.Name -eq 'RealityHop.exe') -and $_.ProcessId -ne {os.getpid()} }} | "
@@ -2695,8 +2776,18 @@ def watcher_kill():
 def startup(on):
     """Start the watcher at logon (no admin needed); also starts or stops it now. Task Scheduler starts it a few
     seconds after logon; a Startup-folder shortcut waits for Explorer (about 90 s on a busy PC), so it is only the
-    fallback. It runs on the newest installed Python (or RealityHop.exe when frozen)."""
+    fallback. It runs on the newest installed Python (or RealityHop.exe when frozen). macOS: a login item (launchd)."""
     cmd = self_cmd('--watch')
+    if MAC:
+        if on:
+            macos.lockdown(DATA); macos.agent_write(macos.WATCHER, cmd + ['--logon'], DATA); set_this_pc(logon_task=True)
+            if not port_taken(WATCH_PORT):
+                subprocess.Popen(cmd, cwd=DATA, env=own_env(), **DETACH)
+            say('background watcher: on, starts at every login')
+        else:
+            macos.agent_remove(macos.WATCHER); set_this_pc(logon_task=False); watcher_kill()
+            say('background watcher: off')
+        return
     if on:
         os.makedirs(DATA, exist_ok=True); lnk_migrate(STARTUP_LNK)
         task = logon_task(cmd + ['--logon']); set_this_pc(logon_task=task)
@@ -2709,7 +2800,7 @@ def startup(on):
                   f"$s.Arguments = {psq(args)}; $s.WorkingDirectory = {psq(DATA)}; $s.Save()")
             run(['powershell', '-NoProfile', '-Command', ps], timeout=30)
         if not port_taken(WATCH_PORT):
-            subprocess.Popen(cmd, cwd=DATA, env=own_env(), creationflags=subprocess.DETACHED_PROCESS)
+            subprocess.Popen(cmd, cwd=DATA, env=own_env(), **DETACH)
         say('background watcher: on, starts at every logon' + ('' if task else ' (Startup folder: Task Scheduler refused the logon task)'))
     else:
         lnk_migrate(STARTUP_LNK)
@@ -2723,6 +2814,8 @@ def startup(on):
 
 def startup_on():
     """True when the watcher starts at logon."""
+    if MAC:
+        return macos.agent_exists(macos.WATCHER)
     return bool(this_pc().get('logon_task')) or os.path.exists(STARTUP_LNK)
 
 
@@ -2760,7 +2853,7 @@ def tray_icon_file(state, segs=()):
     amber slow, red dead, grey not checked yet). Drawn at 256 px and scaled down; cached in TRAY_ICONS."""
     col = {'ok': (95, 211, 141), 'warn': (245, 165, 36), 'bad': (255, 77, 79)}
     segs = list(segs) or ['unk'] * 6
-    path = os.path.join(TRAY_ICONS, f"tray-{state}-{''.join(x[0] for x in segs)}.ico")
+    path = os.path.join(TRAY_ICONS, f"tray-{state}-{''.join(x[0] for x in segs)}.{'png' if MAC else 'ico'}")
     if not os.path.exists(path):
         from PIL import Image, ImageDraw   # only for an icon not drawn before: it costs memory until the process ends
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -2771,9 +2864,12 @@ def tray_icon_file(state, segs=()):
             a = -90 + i * step + gap / 2
             d.arc((14, 14, 242, 242), a, a + step - gap, fill=col.get(sg, (70, 70, 80)) + (255,), width=34)
         d.ellipse((84, 84, 172, 172), fill=col.get(state, (120, 120, 130)) + (255,))
-        im.save(path, sizes=[(16, 16), (20, 20), (24, 24), (32, 32), (48, 48), (64, 64)])
+        if MAC:   # the menu bar draws it at 18 points: 36 px on a Retina screen, sharper from a larger source
+            im.resize((64, 64), Image.LANCZOS).save(path)
+        else:
+            im.save(path, sizes=[(16, 16), (20, 20), (24, 24), (32, 32), (48, 48), (64, 64)])
         for old in (glob.glob(os.path.join(DATA, 'tray-*.ico'))   # where versions up to 1.3.5 kept them
-                    + sorted(glob.glob(os.path.join(TRAY_ICONS, 'tray-*.ico')), key=os.path.getmtime)[:-200]):   # one file per ring pattern: thousands possible
+                    + sorted(glob.glob(os.path.join(TRAY_ICONS, 'tray-*.*')), key=os.path.getmtime)[:-200]):   # one file per ring pattern: thousands possible
             try:
                 os.remove(old)
             except OSError:
@@ -2784,6 +2880,8 @@ def tray_icon_file(state, segs=()):
 def tray_promote():
     """Windows 11 puts a new tray icon in the hidden overflow (^). Show Reality Hop's on the taskbar once, unless the
     person already chose (Windows Settings > Personalization > Taskbar > Other system tray icons); their choice wins."""
+    if MAC:
+        return
     try:
         import winreg
         tail = '\\' + '\\'.join(os.path.normcase(sys.executable).split(os.sep)[-2:])   # \\<install folder>\\realityhop.exe

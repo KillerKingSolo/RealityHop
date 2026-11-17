@@ -1,7 +1,7 @@
 """check-backend.py  -  refuses a release while the build backend is out of date.
 
 Checks the GitHub Actions in .github/workflows (newest release), the Python version the release is built with
-(the newest one that PyInstaller, Pillow and setup-python all support), and any == pins in requirements.txt.
+(the newest one that PyInstaller, Pillow and setup-python all support), and any == pins in requirements.txt and requirements-mac.txt.
 Runs first in the release workflow, and before a v* tag is pushed (.githooks/pre-push). Exit code 1 = out of date.
 Standard library only.
 """
@@ -62,7 +62,8 @@ def python():
 
 
 def pins():
-    for line in open(os.path.join(ROOT, 'requirements.txt'), encoding='utf-8'):
+    lines = [l for f in sorted(glob.glob(os.path.join(ROOT, 'requirements*.txt'))) for l in open(f, encoding='utf-8')]   # Windows and Mac
+    for line in lines:
         m = re.match(r'\s*([\w.-]+)\s*==\s*([\w.]+)', line)
         if m:
             latest = get(f'https://pypi.org/pypi/{m.group(1)}/json')['info']['version']

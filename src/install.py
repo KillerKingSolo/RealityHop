@@ -12,6 +12,9 @@ Installing asks for one UAC prompt: it creates the folder, copies the exe and gi
 alone (with SYSTEM and administrators), so Reality Hop can update itself later without asking again and no other
 account can read the keys in it. The exe itself never runs as administrator. Installs made by 1.0.x (data in
 %LOCALAPPDATA%\\RealityHop, the program of 1.0.0 and 1.0.1 in %LOCALAPPDATA%\\Programs\\RealityHop) are moved there.
+
+macOS: nothing to install. RealityHop.app is dragged from the .dmg to Applications and keeps its data in Application
+Support; updates replace the app from the release .dmg for this Mac's chip (see macos.py).
 """
 import glob, hashlib, json, os, re, shutil, subprocess, sys, time, urllib.request, zipfile   # all at start: see stale_onefile()
 import engine as N
@@ -20,6 +23,7 @@ UNINSTALL_KEY = N.UNINSTALL_KEY
 MENU_LNK = os.path.join(os.environ.get('APPDATA', ''), r'Microsoft\Windows\Start Menu\Programs', N.NAME + '.lnk')
 LEGACY_EXE = os.path.join(N.LEGACY_DIR, 'RealityHop.exe')
 EMBED = os.path.join(getattr(sys, '_MEIPASS', N.HERE), 'RealityHop-app.zip')   # the program folder (RealityHop.exe + app-X.Y.Z), inside the download
+ASSET = N.macos.DMG if N.MAC else 'RealityHop.exe'   # the release file this copy updates from
 
 
 def same(a, b):
@@ -27,20 +31,22 @@ def same(a, b):
 
 
 def installed_here():
-    return N.FROZEN and same(sys.executable, N.INSTALLED_EXE)
+    return N.FROZEN and (N.MAC or same(sys.executable, N.INSTALLED_EXE))
 
 
 def running_legacy():
     """True when this is a copy installed by 1.0.0 or 1.0.1 in %LOCALAPPDATA%\\Programs."""
-    return N.FROZEN and same(sys.executable, LEGACY_EXE)
+    return N.FROZEN and not N.MAC and same(sys.executable, LEGACY_EXE)
 
 
 def needs_install():
     """True when RealityHop.exe runs from somewhere else (the Downloads folder): this run is the installer."""
-    return N.FROZEN and not installed_here() and not running_legacy()
+    return N.FROZEN and not N.MAC and not installed_here() and not running_legacy()
 
 
 def installed_version():
+    if N.MAC:
+        return N.VERSION
     try:
         import winreg
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, UNINSTALL_KEY) as k:
@@ -55,6 +61,8 @@ def vtuple(v):
 
 def desktop_lnk():
     """The desktop icon's path (the Desktop folder may have moved, for example into OneDrive)."""
+    if N.MAC:
+        return ''
     import ctypes
     buf = ctypes.create_unicode_buffer(260); ctypes.windll.shell32.SHGetFolderPathW(None, 0x10, None, 0, buf)   # CSIDL_DESKTOPDIRECTORY
     return os.path.join(buf.value or os.path.expanduser(r'~\Desktop'), N.NAME + '.lnk')
@@ -63,7 +71,12 @@ def desktop_lnk():
 def cleanup():
     """Old exes left by an update (a running exe can be renamed, not deleted), program folders of older versions once
     nothing runs from them, the old install folder once the Program Files copy runs, and shortcuts under the name used
-    up to 1.0.4."""
+    up to 1.0.4. macOS: apps left by an update, and login items that still point at an app that was moved."""
+    if N.MAC:
+        N.macos.cleanup(N.macos.bundle() if N.FROZEN else None)
+        if N.FROZEN and N.startup_on() and N.macos.agent_args(N.macos.WATCHER)[:1] != [N.exe()]:
+            N.macos.agent_write(N.macos.WATCHER, N.self_cmd('--watch', '--logon'), N.DATA)
+        return
     for p in (N.STARTUP_LNK, MENU_LNK, desktop_lnk()):
         N.lnk_migrate(p)
     for f in glob.glob(os.path.join(N.INSTALL_DIR, '*.old-*.exe')):
@@ -153,7 +166,7 @@ def stale_onefile():
     """True for a one-file exe running from the install folder, as the updater of 1.4.0 and older leaves it. PyInstaller
     reads a program's modules from its exe, by path, whenever one is first imported: such a copy must not run on once the
     folder build has replaced the exe at that path, or it crashes ("Error -5 while decompressing data")."""
-    return installed_here() and not onedir()
+    return not N.MAC and installed_here() and not onedir()
 
 
 def folder_in_place():
@@ -232,7 +245,9 @@ def user_sid():
 
 def shortcuts():
     """The Start menu entry (it is also what Windows search finds when you press the Windows key and type Reality Hop)
-    and the desktop icon, each as chosen in the setup or in Settings."""
+    and the desktop icon, each as chosen in the setup or in Settings. macOS: the app in Applications is the entry."""
+    if N.MAC:
+        return
     s, target = N.settings_load(), N.exe()
     for on, path in ((s['start_menu'], MENU_LNK), (s['desktop_icon'], desktop_lnk())):
         N.lnk_migrate(path)
@@ -252,6 +267,8 @@ def install(target=None):
     import winreg
     if not N.FROZEN:
         return 'running from source: nothing to install'
+    if N.MAC:
+        return 'nothing to install'
     sid = user_sid()
     if not sid:
         raise RuntimeError('could not read this Windows user; not installed')
@@ -292,7 +309,7 @@ def install(target=None):
 
 def needs_move():
     """True for an install made by 1.0.x: the program is in its folder, the data still in %LOCALAPPDATA%."""
-    return installed_here() and same(N.DATA, N.OLD_DATA) and not N.port_taken(N.GUI_PORT)
+    return not N.MAC and installed_here() and same(N.DATA, N.OLD_DATA) and not N.port_taken(N.GUI_PORT)
 
 
 def move_here():
@@ -315,19 +332,20 @@ def move_here():
 
 def start_watcher(*extra):
     if N.FROZEN:
-        subprocess.Popen([N.exe(), '--watch', *extra], cwd=N.DATA, env=N.own_env(), creationflags=subprocess.DETACHED_PROCESS)
+        subprocess.Popen([N.exe(), '--watch', *extra], cwd=N.DATA, env=N.own_env(), **N.DETACH)
 
 
 def latest():
-    """The newest release on GitHub: {'ver', 'asset', 'sha', 'notes'}, or None when it has no RealityHop.exe."""
+    """The newest release on GitHub: {'ver', 'asset', 'sha', 'notes'}, or None when it has no file for this PC
+    (RealityHop.exe, or the .dmg for this Mac's chip)."""
     req = urllib.request.Request(f'https://api.github.com/repos/{N.REPO}/releases/latest', headers={'Accept': 'application/vnd.github+json'})
     r = json.loads(N.gh_get(req, 20))
     assets = {a['name']: a for a in r.get('assets', [])}
-    if 'RealityHop.exe' not in assets:
+    if ASSET not in assets:
         return None
     body = r.get('body') or ''
-    m = re.search(r'SHA-256 of RealityHop\.exe[^0-9a-fA-F]*([0-9a-fA-F]{64})', body)   # also printed in the release notes
-    return {'ver': r['tag_name'].lstrip('v'), 'asset': assets['RealityHop.exe'], 'sha': m.group(1) if m else '',
+    m = re.search(rf'SHA-256 of {re.escape(ASSET)}[^0-9a-fA-F]*([0-9a-fA-F]{{64}})', body)   # also printed in the release notes
+    return {'ver': r['tag_name'].lstrip('v'), 'asset': assets[ASSET], 'sha': m.group(1) if m else '',
             'notes': body.split('\n---')[0][:1500]}
 
 
@@ -358,7 +376,9 @@ def apply_update(rel):
     """Download the release exe, check its SHA-256 against the release (GitHub's asset digest, or the checksum printed
     in the release notes), then put it in where this copy runs: a folder install runs it with --unpack-to, and it puts
     the program folder it carries there; a one-file copy swaps the exe. The caller restarts whatever it needs, with
-    N.own_env() so a one-file exe unpacks its own files."""
+    N.own_env() so a one-file exe unpacks its own files. macOS: the .dmg's app replaces this one (macos.apply_update)."""
+    if N.MAC:
+        return N.macos.apply_update(rel, N.DATA, N.gh_get, N.say, others_stop)
     a, tmp = rel['asset'], os.path.join(N.DATA, 'update.exe')
     os.makedirs(N.DATA, exist_ok=True)
     N.say(f"downloading Reality Hop {rel['ver']} ({a['size'] // 1_000_000} MB)...")
@@ -403,6 +423,8 @@ def unpack_from(exe, d):
 
 def register(d, e, ver=None):
     """The entry in Windows Settings > Apps and Control Panel > Uninstall a program, for the program in folder d."""
+    if N.MAC:
+        return
     import winreg
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, UNINSTALL_KEY) as k:
         for name, val in entry(d, e, ver).items():
@@ -419,7 +441,7 @@ def entry(d, e, ver=None):
 def entry_fix():
     """Up to 1.4.0 an update changed only the version in the entry, so an entry made by 1.0.x kept pointing at a folder
     that is gone, and Uninstall a program failed. Rewrite it when it does not match this installed copy."""
-    if not installed_here():
+    if N.MAC or not installed_here():
         return
     try:
         import winreg
@@ -455,6 +477,14 @@ def uninstall(keep_data=False, router_too=False):
         except Exception as e:
             out.append(f'router: could not switch it off ({e}); do it later in the GL.iNet panel')
     N.startup(False); others_stop(); N.core_stop(); out.append('PC tunnel, background watcher and open windows: stopped')
+    if N.MAC:
+        N.boot_task(False); out.append('login start: removed')
+        out.append('VPN app: turn its SOCKS5 proxy off (PIA: Settings > Multi-Hop, untick "Multi-hop and Obfuscation")')
+        app = N.macos.bundle() if N.FROZEN else None
+        N.macos.remove_later([app] + ([] if keep_data else [N.DATA]))
+        out.append(('the app' if app else 'the program (run from source: left in place)') + ('' if keep_data else ' and data folder')
+                   + ': removed when you close this message')
+        return out
     if N.boot_task_exists():
         out.append('boot start: removed' if N.boot_task(False) else 'boot start: NOT removed (UAC declined); remove the task '
                    f'"{N.BOOT_TASK}" in Task Scheduler')
@@ -491,6 +521,12 @@ def others_stop():
     """Stop every other Reality Hop process (a window left open, the watcher, a node test): a running copy keeps its
     program folder from being removed, and crashes when its exe is replaced. Returns their command lines."""
     keep = ','.join(str(p) for p in {os.getpid(), os.getppid()})   # this copy (and its one-file starter)
+    if N.MAC:
+        me, app = {os.getpid(), os.getppid()}, N.macos.bundle() or '\0'
+        rows = [(p, c) for p, c in N.macos.cmdlines() if p not in me and (c.startswith(app + '/') or
+                os.path.basename(c.split(' ', 1)[0]) == 'rh-test' or ('realityhop.pyw' in c or 'engine.py --watch' in c))]
+        N.macos.kill([p for p, _ in rows])
+        return [c for _, c in rows if 'rh-test' not in c]
     r = N.run(['powershell', '-NoProfile', '-Command', "Get-CimInstance Win32_Process | Where-Object { ($_.Name -in @('RealityHop.exe', "
                f"'rh-test.exe')) -and ($_.ProcessId -notin @({keep})) }} | ForEach-Object {{ Stop-Process -Id $_.ProcessId -Force "
                "-ErrorAction SilentlyContinue; if ($_.Name -eq 'RealityHop.exe') { $_.CommandLine } }"], timeout=30)

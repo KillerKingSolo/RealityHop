@@ -16,7 +16,8 @@ KEEP_HOSTS = {'api.ipify.org', 'www.gstatic.com', 'ip-api.com', 'api.github.com'
 KEEP_EXT = {'json', 'pyw', 'exe', 'log', 'txt', 'ico', 'cmd', 'lnk', 'tmp', 'dll', 'old'}   # file names; none of these ends a website's name
 # .py, .sh, .zip, .md, .pub and .new also end the names of real websites (crt.sh, obsidian.md): only Reality Hop's own files are kept
 KEEP_FILES = re.compile(r'(engine|install|report|version|check-backend)\.py|(heal|nft-devices)\.sh|realityhop-app\.zip|'
-                        r'sing-box-[\w.-]+\.zip|realityhop\.exe\.new|(readme|changelog)\.md')
+                        r'sing-box-[\w.-]+\.(zip|tar\.gz)|realityhop\.exe\.new|(readme|changelog)\.md|'
+                        r'realityhop\.app|realityhop-mac-[\w-]+\.dmg|com\.realityhop\.\w+(\.plist)?|add-router-key\.command|macos\.py')
 LINES = 400   # per log
 
 
@@ -69,6 +70,7 @@ class Scrubber:
             text = re.sub(r'(?<![A-Za-z0-9])' + re.escape(v) + r'(?![A-Za-z0-9])', self.exact[v].replace('\\', '\\\\'), text, flags=re.I)
         text = re.sub(r'(?m)^[+-]\d{4} (?=\d{4}-\d\d-\d\d)', '', text)   # sing-box's time zone offset tells where you are
         text = re.sub(r'\b[A-Za-z]:\\Users\\[^\\\s"\']+', lambda m: m.group(0)[:9] + '<user>', text)   # any profile folder, on any drive
+        text = re.sub(r'(?<![\w.])/Users/(?!Shared/)[^/\s"\']+', '/Users/<user>', text)   # a macOS home folder
         text = re.sub(r'(?i)\b(sid|short_id|token|secret|password|bearer)([=:\s]+)[^\s&"\']+', r'\1\2<secret>', text)
         text = re.sub(r'[\w.+-]+@[\w-]+\.[\w.-]+', '<email>', text)
         text = re.sub(r'(?<![\w-])(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}(?![\w-])', self.host, text)   # sites the tunnel reached or looked up
