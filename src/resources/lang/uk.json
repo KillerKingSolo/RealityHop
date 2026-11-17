@@ -523,5 +523,6 @@
  "Remove Reality Hop from this Mac?\n\nThe tunnel, the background watcher, the login items and the app are removed.": "Видалити Reality Hop з цього Mac?\n\nБуде видалено тунель, фоновий спостерігач, об’єкти входу та застосунок.",
  "Downloads sing-box, finds the first nodes and starts the tunnel. About a minute.": "Завантажує sing-box, знаходить перші вузли й запускає тунель. Близько хвилини.",
  "Makes an SSH key and adds it to the router. In a Terminal window ssh asks for the router password; Reality Hop never sees it.": "Створює SSH-ключ і додає його на роутер. У вікні Термінала ssh запитає пароль роутера; Reality Hop його ніколи не бачить.",
- "Drag Reality Hop into the Applications folder first, then open it from there.": "Спершу перетягніть Reality Hop у папку «Програми», потім відкрийте його звідти."
+ "Drag Reality Hop into the Applications folder first, then open it from there.": "Спершу перетягніть Reality Hop у папку «Програми», потім відкрийте його звідти.",
+ "Settings → Split Tunnel → Add Application → Applications → Reality Hop → Bypass VPN.": "Settings → Split Tunnel → Add Application → Програми → Reality Hop → Bypass VPN."
 }

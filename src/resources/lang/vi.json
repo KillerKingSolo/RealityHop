@@ -523,5 +523,6 @@
  "Remove Reality Hop from this Mac?\n\nThe tunnel, the background watcher, the login items and the app are removed.": "Gỡ Reality Hop khỏi máy Mac này?\n\nĐường hầm, trình theo dõi nền, các mục đăng nhập và ứng dụng sẽ bị gỡ.",
  "Downloads sing-box, finds the first nodes and starts the tunnel. About a minute.": "Tải sing-box, tìm các nút đầu tiên và khởi động đường hầm. Khoảng một phút.",
  "Makes an SSH key and adds it to the router. In a Terminal window ssh asks for the router password; Reality Hop never sees it.": "Tạo khóa SSH và thêm vào router. ssh hỏi mật khẩu router trong một cửa sổ Terminal; Reality Hop không bao giờ thấy nó.",
- "Drag Reality Hop into the Applications folder first, then open it from there.": "Trước tiên hãy kéo Reality Hop vào thư mục Ứng dụng, rồi mở nó từ đó."
+ "Drag Reality Hop into the Applications folder first, then open it from there.": "Trước tiên hãy kéo Reality Hop vào thư mục Ứng dụng, rồi mở nó từ đó.",
+ "Settings → Split Tunnel → Add Application → Applications → Reality Hop → Bypass VPN.": "Settings → Split Tunnel → Add Application → Ứng dụng → Reality Hop → Bypass VPN."
 }

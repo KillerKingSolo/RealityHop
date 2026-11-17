@@ -25,6 +25,10 @@ is the normal HTTPS port, the least likely to be blocked.
 
 ![PIA Multi-Hop with the SOCKS5 proxy](images/pia-multihop-socks5.png)
 
+**Mac:** step 4 is always just this: **Settings → Split Tunnel → Add Application → Applications → Reality Hop →
+Bypass VPN**. That one rule covers the tunnel engine too: Reality Hop signs its copy of sing-box with an id that
+starts with the app's own (`com.realityhop.app.core`), and PIA counts it as part of the app.
+
 **Why rh-core.exe must bypass the VPN:** rh-core.exe carries the VPN's own connection to the node. When all other apps
 use the VPN, PIA routes that connection back into the VPN, which is not up yet, and the VPN cannot connect. Only
 rh-core.exe needs the rule; RealityHop.exe does not. With All Other Apps set to Bypass VPN, rh-core.exe already
