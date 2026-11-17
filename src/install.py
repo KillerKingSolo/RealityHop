@@ -480,9 +480,9 @@ def uninstall(keep_data=False, router_too=False):
     N.startup(False); others_stop(); N.core_stop(); out.append('PC tunnel, background watcher and open windows: stopped')
     if N.MAC:
         N.boot_task(False); out.append('login start: removed')
-        if N.this_pc().get('pia_ips'):
-            out.append('PIA split tunnel: Reality Hop\'s node addresses removed' if N.pia_bypass(in_use=False) else
-                       'PIA split tunnel: remove Reality Hop\'s node addresses by hand (Settings → Split Tunnel)')
+        if N.this_pc().get('pia_ips') or N.this_pc().get('pia_app'):
+            out.append('PIA split tunnel: Reality Hop\'s rules removed' if N.pia_bypass(in_use=False) else
+                       'PIA split tunnel: remove Reality Hop and its node addresses by hand (Settings → Split Tunnel)')
         out.append('VPN app: turn its SOCKS5 proxy off (PIA: Settings > Multi-Hop, untick "Multi-hop and Obfuscation")')
         app = N.macos.bundle() if N.FROZEN else None
         N.macos.remove_later([app] + ([] if keep_data else [N.DATA]))

@@ -105,9 +105,8 @@ Requirements: Windows 10 or 11 (64-bit), and a VPN app that can use a SOCKS5 pro
 3. The first time, right-click Reality Hop in Applications and choose **Open**: the app is not notarized by Apple.
 4. Follow the same setup wizard. No admin password is needed: everything stays in `~/Library/Application
    Support/RealityHop`, readable by your user only, and the background watcher shows in the menu bar.
-5. PIA on a Mac: **Settings → Split Tunnel → Add Application → Applications → Reality Hop → Bypass VPN**. PIA's kill
-   switch can stay on: Reality Hop keeps its node addresses on PIA's split tunnel list. Run one DNS app at a time
-   ([details](docs/vpn-setup.md)).
+5. PIA on a Mac: nothing to set in Split Tunnel. Reality Hop adds itself (Bypass VPN) and keeps its node addresses
+   there, so PIA's kill switch can stay on. Run one DNS app at a time ([details](docs/vpn-setup.md)).
 
 Requirements: macOS 12 or newer, Apple silicon or Intel, and a VPN app that can use a SOCKS5 proxy. The website version
 of PIA: the App Store version has no Multi-Hop or Split Tunnel.

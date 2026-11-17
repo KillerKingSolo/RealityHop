@@ -25,9 +25,11 @@ is the normal HTTPS port, the least likely to be blocked.
 
 ![PIA Multi-Hop with the SOCKS5 proxy](images/pia-multihop-socks5.png)
 
-**Mac:** step 4 is always just this: **Settings → Split Tunnel → Add Application → Applications → Reality Hop →
-Bypass VPN**. That one rule covers the tunnel engine too: Reality Hop signs its copy of sing-box with an id that
-starts with the app's own (`com.realityhop.app.core`), and PIA counts it as part of the app.
+**Mac:** skip step 4. Reality Hop adds itself to PIA's Split Tunnel list as **Bypass VPN** (and switches Split Tunnel
+on when it is off). That one app rule covers the tunnel engine too: Reality Hop signs its copy of sing-box with an id
+that starts with the app's own (`com.realityhop.app.core`), and PIA counts it as part of the app. If PIA's command
+line ever refuses, the setup wizard shows the manual step: **Settings → Split Tunnel → Add Application →
+Applications → Reality Hop → Bypass VPN**.
 
 **Mac: PIA's kill switch works, through IP rules Reality Hop keeps for you.** PIA's Mac kill switch (both the VPN Kill
 Switch and the Advanced Kill Switch) blocks every program whatever its app rules say, the tunnel too, so the VPN would

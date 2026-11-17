@@ -1008,36 +1008,57 @@ def _local_test(nodes, speed, base):
 
 
 def pia_bypass(extra=(), in_use=True):
-    """macOS with PIA: keep the tunnel's node addresses on PIA's Split Tunnel list as IP rules (Bypass VPN). PIA's Mac
-    kill switch blocks every program, Reality Hop's tunnel too, whatever its app rules say; IP rules are the one
-    exception. Without them a kill switch cuts the connection the VPN itself runs through. The nodes in use always,
-    plus extra (nodes under test) for a moment; in_use=False (uninstall) takes them all off. Only the addresses
-    Reality Hop added are changed; the person's own rules stay. Through piactl's applysettings, which PIA marks
-    unstable: False when that fails (Check PIA then warns)."""
+    """macOS with PIA: keep Reality Hop on PIA's Split Tunnel list, so nobody has to set it by hand:
+    - the app as an app rule (Bypass VPN); its signing id covers rh-core and rh-test (macos.core_sign)
+    - the tunnel's node addresses as IP rules (Bypass VPN). PIA's Mac kill switch blocks every program whatever its
+      app rules say; IP rules are its one exception. Without them a kill switch cuts the connection the VPN itself
+      runs through. The nodes in use always, plus extra (nodes under test) for a moment.
+    Split Tunnel is switched on when it is off (both kinds of rule need it). in_use=False (uninstall) takes Reality
+    Hop's rules off again. Only what Reality Hop added is changed; the person's own rules stay. Through piactl's
+    applysettings, which PIA marks unstable: False when that fails (Check PIA then warns)."""
     if not MAC or not os.path.exists(PIACTL):
         return False
     try:
-        cur = json.load(open(PIA_SETTINGS)).get('bypassSubnets') or []
+        st = json.load(open(PIA_SETTINGS))
+        cur, apps = st.get('bypassSubnets') or [], st.get('splitTunnelRules') or []
     except (OSError, ValueError, AttributeError):
         return False
-    mine = {ip + '/32' for ip in this_pc().get('pia_ips', [])}
+    me = this_pc()
+    mine = {ip + '/32' for ip in me.get('pia_ips', [])}
     theirs = [r for r in cur if isinstance(r, dict) and r.get('subnet') not in mine]
     keep = {r.get('subnet') for r in theirs}
     want = sorted(({n['server'] for n in nodes_of(PC_CFG)} if in_use else set()) | set(extra), key=lambda ip: tuple(int(k) for k in ip.split('.')))
     add = [ip for ip in want if public_ip(ip) and ip + '/32' not in keep]   # an address the person listed is theirs
     rules = theirs + [{'subnet': ip + '/32', 'mode': 'exclude'} for ip in add]
-    if [r.get('subnet') for r in rules] == [r.get('subnet') for r in cur if isinstance(r, dict)]:
+    change = {}
+    if [r.get('subnet') for r in rules] != [r.get('subnet') for r in cur if isinstance(r, dict)]:
+        change['bypassSubnets'] = rules
+    app = macos.bundle() if FROZEN else None   # the app rule: only for the installed app (from source there is none)
+    same = lambda r: isinstance(r, dict) and os.path.normcase(str(r.get('path', '')).rstrip('/')) == os.path.normcase(app or '')
+    added_app = me.get('pia_app', False)
+    if app and in_use:
+        if not any(same(r) and r.get('mode') == 'exclude' for r in apps):   # missing, or set to Only VPN: Bypass VPN
+            change['splitTunnelRules'] = [r for r in apps if not same(r)] + [{'path': app, 'linkTarget': '', 'mode': 'exclude'}]
+            added_app = added_app or not any(same(r) for r in apps)
+    elif app and added_app and any(same(r) for r in apps):   # uninstall: only a rule Reality Hop added itself
+        change['splitTunnelRules'] = [r for r in apps if not same(r)]; added_app = False
+    if in_use and (rules or 'splitTunnelRules' in change) and not st.get('splitTunnelEnabled', False):
+        change['splitTunnelEnabled'] = True
+    if not change:
         set_this_pc(pia_ips=add); return True
     try:
-        r = run([PIACTL, '-u', 'applysettings', json.dumps({'bypassSubnets': rules})], timeout=20)
+        r = run([PIACTL, '-u', 'applysettings', json.dumps(change)], timeout=20)
     except Exception as e:
         r = subprocess.CompletedProcess([], 1, '', str(e))
-    dbg('PIA split tunnel IPs:', len(add), 'of Reality Hop,', len(theirs), 'of yours; piactl exit', r.returncode, (r.stderr or '').strip()[:200])
+    dbg('PIA split tunnel:', sorted(change), len(add), 'addresses of Reality Hop,', len(theirs), 'of yours; piactl exit',
+        r.returncode, (r.stderr or '').strip()[:200])
     if r.returncode:
-        say(f"PIA: could not update its split tunnel IP list ({(r.stderr or r.stdout).strip()[:200]}); "
-            'with a kill switch on, PIA cannot connect through Reality Hop')
+        say(f"PIA: could not update its split tunnel list ({(r.stderr or r.stdout).strip()[:200]}); with a kill switch "
+            'on, PIA cannot connect through Reality Hop')
         return False
-    set_this_pc(pia_ips=add)
+    if 'splitTunnelRules' in change and in_use:
+        say('PIA: Reality Hop is in its split tunnel list (Bypass VPN)' + ('; split tunnel switched on' if 'splitTunnelEnabled' in change else ''))
+    set_this_pc(pia_ips=add, pia_app=added_app)
     return True
 
 
