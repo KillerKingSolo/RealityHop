@@ -198,10 +198,11 @@ def cleanup(app):
             pass
 
 
-def apply_update(rel, data, get, say, before_swap):
-    """Download the release .dmg, check its SHA-256, mount it read-only, copy its RealityHop.app next to this one, then
-    swap the two. before_swap() stops the other Reality Hop processes. The caller starts again from the same path."""
-    a, app = rel['asset'], bundle()
+def apply_update(rel, data, get, say, before_swap, app=None):
+    """Download the release .dmg, check its SHA-256, mount it read-only, copy its RealityHop.app next to this one (or
+    next to app), then swap the two. before_swap() stops the other Reality Hop processes. The caller starts again from
+    the same path."""
+    a, app = rel['asset'], app or bundle()
     if not app:
         raise RuntimeError('not running from RealityHop.app; not updated')
     if not os.access(os.path.dirname(app), os.W_OK):
