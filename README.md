@@ -108,7 +108,7 @@ Requirements: Windows 10 or 11 (64-bit), and a VPN app that can use a SOCKS5 pro
 5. PIA on a Mac: nothing to set in Split Tunnel. Reality Hop adds itself (Bypass VPN) and keeps its node addresses
    there, so PIA's kill switch can stay on. Run one DNS app at a time ([details](docs/vpn-setup.md)).
 
-Requirements: macOS 12 or newer, Apple silicon or Intel, and a VPN app that can use a SOCKS5 proxy. The website version
+Requirements: macOS 15 or newer, Apple silicon or Intel, and a VPN app that can use a SOCKS5 proxy. The website version
 of PIA: the App Store version has no Multi-Hop or Split Tunnel.
 
 ## Set up your VPN app

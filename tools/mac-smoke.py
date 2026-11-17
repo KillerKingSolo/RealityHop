@@ -72,6 +72,10 @@ check('plist lint', subprocess.run(['/usr/bin/plutil', '-lint', macos.agent_path
 check('task state ready', N.task_state() == 'Ready', str(N.task_state()))
 out = N.manager_stop()
 check('Stop switches the login start off', N.task_state() == 'Disabled' and N.stopped(), ' | '.join(out))
+N.pc_push()   # a node change while stopped: the configs are saved, the tunnel stays off
+check('stopped: a node change leaves the tunnel off', not N.core_running())
+check('Mac wording', N.T('Restart PC tunnel') == 'Restart Mac tunnel' and 'PC, Router' in N.T('Opens the install folder with the PC, Router and logs folders.'))
+check('no DNS app on this runner', N.macos.dns_proxies() == [], str(N.macos.dns_proxies()))
 out = N.manager_start()
 check('Start switches it on again', N.task_state() == 'Ready' and N.core_running(), ' | '.join(out))
 time.sleep(8)

@@ -1,7 +1,19 @@
 # Changelog
 
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
-Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
+Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac from the release.
+
+## 1.7.0 (2026-11-17)
+
+**Why update:** Reality Hop now runs on Macs, Apple silicon and Intel, with PIA's kill switch on.
+
+- New: macOS app (macOS 15 or newer). Each release has `RealityHop-mac-apple-silicon.dmg` and `RealityHop-mac-intel.dmg`: drag Reality Hop to Applications. It keeps its data in your user's Library, starts at login without an admin password, shows the watcher in the menu bar and updates itself from the release.
+- New: on a Mac, Reality Hop adds itself to PIA's Split Tunnel list (Bypass VPN) and keeps the 6 node addresses there, so PIA's kill switch and Advanced Kill Switch stay on. New nodes are added before the tunnel switches to them, old ones removed after; your own rules stay.
+- New: Check PIA on a Mac warns when another DNS app (such as NextDNS) is on, which stops every name from resolving while PIA is connected.
+- Fixed: while Reality Hop is stopped, a node swap or restart no longer starts the tunnel; the new nodes are used at the next Start.
+- Fixed: after a name lookup gets no answer, downloads go through the tunnel first for 10 minutes instead of waiting 30 seconds each time.
+- Fixed: the locations of the nodes picked during setup fill in at the first check instead of staying "?".
+- Changed: on a Mac the window says "Mac" where Windows says "PC", in all 9 languages.
 
 ## 1.6.2 (2026-11-16)
 

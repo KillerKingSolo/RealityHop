@@ -23,7 +23,7 @@ set_key() {   # Info.plist: change the key, or add it when PyInstaller did not w
 set_key CFBundleDisplayName string "Reality Hop"
 set_key CFBundleShortVersionString string "$v"
 set_key CFBundleVersion string "$v"
-set_key LSMinimumSystemVersion string 12.0
+set_key LSMinimumSystemVersion string 15.0
 set_key NSHumanReadableCopyright string "(c) 2026 KillerKingSolo, CC BY-NC-ND 4.0"
 # a changed Info.plist breaks the signature: sign the whole app again (ad hoc, no Apple ID), then check it
 codesign --force --deep --sign - "$app"

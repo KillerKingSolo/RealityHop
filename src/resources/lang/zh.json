@@ -517,7 +517,6 @@
  "Not connected": "未连接",
  "Not on the router's network; press Test on router": "不在路由器的网络中；请按“在路由器上测试”",
  "Start tunnel at login": "登录时启动隧道",
- "macOS 12 or newer, Intel or Apple silicon.": "macOS 12 或更高版本，Intel 或 Apple 芯片。",
  "Start everything again on this Mac?\n\n- the PC tunnel (rh-core) starts now and at every login\n- the background watcher and menu bar icon start now and at every login\n\nAfterwards turn the VPN app's proxy back on (PIA: Settings → Multi-Hop, tick \"Multi-hop and Obfuscation\", SOCKS5 127.0.0.1:2080).": "在这台 Mac 上重新启动一切？\n\n- 电脑隧道（rh-core）现在以及每次登录时启动\n- 后台守护程序和菜单栏图标现在以及每次登录时启动\n\n之后重新打开 VPN 应用的代理（PIA：Settings → Multi-Hop，勾选“Multi-hop and Obfuscation”，SOCKS5 127.0.0.1:2080）。",
  "Stop everything on this Mac, for when you are somewhere else?\n\n- the PC tunnel (rh-core) stops and no longer starts at login\n- the background watcher and menu bar icon stop and no longer start at login\n- the router and your configs are not touched\n\nAfterwards turn the VPN app's proxy off (PIA: Settings → Multi-Hop, untick \"Multi-hop and Obfuscation\"), or it cannot connect. Press Start to undo.": "停止这台 Mac 上的一切，用于你不在这里时？\n\n- 电脑隧道（rh-core）停止，登录时不再启动\n- 后台守护程序和菜单栏图标停止，登录时不再启动\n- 不会改动路由器和你的配置\n\n之后关闭 VPN 应用的代理（PIA：Settings → Multi-Hop，取消勾选“Multi-hop and Obfuscation”），否则它无法连接。按“启动”可撤销。",
  "Remove Reality Hop from this Mac?\n\nThe tunnel, the background watcher, the login items and the app are removed.": "从这台 Mac 移除 Reality Hop？\n\n隧道、后台守护程序、登录项和应用都会被移除。",
@@ -525,5 +524,7 @@
  "Makes an SSH key and adds it to the router. In a Terminal window ssh asks for the router password; Reality Hop never sees it.": "生成一个 SSH 密钥并添加到路由器。ssh 会在终端窗口中询问路由器密码；Reality Hop 永远看不到它。",
  "Drag Reality Hop into the Applications folder first, then open it from there.": "请先把 Reality Hop 拖到“应用程序”文件夹，然后从那里打开。",
  "Settings → Split Tunnel → Add Application → Applications → Reality Hop → Bypass VPN.": "Settings → Split Tunnel → Add Application → 应用程序 → Reality Hop → Bypass VPN。",
- "the kill switch is on: on a Mac it blocks the tunnel (Settings → Privacy, untick both kill switches)": "kill switch 已开启：在 Mac 上它会阻断隧道（Settings → Privacy，取消勾选两个 kill switch）"
+ "the kill switch is on: on a Mac it blocks the tunnel (Settings → Privacy, untick both kill switches)": "kill switch 已开启：在 Mac 上它会阻断隧道（Settings → Privacy，取消勾选两个 kill switch）",
+ "macOS 15 or newer, Intel or Apple silicon.": "macOS 15 或更高版本，Intel 或 Apple 芯片。",
+ "another DNS app (such as NextDNS) is on: with PIA connected no name resolves (turn it off, or PIA → Settings → Network → Name Servers: Use Existing DNS)": "另一个 DNS 应用（例如 NextDNS）正在运行：PIA 连接时任何域名都无法解析（关闭它，或在 PIA → Settings → Network → Name Servers 选择 Use Existing DNS）"
 }

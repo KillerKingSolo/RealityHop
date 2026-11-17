@@ -124,6 +124,7 @@ say = print   # the GUI points this at its log pane
 DEBUG = bool(getattr(version, 'DEBUG', False))   # test builds only: the release workflow sets it on manual runs
 BUILD = getattr(version, 'BUILD', '')            # a test build's commit, shown next to the version
 _dbg = []
+_DNS_DOWN = [0.0]   # when a direct download last failed its name lookup (gh_get)
 
 
 def dbg(*a):
@@ -489,6 +490,14 @@ def gh_get(url, timeout=30):
     """A whole download from GitHub (url or Request): direct first, then through the PC tunnel, which gets past a block.
     The retry also covers a download that stalls partway, as DPI filters do. TLS stays end to end with GitHub."""
     u, t = getattr(url, 'full_url', url), time.time()
+    if time.time() - _DNS_DOWN[0] < 600 and not router_only() and port_open(2080):
+        dbg('download: name lookups failed lately, the tunnel goes first', u)   # each direct try waits 30 s for DNS
+        try:
+            return _gh_tunnel(url, timeout, u)
+        except urllib.error.HTTPError:
+            raise
+        except Exception:
+            pass   # the tunnel is down too: direct after all
     try:
         with urllib.request.urlopen(url, timeout=timeout, context=tls()) as r:
             b = read_all(r, timeout * 6); dbg(f'download direct ok {len(b)} B {time.time() - t:.1f} s', u); return b
@@ -498,9 +507,15 @@ def gh_get(url, timeout=30):
     except Exception as e:
         dbg(f'download direct FAILED {time.time() - t:.1f} s: {type(e).__name__} {getattr(e, "reason", e)!r}', u,
             f'tunnel port open: {port_open(2080)}')
+        if isinstance(getattr(e, 'reason', None), socket.gaierror):
+            _DNS_DOWN[0] = time.time()
         if router_only() or not port_open(2080):
             raise
         say(f'direct download failed ({e}); retrying through the tunnel')
+    return _gh_tunnel(url, timeout, u)
+
+
+def _gh_tunnel(url, timeout, u):
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({'http': TUNNEL_PROXY, 'https': TUNNEL_PROXY}),
                                          urllib.request.HTTPSHandler(context=tls()))
     t = time.time()
@@ -2002,6 +2017,9 @@ def pc_push():
         return True
     if not core_mode():
         say('rh-core.exe is missing; run the setup again'); return False
+    if stopped():   # Stop means off until Start: the new nodes are in the configs and run from the next Start
+        say('Reality Hop is stopped: the tunnel stays off; the configs are saved and used at the next Start')
+        return True
     return core_restart()
 
 
@@ -2678,6 +2696,9 @@ def vpn_state():
         wrong.append('the SOCKS5 proxy is not 127.0.0.1:2080')
     if MAC and st.get('killswitch', 'auto') != 'off' and not pia_bypass():   # auto = VPN Kill Switch, on = Advanced
         wrong.append('the kill switch is on: on a Mac it blocks the tunnel (Settings → Privacy, untick both kill switches)')
+    if MAC and st.get('overrideDNS', 'pia') != '' and macos.dns_proxies():   # '' = PIA's "Use Existing DNS"
+        wrong.append('another DNS app (such as NextDNS) is on: with PIA connected no name resolves (turn it off, or '
+                     'PIA → Settings → Network → Name Servers: Use Existing DNS)')
     return True, wrong
 
 

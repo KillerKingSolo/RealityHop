@@ -45,9 +45,34 @@ def use(code):
     LANG, RTL, CAT = code, code in RTL_LANGS, cat
 
 
+MAC = sys.platform == 'darwin'
+_NOT_FOLDER = r'(?!\s*[,،、]\s*Router)'   # the folder named PC keeps its name
+# On a Mac, "PC" becomes "Mac" (Chinese, Persian and Arabic say "computer": no change). Another PC on the router can be
+# any computer, so that one becomes "computer". Turkish endings follow the new word (PC'den -> Mac'ten).
+MAC_WORDS = {
+    'en': [(r'\banother PC\b', 'another computer'), (r'\bPC\b' + _NOT_FOLDER, 'Mac')],
+    'es': [(r'\botro PC\b', 'otro equipo'), (r'\bPC\b' + _NOT_FOLDER, 'Mac')],
+    'ru': [(r'\bдругой ПК\b', 'другой компьютер'), (r'\bПК\b', 'Mac')],
+    'uk': [(r'\bінший ПК\b', "інший комп'ютер"), (r'\bПК\b', 'Mac')],
+    'tr': [(r'\b[Bb]aşka bir PC\b', lambda m: m.group(0)[0] + 'aşka bir bilgisayar'), (r"\bPC'deki\b", "Mac'teki"), (r"\bPC'de\b", "Mac'te"),
+           (r"\bPC'den\b", "Mac'ten"), (r"\bPC'ye\b", "Mac'e"), (r"\bPC'yi\b", "Mac'i"), (r"\bPC'nin\b", "Mac'in"),
+           (r'\bPC\b' + _NOT_FOLDER, 'Mac')],
+    'vi': [(r'\bmáy PC khác\b', 'máy tính khác'), (r'\bPC\b' + _NOT_FOLDER, 'Mac')],
+}
+
+
+def mac_words(s, lang):
+    import re
+    for pat, rep in MAC_WORDS.get(lang, ()):
+        s = re.sub(pat, rep, s)
+    return s
+
+
 def T(text, **kw):
-    """text in the current language; {name} fields are filled from kw."""
+    """text in the current language; {name} fields are filled from kw. On a Mac, "PC" reads "Mac" (mac_words)."""
     s = CAT.get(text) or text
+    if MAC:   # before the fields go in: a node name or path must not change
+        s = mac_words(s, LANG if text in CAT else 'en')
     if kw:
         try:
             s = s.format(**kw)

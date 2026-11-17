@@ -2453,7 +2453,7 @@ class Wizard(tk.Tk):
             tk.Label(row, text=T(label), bg=BG, fg=MUTED, font=(UI, 9)).pack(side='left')
             link(row, text, url, BG).pack(side='left', padx=(4, 18))
         self.p(T('What you need'), bold=True)
-        self.items([T('macOS 12 or newer, Intel or Apple silicon.') if N.MAC else T('Windows 10 or 11, 64-bit.'),
+        self.items([T('macOS 15 or newer, Intel or Apple silicon.') if N.MAC else T('Windows 10 or 11, 64-bit.'),
                     T('A VPN app that can use a SOCKS5 proxy. Private Internet Access (PIA) works out of the box; the VPN step shows how.'),
                     T('Optional: a GL.iNet router (firmware 4.x) to put other devices, such as a phone or a console, through the tunnel too.')])
         self.p(T('Public nodes are run by strangers. Your VPN still encrypts everything end to end, so a node only sees encrypted VPN '

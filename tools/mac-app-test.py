@@ -68,7 +68,7 @@ check('chip', sh('/usr/bin/lipo', '-archs', exe).stdout.split() == [ARCH], sh('/
 check('signature', sh('/usr/bin/codesign', '--verify', '--deep', '--strict', src).returncode == 0)
 info = plistlib.load(open(os.path.join(src, 'Contents', 'Info.plist'), 'rb'))
 check('bundle id', info.get('CFBundleIdentifier') == 'com.realityhop.app', info.get('CFBundleIdentifier'))
-check('minimum macOS 12', info.get('LSMinimumSystemVersion') == '12.0', info.get('LSMinimumSystemVersion'))
+check('minimum macOS 15', info.get('LSMinimumSystemVersion') == '15.0', info.get('LSMinimumSystemVersion'))
 check('version', bool(info.get('CFBundleShortVersionString')), info.get('CFBundleShortVersionString'))
 print(f"macOS {sh('/usr/bin/sw_vers', '-productVersion').stdout.strip()}, {sh('/usr/bin/uname', '-m').stdout.strip()}")
 

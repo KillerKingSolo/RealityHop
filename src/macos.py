@@ -134,6 +134,17 @@ def open_path(p):
     subprocess.Popen(['/usr/bin/open', p], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
+def dns_proxies():
+    """DNS servers on this Mac that are a local DNS app (NextDNS, AdGuard and the like): a loopback address, or the
+    documentation range 192.0.2.0/24 such apps use for their proxy. PIA blocks them while it is connected."""
+    try:
+        out = subprocess.run(['/usr/sbin/scutil', '--dns'], capture_output=True, text=True, timeout=10).stdout
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    found = set(re.findall(r'nameserver\[\d+\]\s*:\s*(\S+)', out))
+    return sorted(a for a in found if a.startswith(('127.', '192.0.2.')) or a == '::1')
+
+
 def mac_from_arp(out):
     """macOS arp drops leading zeros (0:1a:2b:3:4c:5d): back to the 00-1a-2b-03-4c-5d form Windows prints."""
     m = re.search(r'\bat ((?:[0-9a-f]{1,2}:){5}[0-9a-f]{1,2})\b', out.lower())
