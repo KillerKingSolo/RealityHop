@@ -701,6 +701,30 @@ def geolocate(nodes):
     return nodes
 
 
+def where_fill(nodes):
+    """Locations of nodes picked while the tunnel was not up yet (the first setup's scan): looked up now through the
+    tunnel, as geolocate always does, and written into nodes.txt, so the window shows them from then on."""
+    todo = [n for n in nodes if n.get('where', '?') == '?']
+    if not todo or router_only() or not port_open(2080):
+        return nodes
+    geolocate(todo)
+    got = {n['server']: n for n in todo if n.get('where', '?') != '?'}
+    try:
+        lines = open(NODES_TXT, encoding='utf-8').read().split('\n')
+    except OSError:
+        return nodes
+    for i, l in enumerate(lines):   # a row of write_txt with no location yet: "  tag  server  front  ms  ?  ?"
+        m = re.match(r'(\s+(?:vless-\d+\s+)?(\d+\.\d+\.\d+\.\d+)\s+\S+\s+(?:\d+ms|\?))  \?\s+\?\s*$', l)
+        if m and m.group(2) in got:
+            n = got[m.group(2)]; lines[i] = f"{m.group(1)}  {n['where']:26}  {n.get('isp', '?')}"
+    if got:
+        tmp = NODES_TXT + '.tmp'
+        with open(tmp, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(lines))
+        os.replace(tmp, NODES_TXT); say(f"locations found: {', '.join(n['server'] + ' ' + n['where'] for n in got.values())}")
+    return nodes
+
+
 ERRS = re.compile(r'reality verification failed|certificate is valid for [a-z0-9.*-]+|connection refused|i/o timeout|'
                   r'connection reset|EOF', re.I)
 

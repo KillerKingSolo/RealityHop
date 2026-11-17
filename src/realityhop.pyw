@@ -1120,6 +1120,7 @@ class App(tk.Tk):
                     elif r:
                         self.pc_pending = False
                         N.hist_add(pings={n['server']: n['pc_ms'] for n in self.lists['pc']})
+                        N.where_fill(self.lists['pc'])   # nodes from the first setup: found before the tunnel was up
                 else:
                     for n in self.lists['pc']:
                         n['pc_ms'] = n['pc_why'] = None

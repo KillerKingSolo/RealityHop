@@ -51,6 +51,11 @@ check('tunnel process found', N.core_running(), str(N.pids('rh-core')))
 check('port owner', N.port_owner(2080) == 'rh-core', str(N.port_owner(2080)))
 ip = N.pc_exit()
 check('traffic through the tunnel', bool(ip), ip or 'no exit address')
+cur = N.inuse(); kw = N.known_where()
+for n in cur:
+    n['where'] = kw.get(n['server'], '?')
+N.where_fill(cur); kw = N.known_where()   # the setup's scan ran before the tunnel was up: locations come now
+check('locations of the nodes in use', all(kw.get(n['server'], '?') != '?' for n in cur), str([kw.get(n['server'], '?') for n in cur]))
 check('restart', N.core_restart())
 import socket
 c = socket.create_connection(('127.0.0.1', 2080), timeout=5)   # as the VPN app is: connected to the proxy
