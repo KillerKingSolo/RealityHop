@@ -123,8 +123,6 @@ jobs:
             chip: apple-silicon
           - runner: macos-26-intel     # macOS 26, Intel
             chip: intel
-          - runner: macos-14           # macOS 14, Intel
-            chip: intel
           - runner: macos-26           # the Intel app on Apple silicon, through Rosetta
             chip: intel
             rosetta: true
