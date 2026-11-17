@@ -41,13 +41,12 @@ inside it the whole way.
 
 ## Screenshots
 
-| ![Main window](docs/images/main-window.png) | ![Candidates](docs/images/candidates.png) |
-|---|---|
-| **Main window:** every node tested through the live tunnel, the last 24 hours, the router tunnel. | **Candidates:** nodes from the public list, pinged and tested on your PC; put any of them in a slot. |
-| ![Node details](docs/images/node-details.png) | ![Report a problem](docs/images/report.png) |
-| **Node details:** where a node is, how it tests, its ping over 24 hours. | **Report a problem:** the logs with everything personal redacted, ready for a GitHub issue. |
-| ![Router devices](docs/images/devices.png) | ![Settings](docs/images/settings.png) |
-| **Router devices:** choose which devices use the router tunnel, and how to keep their address fixed. | **Settings:** checks, router features, updates, the sing-box channel, shortcuts. |
+<table>
+<tr><td colspan="2"><img src="docs/images/main-window.png" alt="Main window" width="100%"><br><b>Main window:</b> every node tested through the live tunnel, the last 24 hours, the router tunnel.</td></tr>
+<tr><td width="50%" valign="top"><img src="docs/images/candidates.png" alt="Candidates" width="100%"><br><b>Candidates:</b> nodes from the public list, pinged and tested on your PC; put any of them in a slot.</td><td width="50%" valign="top"><img src="docs/images/devices.png" alt="Router devices" width="100%"><br><b>Router devices:</b> choose which devices use the router tunnel, and how to keep their address fixed.</td></tr>
+<tr><td width="50%" valign="top"><img src="docs/images/node-details.png" alt="Node details" width="100%"><br><b>Node details:</b> where a node is, how it tests, its ping over 24 hours.</td><td width="50%" valign="top"><img src="docs/images/report.png" alt="Report a problem" width="100%"><br><b>Report a problem:</b> the logs with everything personal redacted, ready for a GitHub issue.</td></tr>
+<tr><td colspan="2" align="center"><img src="docs/images/settings.png" alt="Settings" width="50%"><br><b>Settings:</b> checks, router features, updates, the sing-box channel, shortcuts.</td></tr>
+</table>
 
 ## Features
 

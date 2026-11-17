@@ -3,6 +3,13 @@
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` from the release and run it.
 
+## 1.6.2 (2026-11-16)
+
+**Why update:** in Persian and Arabic, sing-box versions like 1.15.0-alpha.13 now read correctly.
+
+- Fixed: in Persian and Arabic, versions with a suffix (1.15.0-alpha.13) showed with their parts swapped in the sidebar, Settings, the router update window and the status line. They are now marked left to right.
+- Docs: new screenshots in all 9 languages, in a new gallery layout.
+
 ## 1.6.1 (2026-11-16)
 
 **Why update:** the window now says when the router cannot be reached, instead of showing old router results as if they were current.

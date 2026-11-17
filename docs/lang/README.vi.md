@@ -21,13 +21,12 @@ Nó lấy các nút công khai miễn phí từ [rtwo2/FastNodes](https://github
 
 ## Ảnh chụp màn hình
 
-| ![Cửa sổ chính](../images/vi/main-window.png) | ![Ứng viên](../images/vi/candidates.png) |
-|---|---|
-| **Cửa sổ chính:** mọi nút được kiểm tra qua đường hầm đang chạy, 24 giờ qua, đường hầm router. | **Ứng viên:** các nút từ danh sách công khai, được ping và kiểm tra trên PC của bạn; đặt bất kỳ nút nào vào một ô. |
-| ![Chi tiết nút](../images/vi/node-details.png) | ![Báo cáo sự cố](../images/vi/report.png) |
-| **Chi tiết nút:** nút ở đâu, kết quả kiểm tra, ping của nó trong 24 giờ. | **Báo cáo sự cố:** nhật ký đã ẩn mọi thông tin cá nhân, sẵn sàng cho một issue trên GitHub. |
-| ![Thiết bị của router](../images/vi/devices.png) | ![Cài đặt](../images/vi/settings.png) |
-| **Thiết bị của router:** chọn thiết bị nào dùng đường hầm router và cách giữ cố định địa chỉ của chúng. | **Cài đặt:** kiểm tra, tính năng router, cập nhật, kênh sing-box, lối tắt. |
+<table>
+<tr><td colspan="2"><img src="../images/vi/main-window.png" alt="Cửa sổ chính" width="100%"><br><b>Cửa sổ chính:</b> mọi nút được kiểm tra qua đường hầm đang chạy, 24 giờ qua, đường hầm router.</td></tr>
+<tr><td width="50%" valign="top"><img src="../images/vi/candidates.png" alt="Ứng viên" width="100%"><br><b>Ứng viên:</b> các nút từ danh sách công khai, được ping và kiểm tra trên PC của bạn; đặt bất kỳ nút nào vào một ô.</td><td width="50%" valign="top"><img src="../images/vi/devices.png" alt="Thiết bị của router" width="100%"><br><b>Thiết bị của router:</b> chọn thiết bị nào dùng đường hầm router và cách giữ cố định địa chỉ của chúng.</td></tr>
+<tr><td width="50%" valign="top"><img src="../images/vi/node-details.png" alt="Chi tiết nút" width="100%"><br><b>Chi tiết nút:</b> nút ở đâu, kết quả kiểm tra, ping của nó trong 24 giờ.</td><td width="50%" valign="top"><img src="../images/vi/report.png" alt="Báo cáo sự cố" width="100%"><br><b>Báo cáo sự cố:</b> nhật ký đã ẩn mọi thông tin cá nhân, sẵn sàng cho một issue trên GitHub.</td></tr>
+<tr><td colspan="2" align="center"><img src="../images/vi/settings.png" alt="Cài đặt" width="50%"><br><b>Cài đặt:</b> kiểm tra, tính năng router, cập nhật, kênh sing-box, lối tắt.</td></tr>
+</table>
 
 ## Cài đặt
 

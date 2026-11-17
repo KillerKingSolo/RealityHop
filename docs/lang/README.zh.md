@@ -21,13 +21,12 @@ VPN 应用 → 你电脑上的 Reality Hop（SOCKS5 `127.0.0.1:2080`）→ 公�
 
 ## 截图
 
-| ![主窗口](../images/zh/main-window.png) | ![候选节点](../images/zh/candidates.png) |
-|---|---|
-| **主窗口:** 每个节点都通过运行中的隧道测试，显示最近 24 小时和路由器隧道。 | **候选节点:** 来自公共列表的节点，在你的电脑上测 ping 和测试；可以把任意一个放进槽位。 |
-| ![节点详情](../images/zh/node-details.png) | ![报告问题](../images/zh/report.png) |
-| **节点详情:** 节点所在位置、测试结果、24 小时内的 ping。 | **报告问题:** 去除了所有个人信息的日志，可直接附到 GitHub issue。 |
-| ![路由器设备](../images/zh/devices.png) | ![设置](../images/zh/settings.png) |
-| **路由器设备:** 选择哪些设备走路由器隧道，以及如何固定它们的地址。 | **设置:** 检查、路由器功能、更新、sing-box 通道、快捷方式。 |
+<table>
+<tr><td colspan="2"><img src="../images/zh/main-window.png" alt="主窗口" width="100%"><br><b>主窗口:</b> 每个节点都通过运行中的隧道测试，显示最近 24 小时和路由器隧道。</td></tr>
+<tr><td width="50%" valign="top"><img src="../images/zh/candidates.png" alt="候选节点" width="100%"><br><b>候选节点:</b> 来自公共列表的节点，在你的电脑上测 ping 和测试；可以把任意一个放进槽位。</td><td width="50%" valign="top"><img src="../images/zh/devices.png" alt="路由器设备" width="100%"><br><b>路由器设备:</b> 选择哪些设备走路由器隧道，以及如何固定它们的地址。</td></tr>
+<tr><td width="50%" valign="top"><img src="../images/zh/node-details.png" alt="节点详情" width="100%"><br><b>节点详情:</b> 节点所在位置、测试结果、24 小时内的 ping。</td><td width="50%" valign="top"><img src="../images/zh/report.png" alt="报告问题" width="100%"><br><b>报告问题:</b> 去除了所有个人信息的日志，可直接附到 GitHub issue。</td></tr>
+<tr><td colspan="2" align="center"><img src="../images/zh/settings.png" alt="设置" width="50%"><br><b>设置:</b> 检查、路由器功能、更新、sing-box 通道、快捷方式。</td></tr>
+</table>
 
 ## 安装
 

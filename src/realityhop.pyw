@@ -142,6 +142,11 @@ def theme(root):
     s.configure('Busy.Horizontal.TProgressbar', background=ACC, troughcolor=BG, bordercolor=BG, lightcolor=ACC, darkcolor=ACC, thickness=3)
 
 
+def ltr(v):
+    """A version like 1.15.0-alpha.13 inside Persian or Arabic text: marked left to right, or the parts swap places."""
+    return f'‎{v}‎' if v and i18n.RTL else v
+
+
 def rtl_wrap():
     """Persian and Arabic: Tk wraps a label itself and draws each line left to right, so a line that mixes in Latin
     words comes out jumbled. Labels with a wrap length are wrapped here instead, each line in its own right-to-left
@@ -679,7 +684,7 @@ class App(tk.Tk):
             self.say(f'sing-box update check failed: {e}'); return
         if ver:
             self.show_core(); self.check_local('pc')
-            self.status_text, self.status_state = T('sing-box {ver} installed; the tunnel is running on it.', ver=ver), 'ok'
+            self.status_text, self.status_state = T('sing-box {ver} installed; the tunnel is running on it.', ver=ltr(ver)), 'ok'
 
     def maybe_router_core(self, force=False):
         """Reality Hop's router build of sing-box: once a day, and at once after the router's channel changes, see whether
@@ -701,7 +706,7 @@ class App(tk.Tk):
         ok, out = N.router_core_install(m, a)
         for line in out.splitlines():
             self.say('router: ' + line)
-        self.status_text, self.status_state = ((T("The router runs sing-box {ver} now.", ver=m['singbox']), 'ok') if ok else
+        self.status_text, self.status_state = ((T("The router runs sing-box {ver} now.", ver=ltr(m['singbox'])), 'ok') if ok else
                                                (T("The router's sing-box was not updated; it runs as before. See the activity log."), 'warn'))
         self.show_router_core(N.this_pc().get('router_core'))
         if ok:
@@ -913,9 +918,9 @@ class App(tk.Tk):
     def show_core(self):
         """Under the name: the sing-box version on this PC (an alpha or beta says so in the version itself)."""
         ver = N.core_version()
-        text = f"sing-box {ver}" if ver else T('sing-box: not installed')
+        text = f"sing-box {ltr(ver)}" if ver else T('sing-box: not installed')
         if ROUTER and ver:
-            text = f"{T('PC')}: {ver}"
+            text = f"{T('PC')}: {ltr(ver)}"
         self.ui(lambda: self.core_lbl.configure(text=text))
 
     def ask_router_core(self):
@@ -928,7 +933,7 @@ class App(tk.Tk):
         """Under it: the router's sing-box version; GL.iNet's package says so. st: router_core_state()."""
         if not st or not st.get('ver'):
             return
-        self.rcore_text = f"{T('Router')}: {st['ver']}" + ('' if st.get('mark') else f" · {T('GL.iNet package')}")
+        self.rcore_text = f"{T('Router')}: {ltr(st['ver'])}" + ('' if st.get('mark') else f" · {T('GL.iNet package')}")
         if threading.current_thread() is threading.main_thread():
             self.show_rcore()
         else:
@@ -1651,12 +1656,12 @@ class SettingsDialog(tk.Toplevel):
         """Choice texts with versions, '(installed)' on the running one, and what Save changes (upgrade or downgrade)."""
         names = {'': T('Same as this PC'), 'stable': T('Stable'), 'testing': T('Test builds (beta, alpha)')}
         def opt(k, ver, now):
-            return names[k] + (f'  ·  {ver}' + (f"  ({T('installed')})" if ver == now else '') if ver else '')
+            return names[k] + (f'  ·  {ltr(ver)}' + (f"  ({T('installed')})" if ver == now else '') if ver else '')
         def change(what, old, new):
             if not old or not new or old == new:
                 return ''
             how = T('upgrade') if N.vkey(new) > N.vkey(old) else T('downgrade')
-            return T('{what}: {old} → {new} ({how})', what=what, old=old, new=new, how=how)
+            return T('{what}: {old} → {new} ({how})', what=what, old=ltr(old), new=ltr(new), how=how)
         notes, pv, rv = [], self.sb_vers['pc'], self.sb_vers['router']
         if self.pc_cb:
             i = self.pc_cb.current(); self.pc_cb['values'] = [opt(k, pv.get(k), self.pc_now) for k in self.pc_keys]; self.pc_cb.current(i)
@@ -2127,8 +2132,8 @@ class RouterCoreDialog(tk.Toplevel):
         tk.Label(self, text=T("Update the router's sing-box?"), bg=BG, fg=FG, font=(UIB, 16)).pack(anchor='w', padx=24, pady=(20, 10))
         c = card(self, fill='x', padx=24)
         now = (T('Reality Hop build, {channel}', channel=ch(st['mark'][0])) if st['mark'] else T('GL.iNet package'))
-        for i, (k, v) in enumerate(((T('On the router now'), f"sing-box {st['ver']}  ·  {now}"),
-                                    (T('New'), f"sing-box {m['singbox']}  ·  " + T('Reality Hop build, {channel}', channel=ch(m['channel']))),
+        for i, (k, v) in enumerate(((T('On the router now'), f"sing-box {ltr(st['ver'])}  ·  {now}"),
+                                    (T('New'), f"sing-box {ltr(m['singbox'])}  ·  " + T('Reality Hop build, {channel}', channel=ch(m['channel']))),
                                     (T('Download'), f"{a['size'] / 1e6:.1f} MB"))):
             tk.Label(c, text=k, bg=CARD, fg=MUTED, font=(UI, 10)).grid(row=i, column=0, sticky='w', padx=(16, 20), pady=6)
             tk.Label(c, text=v, bg=CARD, fg=FG, font=(UIB if i == 1 else UI, 10)).grid(row=i, column=1, sticky='w', padx=(0, 16))

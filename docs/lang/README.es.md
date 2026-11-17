@@ -21,13 +21,12 @@ App VPN → Reality Hop en tu PC (SOCKS5 `127.0.0.1:2080`) → nodo REALITY púb
 
 ## Capturas de pantalla
 
-| ![Ventana principal](../images/es/main-window.png) | ![Candidatos](../images/es/candidates.png) |
-|---|---|
-| **Ventana principal:** cada nodo probado a través del túnel activo, las últimas 24 horas, el túnel del router. | **Candidatos:** nodos de la lista pública, con ping y probados en tu PC; pon cualquiera en una ranura. |
-| ![Detalles del nodo](../images/es/node-details.png) | ![Informar de un problema](../images/es/report.png) |
-| **Detalles del nodo:** dónde está un nodo, cómo responde a las pruebas, su ping en 24 horas. | **Informar de un problema:** los registros sin nada personal, listos para un issue de GitHub. |
-| ![Dispositivos del router](../images/es/devices.png) | ![Ajustes](../images/es/settings.png) |
-| **Dispositivos del router:** elige qué dispositivos usan el túnel del router y cómo mantener fija su dirección. | **Ajustes:** comprobaciones, funciones del router, actualizaciones, el canal de sing-box, accesos directos. |
+<table>
+<tr><td colspan="2"><img src="../images/es/main-window.png" alt="Ventana principal" width="100%"><br><b>Ventana principal:</b> cada nodo probado a través del túnel activo, las últimas 24 horas, el túnel del router.</td></tr>
+<tr><td width="50%" valign="top"><img src="../images/es/candidates.png" alt="Candidatos" width="100%"><br><b>Candidatos:</b> nodos de la lista pública, con ping y probados en tu PC; pon cualquiera en una ranura.</td><td width="50%" valign="top"><img src="../images/es/devices.png" alt="Dispositivos del router" width="100%"><br><b>Dispositivos del router:</b> elige qué dispositivos usan el túnel del router y cómo mantener fija su dirección.</td></tr>
+<tr><td width="50%" valign="top"><img src="../images/es/node-details.png" alt="Detalles del nodo" width="100%"><br><b>Detalles del nodo:</b> dónde está un nodo, cómo responde a las pruebas, su ping en 24 horas.</td><td width="50%" valign="top"><img src="../images/es/report.png" alt="Informar de un problema" width="100%"><br><b>Informar de un problema:</b> los registros sin nada personal, listos para un issue de GitHub.</td></tr>
+<tr><td colspan="2" align="center"><img src="../images/es/settings.png" alt="Ajustes" width="50%"><br><b>Ajustes:</b> comprobaciones, funciones del router, actualizaciones, el canal de sing-box, accesos directos.</td></tr>
+</table>
 
 ## Instalar
 

@@ -21,13 +21,12 @@ VPN uygulaması → PC'nizdeki Reality Hop (SOCKS5 `127.0.0.1:2080`) → genel R
 
 ## Ekran görüntüleri
 
-| ![Ana pencere](../images/tr/main-window.png) | ![Adaylar](../images/tr/candidates.png) |
-|---|---|
-| **Ana pencere:** her düğüm canlı tünel üzerinden test edilir, son 24 saat, router tüneli. | **Adaylar:** genel listeden düğümler, PC'nizde ping atılıp test edilir; herhangi birini bir yuvaya koyun. |
-| ![Düğüm ayrıntıları](../images/tr/node-details.png) | ![Sorun bildir](../images/tr/report.png) |
-| **Düğüm ayrıntıları:** düğümün nerede olduğu, testlerde nasıl olduğu, 24 saatlik ping'i. | **Sorun bildir:** kişisel her şeyi ayıklanmış günlükler, bir GitHub issue'suna hazır. |
-| ![Router cihazları](../images/tr/devices.png) | ![Ayarlar](../images/tr/settings.png) |
-| **Router cihazları:** hangi cihazların router tünelini kullanacağını ve adreslerinin nasıl sabit kalacağını seçin. | **Ayarlar:** kontroller, router özellikleri, güncellemeler, sing-box kanalı, kısayollar. |
+<table>
+<tr><td colspan="2"><img src="../images/tr/main-window.png" alt="Ana pencere" width="100%"><br><b>Ana pencere:</b> her düğüm canlı tünel üzerinden test edilir, son 24 saat, router tüneli.</td></tr>
+<tr><td width="50%" valign="top"><img src="../images/tr/candidates.png" alt="Adaylar" width="100%"><br><b>Adaylar:</b> genel listeden düğümler, PC'nizde ping atılıp test edilir; herhangi birini bir yuvaya koyun.</td><td width="50%" valign="top"><img src="../images/tr/devices.png" alt="Router cihazları" width="100%"><br><b>Router cihazları:</b> hangi cihazların router tünelini kullanacağını ve adreslerinin nasıl sabit kalacağını seçin.</td></tr>
+<tr><td width="50%" valign="top"><img src="../images/tr/node-details.png" alt="Düğüm ayrıntıları" width="100%"><br><b>Düğüm ayrıntıları:</b> düğümün nerede olduğu, testlerde nasıl olduğu, 24 saatlik ping'i.</td><td width="50%" valign="top"><img src="../images/tr/report.png" alt="Sorun bildir" width="100%"><br><b>Sorun bildir:</b> kişisel her şeyi ayıklanmış günlükler, bir GitHub issue'suna hazır.</td></tr>
+<tr><td colspan="2" align="center"><img src="../images/tr/settings.png" alt="Ayarlar" width="50%"><br><b>Ayarlar:</b> kontroller, router özellikleri, güncellemeler, sing-box kanalı, kısayollar.</td></tr>
+</table>
 
 ## Kurulum
 
