@@ -74,6 +74,8 @@ def cleanup():
     up to 1.0.4. macOS: apps left by an update, and login items that still point at an app that was moved."""
     if N.MAC:
         N.macos.cleanup(N.macos.bundle() if N.FROZEN else None)
+        if os.path.exists(N.CORE):
+            N.macos.core_sign(N.CORE)   # covered by PIA's split tunnel rule for RealityHop.app (macos.core_sign)
         if N.FROZEN and N.startup_on() and N.macos.agent_args(N.macos.WATCHER)[:1] != [N.exe()]:
             N.macos.agent_write(N.macos.WATCHER, N.self_cmd('--watch', '--logon'), N.DATA)
         return

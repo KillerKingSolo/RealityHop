@@ -21,6 +21,29 @@ PIACTL = '/Applications/Private Internet Access.app/Contents/MacOS/piactl'
 PIA_SETTINGS = '/Library/Preferences/com.privateinternetaccess.vpn/settings.json'
 
 
+CORE_ID = 'com.realityhop.app.core'   # starts with the app's own id (com.realityhop.app): see core_sign()
+
+
+def core_sign(path):
+    """Sign sing-box (ad hoc, no Apple ID) with Reality Hop's own id. PIA's Mac split tunnel matches a program by its
+    signing id, and an id that starts with an app's id counts as that app: setting RealityHop.app to Bypass VPN then
+    covers rh-core and its copy rh-test too, which its file picker cannot select (only .app bundles). A copy is signed
+    and swapped in, so a copy that runs now keeps running. True when the id is in place."""
+    try:
+        r = subprocess.run(['/usr/bin/codesign', '-dv', path], capture_output=True, text=True, timeout=30)
+        if f'Identifier={CORE_ID}\n' in r.stderr:
+            return True
+        tmp = path + '.sign'
+        shutil.copy2(path, tmp)
+        r = subprocess.run(['/usr/bin/codesign', '--force', '--sign', '-', '--identifier', CORE_ID, tmp],
+                           capture_output=True, text=True, timeout=60)
+        if r.returncode:
+            os.remove(tmp); return False
+        os.replace(tmp, path); return True
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
 def bundle(exe=None):
     """The RealityHop.app folder that exe (Contents/MacOS/RealityHop) is in, or None when it is not in an app."""
     b = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(exe or sys.executable))))

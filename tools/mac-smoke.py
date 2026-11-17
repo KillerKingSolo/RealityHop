@@ -44,6 +44,9 @@ res = N.setup_pc()   # data folder, configs, sing-box download and SHA-256 check
 check('setup', any('running on 127.0.0.1:2080' in l for l in res), ' | '.join(res))
 check('data folder only for this user', oct(os.stat(N.DATA).st_mode & 0o777) == '0o700', oct(os.stat(N.DATA).st_mode & 0o777))
 check('sing-box runs', bool(N.core_version()), N.core_version() or 'none')
+for f in (N.CORE, N.test_exe()):   # PIA's split tunnel rule for RealityHop.app must cover both
+    ident = [l for l in subprocess.run(['/usr/bin/codesign', '-dv', f], capture_output=True, text=True).stderr.splitlines() if l.startswith('Identifier=')]
+    check(f'signing id of {os.path.basename(f)}', ident == ['Identifier=' + macos.CORE_ID], str(ident))
 check('tunnel process found', N.core_running(), str(N.pids('rh-core')))
 check('port owner', N.port_owner(2080) == 'rh-core', str(N.port_owner(2080)))
 ip = N.pc_exit()

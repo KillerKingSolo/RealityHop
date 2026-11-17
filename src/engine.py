@@ -1581,7 +1581,7 @@ def core_update(force=False):
             with tarfile.open(z, 'r:gz') as tf, tf.extractfile(f'sing-box-{ver}-darwin-{macos.ARCH}/sing-box') as src, \
                     open(new, 'wb') as dst:
                 shutil.copyfileobj(src, dst)
-            os.chmod(new, 0o755)
+            os.chmod(new, 0o755); macos.core_sign(new)   # so PIA's split tunnel rule for RealityHop.app covers it
         else:
             with zipfile.ZipFile(z) as zf, zf.open(f'sing-box-{ver}-windows-amd64/sing-box.exe') as src, open(new, 'wb') as dst:
                 shutil.copyfileobj(src, dst)
@@ -2424,6 +2424,8 @@ def prepare():
         os.makedirs(d, exist_ok=True)
     if MAC:
         macos.lockdown(DATA)
+        if os.path.exists(CORE):
+            macos.core_sign(CORE)   # sing-box downloaded before 1.7: signed with Reality Hop's id now
     for name, dst in (('pc-config.json', PC_CFG), ('router-config.json', ROUTER_CFG)):
         if not os.path.exists(dst):
             c = json.load(open(os.path.join(RES, name), encoding='utf-8'))
