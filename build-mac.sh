@@ -39,6 +39,10 @@ cp "$app/Contents/Resources/${icon%.icns}.icns" "$stage/.VolumeIcon.icns"
 hdiutil create -volname "Reality Hop" -srcfolder "$stage" -fs HFS+ -format UDRW -ov "$out/rw.dmg"
 mnt=$(mktemp -d); hdiutil attach -nobrowse -noautoopen -mountpoint "$mnt" "$out/rw.dmg"
 xattr -wx com.apple.FinderInfo 0000000000000000040000000000000000000000000000000000000000000000 "$mnt"
-hdiutil detach "$mnt"; rmdir "$mnt"
+for i in 1 2 3 4 5; do   # Spotlight may still be reading the fresh disk for a moment: "Resource busy"
+  hdiutil detach "$mnt" && break
+  sleep 2; [ "$i" = 5 ] && hdiutil detach -force "$mnt"
+done
+rmdir "$mnt"
 hdiutil convert "$out/rw.dmg" -format UDZO -o "$dmg"
 echo "$dmg  SHA-256 $(shasum -a 256 "$dmg" | cut -d' ' -f1)"
