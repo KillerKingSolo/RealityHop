@@ -52,7 +52,13 @@ check('port owner', N.port_owner(2080) == 'rh-core', str(N.port_owner(2080)))
 ip = N.pc_exit()
 check('traffic through the tunnel', bool(ip), ip or 'no exit address')
 check('restart', N.core_restart())
-check('stop', N.core_stop() and not N.core_running())
+import socket
+c = socket.create_connection(('127.0.0.1', 2080), timeout=5)   # as the VPN app is: connected to the proxy
+t = time.time(); ok = N.core_restart(); c.close()
+check('restart while a client is connected', ok and time.time() - t < 8, f'{time.time() - t:.1f} s')
+c = socket.create_connection(('127.0.0.1', 2080), timeout=5)
+t = time.time(); ok = N.core_stop(); c.close()
+check('stop while a client is connected', ok and not N.core_running() and time.time() - t < 3, f'{time.time() - t:.1f} s')
 
 check('login item for the tunnel', N.boot_task(True) and os.path.isfile(macos.agent_path(macos.TUNNEL)))
 with open(macos.agent_path(macos.TUNNEL), 'rb') as f:

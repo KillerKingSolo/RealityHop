@@ -84,8 +84,9 @@ def ps(fmt):
 
 
 def procs():
-    """[(process id, program name)] of every process; comm is the program's full path on macOS."""
-    return [(p, os.path.basename(c)) for p, c in ps('comm')]
+    """[(process id, program name)] of every process, exited ones not yet reaped (zombies) left out; comm is the
+    program's full path on macOS."""
+    return [(p, os.path.basename(c.split(None, 1)[1])) for p, c in ps('stat,comm') if not c.startswith('Z') and ' ' in c]
 
 
 def cmdlines():
@@ -99,6 +100,12 @@ def kill(pids_):
             os.kill(p, signal.SIGKILL)
         except OSError:
             pass   # gone already, or another user's
+    time.sleep(0.1)
+    for p in pids_:   # reap the ones this process started, so they do not linger as zombies
+        try:
+            os.waitpid(p, os.WNOHANG)
+        except OSError:
+            pass   # not a child of this process
 
 
 def port_owner(port):

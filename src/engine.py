@@ -517,6 +517,7 @@ def feed_download():
     cache = os.path.join(DATA, 'feed-cache.txt')
     def get(u):
         for src in [u] + mirrors(u):
+            t = time.time()
             try:
                 raw = '\n'.join(l for l in gh_get(src, 20).decode('utf-8', 'ignore').splitlines()
                                 if l.startswith('vless://') and 'reality' in l and 'vision' in l)
@@ -524,6 +525,9 @@ def feed_download():
                     return raw
             except Exception as e:
                 say(f'node list source failed ({urlparse(src).hostname}): {e}')
+                if isinstance(getattr(e, 'reason', None), socket.gaierror) and time.time() - t > 10:
+                    say('name lookups get no answer on this PC (DNS down, a VPN still connecting?); skipping the other sources')
+                    break   # each would wait the same 30 s; a DNS block answers at once, so the mirrors still get their turn
         return ''
     with ThreadPoolExecutor(len(FEEDS)) as ex:
         raw = '\n'.join(ex.map(get, FEEDS))
@@ -2078,6 +2082,8 @@ def port_taken(port):
     """True when another process holds this loopback port (the watcher's and the window's "running" locks).
     A bind test: no connection is made, so nothing piles up in the lock's queue."""
     s = socket.socket()
+    if MAC:   # BSD: a closed connection's TIME_WAIT (the VPN app was connected to 2080) would block a plain bind for 30 s,
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)   # though sing-box rebinds at once; a listener still blocks
     try:
         s.bind(('127.0.0.1', port)); return False
     except OSError:
