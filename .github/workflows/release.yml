@@ -48,7 +48,7 @@ jobs:
           name: RealityHop-windows
           path: dist/RealityHop.exe
 
-  mac:
+  mac:   # build only, so the tests on every macOS version can start as soon as possible
     permissions:
       contents: read   # builds and tests only; publish is the one job that writes
     strategy:
@@ -82,7 +82,35 @@ jobs:
           echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || v=0.0.0
           echo "VERSION = '$v'" > src/version.py
 
-      - name: Smoke test from source (sing-box, nodes, tunnel, login items, menu bar icon, uninstall)
+      - name: Build
+        run: sh build-mac.sh
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: RealityHop-mac-${{ matrix.chip }}
+          path: dist/RealityHop-mac-${{ matrix.chip }}.dmg
+
+  mac-smoke:   # from source, alongside the build: sing-box, nodes, tunnel, login items, menu bar icon, uninstall
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.15'
+
+      - name: Install
+        run: pip install -r requirements.txt -r requirements-mac.txt
+
+      - name: Smoke test from source
         env:
           GITHUB_TOKEN: ${{ github.token }}   # read-only use: GitHub API lookups of the sing-box releases
         run: |
@@ -93,25 +121,14 @@ jobs:
           test ! -d "$RH_SMOKE_HOME/Library/Application Support/RealityHop"
           echo "PASS  uninstall: data folder removed"
 
-      - name: Build
-        run: sh build-mac.sh
-
-      - name: Test the built app (disk image, start from the dmg, language, wizard, watcher, self-update)
-        run: python tools/mac-app-test.py "dist/RealityHop-mac-${{ matrix.chip }}.dmg" ${{ matrix.chip }} "$RUNNER_TEMP/shots"
-
       - name: Keep the screenshots
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: screenshots-${{ matrix.chip }}
+          name: screenshots-smoke-${{ matrix.runner }}
           path: ${{ runner.temp }}/shots
 
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: RealityHop-mac-${{ matrix.chip }}
-          path: dist/RealityHop-mac-${{ matrix.chip }}.dmg
-
-  mac-test:   # the built apps on the other macOS versions GitHub has, and the Intel app on Apple silicon (Rosetta)
+  mac-test:   # the built apps on macOS 15, 26 and 27, and the Intel app on Apple silicon (Rosetta)
     needs: mac
     permissions:
       contents: read
@@ -119,6 +136,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - runner: macos-15           # macOS 15, Apple silicon
+            chip: apple-silicon
+          - runner: macos-15-intel     # macOS 15, Intel
+            chip: intel
           - runner: macos-26           # macOS 26, Apple silicon
             chip: apple-silicon
           - runner: macos-26-intel     # macOS 26, Intel
@@ -137,10 +158,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: '3.15'
-
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: RealityHop-mac-${{ matrix.chip }}
@@ -150,8 +167,8 @@ jobs:
         if: matrix.rosetta
         run: arch -x86_64 /usr/bin/true 2>/dev/null || sudo softwareupdate --install-rosetta --agree-to-license
 
-      - name: Test the built app
-        run: python tools/mac-app-test.py "dist/RealityHop-mac-${{ matrix.chip }}.dmg" ${{ matrix.chip }} "$RUNNER_TEMP/shots"
+      - name: Test the built app (disk image, start from the dmg, language, wizard, watcher, self-update)
+        run: python3 tools/mac-app-test.py "dist/RealityHop-mac-${{ matrix.chip }}.dmg" ${{ matrix.chip }} "$RUNNER_TEMP/shots"   # the runner's own Python: the test needs only the standard library
 
       - name: Keep the screenshots
         if: always()
@@ -161,7 +178,7 @@ jobs:
           path: ${{ runner.temp }}/shots
 
   publish:
-    needs: [build, mac, mac-test]
+    needs: [build, mac, mac-smoke, mac-test]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:

@@ -33,7 +33,7 @@ def home(name, lang=None):
     return h
 
 
-def launch(exe, h, shot, *args, wait=20):
+def launch(exe, h, shot, *args, wait=10):   # a start-up crash shows within seconds
     """Start the app with HOME=h, take a screenshot after wait seconds; True when it is still running then."""
     p = subprocess.Popen([exe, *args], env=dict(os.environ, HOME=h), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
     time.sleep(wait)
@@ -72,7 +72,7 @@ print(f"macOS {sh('/usr/bin/sw_vers', '-productVersion').stdout.strip()}, {sh('/
 
 # run straight from the disk image: it must ask to be moved to Applications, and write nothing
 h = home('from-dmg')
-check('from the dmg: a message, still open', launch(exe, h, 'from-dmg', wait=12))
+check('from the dmg: a message, still open', launch(exe, h, 'from-dmg', wait=8))
 check('from the dmg: no login item, no data folder', not os.path.exists(os.path.join(h, 'Library')))
 
 apps = os.path.join(tmp, 'Applications'); os.makedirs(apps)
@@ -84,7 +84,7 @@ exe = macos.app_exe(app)
 check('first start: language picker', launch(exe, home('first'), 'language'))
 check('setup wizard', launch(exe, home('wizard', 'en'), 'wizard'))
 check('setup wizard in Persian (right to left)', launch(exe, home('wizard-fa', 'fa'), 'wizard-fa'))
-check('watcher with menu bar icon', launch(exe, home('watcher', 'en'), 'watcher', '--watch', wait=15))
+check('watcher with menu bar icon', launch(exe, home('watcher', 'en'), 'watcher', '--watch'))
 
 # self-update: the same dmg as the "new release", into the copy in Applications
 data = os.path.join(tmp, 'update-data'); os.makedirs(data)
@@ -98,7 +98,7 @@ olds = [f for f in os.listdir(apps) if f.startswith('.RealityHop.old-')]
 check('update: old copy kept hidden until it has exited', len(olds) == 1, str(olds))
 check('update: no leftovers', not os.path.exists(app + '.new') and not os.path.exists(os.path.join(data, 'update.dmg')))
 check('update: signature', sh('/usr/bin/codesign', '--verify', '--deep', '--strict', app).returncode == 0)
-check('update: new copy starts', launch(exe, home('after-update', 'en'), 'after-update', wait=15))
+check('update: new copy starts', launch(exe, home('after-update', 'en'), 'after-update'))
 os.utime(os.path.join(apps, olds[0]), (time.time() - 3600, time.time() - 3600))
 macos.cleanup(app)
 check('update: old copy removed later', not [f for f in os.listdir(apps) if f.startswith('.RealityHop.')])
