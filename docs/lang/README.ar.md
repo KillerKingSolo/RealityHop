@@ -32,7 +32,7 @@
 
 ## التثبيت
 
-1. نزّل `RealityHop.exe` من [أحدث إصدار](https://github.com/KillerKingSolo/RealityHop/releases/latest). يتطلب Windows 10 أو 11 بنظام 64 بت. على Mac: `RealityHop-mac-apple-silicon.dmg` (M1 وأحدث) أو `RealityHop-mac-intel.dmg`. يتطلب macOS 15 أو أحدث.
+1. نزّل `RealityHop.exe` من [أحدث إصدار](https://github.com/KillerKingSolo/RealityHop/releases/latest). يتطلب Windows 10 أو 11 بنظام 64 بت. على Mac: `RealityHop-mac-apple-silicon.dmg` (M1 وأحدث) أو `RealityHop-mac-intel.dmg`. يتطلب macOS 15 أو أحدث. نزّل PIA لنظام Mac من [موقعه](https://www.privateinternetaccess.com/download/mac-vpn)، لا من Mac App Store: نسخة App Store ليس فيها Multi-Hop ولا Split Tunnel.
 2. شغّله واختر لغتك.
 3. يثبّت المعالج Reality Hop (مطالبة UAC واحدة)، وينزّل sing-box من إصداراته الرسمية (يتحقق من SHA-256)، ويجد العقد الأولى ويشغّل النفق. نحو دقيقة.
 
@@ -49,7 +49,7 @@
 1. PIA ← **Settings → Protocols**: اجعل Protocol على **OpenVPN** وTransport على **TCP** وRemote Port على **443**.
 2. **Settings → Multi-Hop**: فعّل **Multi-hop and Obfuscation** واختر **SOCKS5 Proxy**.
 3. انقر **EDIT**، المضيف `127.0.0.1`، المنفذ `2080`، اسم المستخدم وكلمة المرور فارغان، ثم احفظ.
-4. فقط إذا كان Split Tunnel يضع **All Other Apps** على **Use VPN**: **Settings → Split Tunnel**، **Add Application**، اختر `C:\Program Files\RealityHop\PC\rh-core.exe` واضبطه على **Bypass VPN**. إذا كان All Other Apps على Bypass VPN فلا حاجة لهذه القاعدة.
+4. يضيف Reality Hop هذه القاعدة بنفسه؛ لا يعرض معالج الإعداد هذه الخطوة إلا إذا فشل ذلك. فقط إذا كان Split Tunnel يضع **All Other Apps** على **Use VPN**: **Settings → Split Tunnel**، **Add Application**، اختر `C:\Program Files\RealityHop\PC\rh-core.exe` واضبطه على **Bypass VPN**. إذا كان All Other Apps على Bypass VPN فلا حاجة لهذه القاعدة.
 5. اتصل.
 
 ![النفق المقسّم في PIA مع rh-core.exe على Bypass VPN](../images/pia-split-tunnel.png)

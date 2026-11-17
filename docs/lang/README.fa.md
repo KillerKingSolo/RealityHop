@@ -32,7 +32,7 @@
 
 ## نصب
 
-1. `RealityHop.exe` را از [آخرین نسخه](https://github.com/KillerKingSolo/RealityHop/releases/latest) دانلود کنید. ویندوز ۱۰ یا ۱۱، ۶۴ بیتی لازم است. در Mac: `RealityHop-mac-apple-silicon.dmg` (M1 و جدیدتر) یا `RealityHop-mac-intel.dmg`. macOS 15 یا جدیدتر لازم است.
+1. `RealityHop.exe` را از [آخرین نسخه](https://github.com/KillerKingSolo/RealityHop/releases/latest) دانلود کنید. ویندوز ۱۰ یا ۱۱، ۶۴ بیتی لازم است. در Mac: `RealityHop-mac-apple-silicon.dmg` (M1 و جدیدتر) یا `RealityHop-mac-intel.dmg`. macOS 15 یا جدیدتر لازم است. PIA برای Mac را از [وب‌سایت خودش](https://www.privateinternetaccess.com/download/mac-vpn) بگیرید، نه از Mac App Store: نسخهٔ App Store گزینه‌های Multi-Hop و Split Tunnel را ندارد.
 2. آن را اجرا کنید و زبان خود را انتخاب کنید.
 3. دستیار، Reality Hop را نصب می‌کند (یک درخواست UAC)، sing-box را از نسخه‌های رسمی دانلود می‌کند (چکیده SHA-256 را بررسی می‌کند)، اولین گره‌ها را پیدا می‌کند و تونل را شروع می‌کند. حدود یک دقیقه.
 
@@ -49,7 +49,7 @@ Reality Hop در اولین اجرا زبان را می‌پرسد. بعداً �
 1. PIA ← **Settings → Protocols**: گزینه Protocol روی **OpenVPN**، Transport روی **TCP**، Remote Port روی **443**.
 2. **Settings → Multi-Hop**: گزینه **Multi-hop and Obfuscation** را علامت بزنید و **SOCKS5 Proxy** را انتخاب کنید.
 3. روی **EDIT** کلیک کنید، میزبان `127.0.0.1`، درگاه `2080`، نام کاربری و رمز خالی، و ذخیره کنید.
-4. فقط اگر در Split Tunnel گزینه **All Other Apps** روی **Use VPN** است: **Settings → Split Tunnel**، **Add Application**، فایل `C:\Program Files\RealityHop\PC\rh-core.exe` را انتخاب کنید و روی **Bypass VPN** بگذارید. اگر All Other Apps روی Bypass VPN است، این قانون لازم نیست.
+4. Reality Hop این قانون را خودش اضافه می‌کند؛ راهنمای نصب این مرحله را فقط وقتی نشان می‌دهد که این کار ناموفق باشد. فقط اگر در Split Tunnel گزینه **All Other Apps** روی **Use VPN** است: **Settings → Split Tunnel**، **Add Application**، فایل `C:\Program Files\RealityHop\PC\rh-core.exe` را انتخاب کنید و روی **Bypass VPN** بگذارید. اگر All Other Apps روی Bypass VPN است، این قانون لازم نیست.
 5. وصل شوید.
 
 ![Split Tunnel در PIA با rh-core.exe روی Bypass VPN](../images/pia-split-tunnel.png)

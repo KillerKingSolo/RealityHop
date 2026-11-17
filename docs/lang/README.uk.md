@@ -30,7 +30,7 @@ VPN-застосунок → Reality Hop на вашому ПК (SOCKS5 `127.0.0
 
 ## Встановлення
 
-1. Завантажте `RealityHop.exe` з [останнього релізу](https://github.com/KillerKingSolo/RealityHop/releases/latest). Потрібна 64-бітна Windows 10 або 11. На Mac: `RealityHop-mac-apple-silicon.dmg` (M1 і новіші) або `RealityHop-mac-intel.dmg`. Потрібна macOS 15 або новіша.
+1. Завантажте `RealityHop.exe` з [останнього релізу](https://github.com/KillerKingSolo/RealityHop/releases/latest). Потрібна 64-бітна Windows 10 або 11. На Mac: `RealityHop-mac-apple-silicon.dmg` (M1 і новіші) або `RealityHop-mac-intel.dmg`. Потрібна macOS 15 або новіша. PIA для Mac завантажте з [його сайту](https://www.privateinternetaccess.com/download/mac-vpn), а не з Mac App Store: у версії з App Store немає Multi-Hop і Split Tunnel.
 2. Запустіть його й виберіть мову.
 3. Майстер встановлює Reality Hop (один запит UAC), завантажує sing-box з офіційних релізів (перевіряє SHA-256), знаходить перші вузли й запускає тунель. Близько хвилини.
 
@@ -47,7 +47,7 @@ Reality Hop питає мову під час першого запуску. П�
 1. PIA → **Settings → Protocols**: Protocol **OpenVPN**, Transport **TCP**, Remote Port **443**.
 2. **Settings → Multi-Hop**: позначте **Multi-hop and Obfuscation** і виберіть **SOCKS5 Proxy**.
 3. Натисніть **EDIT**, хост `127.0.0.1`, порт `2080`, ім'я користувача й пароль порожні, збережіть.
-4. Лише якщо в Split Tunnel для **All Other Apps** вибрано **Use VPN**: **Settings → Split Tunnel**, **Add Application**, виберіть `C:\Program Files\RealityHop\PC\rh-core.exe` і встановіть **Bypass VPN**. Якщо для All Other Apps вибрано Bypass VPN, це правило не потрібне.
+4. Reality Hop додає це правило сам; майстер налаштування показує цей крок, лише якщо це не вдалося. Лише якщо в Split Tunnel для **All Other Apps** вибрано **Use VPN**: **Settings → Split Tunnel**, **Add Application**, виберіть `C:\Program Files\RealityHop\PC\rh-core.exe` і встановіть **Bypass VPN**. Якщо для All Other Apps вибрано Bypass VPN, це правило не потрібне.
 5. Підключіться.
 
 ![Split Tunnel у PIA: rh-core.exe у режимі Bypass VPN](../images/pia-split-tunnel.png)

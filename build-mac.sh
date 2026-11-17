@@ -15,6 +15,8 @@ rm -rf "$out"; mkdir -p "$out" dist
 python -m PyInstaller --noconfirm --windowed --onedir --name RealityHop --icon "$root/src/resources/app.ico" \
   --osx-bundle-identifier com.realityhop.app --add-data "$root/src/resources:resources" --paths "$root/src" \
   --hidden-import macos --hidden-import AppKit --hidden-import Foundation --hidden-import PyObjCTools.AppHelper \
+  --exclude-module PIL._avif --exclude-module PIL._webp --exclude-module PIL._imagingft --exclude-module PIL._imagingcms \
+  --exclude-module _zstd --exclude-module compression.zstd \
   --distpath "$out/dist" --workpath "$out/work" --specpath "$out" "$root/src/realityhop.pyw"
 app="$out/dist/RealityHop.app"; plist="$app/Contents/Info.plist"
 set_key() {   # Info.plist: change the key, or add it when PyInstaller did not write it
@@ -46,5 +48,5 @@ for i in 1 2 3 4 5 6; do   # Spotlight may still be reading the fresh disk for a
   sleep 2; [ "$i" = 6 ] && hdiutil detach -force "$dev"
 done
 rmdir "$mnt" 2>/dev/null || true
-hdiutil convert "$out/rw.dmg" -format UDZO -o "$dmg"
-echo "$dmg  SHA-256 $(shasum -a 256 "$dmg" | cut -d' ' -f1)"
+hdiutil convert "$out/rw.dmg" -format ULMO -o "$dmg"   # LZMA: smaller than UDZO (zlib); macOS 10.15 and newer open it
+echo "$dmg  $(du -sh "$app" | cut -f1) app, $(du -h "$dmg" | cut -f1) dmg, SHA-256 $(shasum -a 256 "$dmg" | cut -d' ' -f1)"

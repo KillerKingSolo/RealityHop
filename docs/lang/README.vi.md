@@ -30,7 +30,7 @@ Nó lấy các nút công khai miễn phí từ [rtwo2/FastNodes](https://github
 
 ## Cài đặt
 
-1. Tải `RealityHop.exe` từ [bản phát hành mới nhất](https://github.com/KillerKingSolo/RealityHop/releases/latest). Cần Windows 10 hoặc 11 bản 64-bit. Trên Mac: `RealityHop-mac-apple-silicon.dmg` (M1 trở lên) hoặc `RealityHop-mac-intel.dmg`. Cần macOS 15 trở lên.
+1. Tải `RealityHop.exe` từ [bản phát hành mới nhất](https://github.com/KillerKingSolo/RealityHop/releases/latest). Cần Windows 10 hoặc 11 bản 64-bit. Trên Mac: `RealityHop-mac-apple-silicon.dmg` (M1 trở lên) hoặc `RealityHop-mac-intel.dmg`. Cần macOS 15 trở lên. Hãy tải PIA cho Mac từ [trang web của họ](https://www.privateinternetaccess.com/download/mac-vpn), không phải từ Mac App Store: bản App Store không có Multi-Hop và Split Tunnel.
 2. Chạy nó và chọn ngôn ngữ.
 3. Trình hướng dẫn cài Reality Hop (một lời nhắc UAC), tải sing-box từ bản phát hành chính thức (kiểm tra SHA-256), tìm các nút đầu tiên và khởi động đường hầm. Khoảng một phút.
 
@@ -47,7 +47,7 @@ Trỏ ứng dụng VPN vào proxy SOCKS5 `127.0.0.1`, cổng `2080`, không có 
 1. PIA → **Settings → Protocols**: Protocol **OpenVPN**, Transport **TCP**, Remote Port **443**.
 2. **Settings → Multi-Hop**: đánh dấu **Multi-hop and Obfuscation** và chọn **SOCKS5 Proxy**.
 3. Bấm **EDIT**, host `127.0.0.1`, cổng `2080`, để trống tên người dùng và mật khẩu, rồi lưu.
-4. Chỉ khi Split Tunnel đặt **All Other Apps** là **Use VPN**: **Settings → Split Tunnel**, **Add Application**, chọn `C:\Program Files\RealityHop\PC\rh-core.exe` và đặt là **Bypass VPN**. Nếu All Other Apps là Bypass VPN thì không cần quy tắc này.
+4. Reality Hop tự thêm quy tắc này; trình cài đặt chỉ hiển thị bước này khi việc đó thất bại. Chỉ khi Split Tunnel đặt **All Other Apps** là **Use VPN**: **Settings → Split Tunnel**, **Add Application**, chọn `C:\Program Files\RealityHop\PC\rh-core.exe` và đặt là **Bypass VPN**. Nếu All Other Apps là Bypass VPN thì không cần quy tắc này.
 5. Kết nối.
 
 ![PIA Split Tunnel với rh-core.exe đặt Bypass VPN](../images/pia-split-tunnel.png)

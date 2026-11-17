@@ -478,11 +478,13 @@ def uninstall(keep_data=False, router_too=False):
         except Exception as e:
             out.append(f'router: could not switch it off ({e}); do it later in the GL.iNet panel')
     N.startup(False); others_stop(); N.core_stop(); out.append('PC tunnel, background watcher and open windows: stopped')
+    me = N.this_pc()
+    if me.get('pia_ips') or me.get('pia_app') or me.get('pia_apps'):
+        out.append('PIA split tunnel: Reality Hop\'s rules removed' if N.pia_bypass(in_use=False) else
+                   'PIA split tunnel: remove ' + ('Reality Hop and its node addresses' if N.MAC else 'rh-core.exe and rh-test.exe')
+                   + ' by hand (Settings → Split Tunnel)')
     if N.MAC:
         N.boot_task(False); out.append('login start: removed')
-        if N.this_pc().get('pia_ips') or N.this_pc().get('pia_app'):
-            out.append('PIA split tunnel: Reality Hop\'s rules removed' if N.pia_bypass(in_use=False) else
-                       'PIA split tunnel: remove Reality Hop and its node addresses by hand (Settings → Split Tunnel)')
         out.append('VPN app: turn its SOCKS5 proxy off (PIA: Settings > Multi-Hop, untick "Multi-hop and Obfuscation")')
         app = N.macos.bundle() if N.FROZEN else None
         N.macos.remove_later([app] + ([] if keep_data else [N.DATA]))

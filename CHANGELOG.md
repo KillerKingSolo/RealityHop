@@ -4,6 +4,18 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 1.7.2 (2026-11-17)
+
+**Why update:** PIA's Split Tunnel sets itself up on Windows, France gets a working DNS choice, and updates arrive sooner.
+
+- New: on Windows, Reality Hop adds rh-core.exe and rh-test.exe to PIA's Split Tunnel as Bypass VPN by itself. Your own rules stay, and uninstalling removes only its rules. The manual steps and screenshots stay in the docs for other VPN apps and in case it fails.
+- New: the first setup asks, after the language, whether you live in France. Quad9 stops serving France on 24 November 2026 after a Paris court order; "Yes" switches the PC and router configs to Cloudflare (1.1.1.1).
+- New: Show candidates keeps testing the next nodes that answer on 443 until 6 work or none are left.
+- Changed: the app update check runs 2 minutes after logon, then every 6 hours (was 15 minutes, then daily). Each check is 1 GitHub API call; the limit is 60 an hour per IP.
+- Changed: the Mac app leaves out image libraries it never uses, and the disk image uses stronger (LZMA) compression: a smaller download.
+- Changed: the release build tests each Mac chip as soon as its own build is done, so a release finishes sooner.
+- Docs: get PIA for Mac from its website, not the Mac App Store: the App Store version has no Multi-Hop or Split Tunnel.
+
 ## 1.7.1 (2026-11-17)
 
 **Why update:** the install steps in every language now cover the Mac.

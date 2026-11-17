@@ -19,11 +19,21 @@ is the normal HTTPS port, the least likely to be blocked.
 1. PIA → **Settings → Protocols**: Protocol **OpenVPN**, Transport **TCP**, Remote Port **443**.
 2. **Settings → Multi-Hop**: tick **Multi-hop and Obfuscation** and choose **SOCKS5 Proxy**.
 3. Click **EDIT**, enter host `127.0.0.1` and port `2080`, leave the username and password empty, and save.
-4. Only if Split Tunnel has **All Other Apps** set to **Use VPN**: **Settings → Split Tunnel**, click
-   **Add Application**, pick `C:\Program Files\RealityHop\PC\rh-core.exe` and set it to **Bypass VPN**.
+4. Split Tunnel: nothing to do. Reality Hop adds the rule by itself (see below). Only if the setup wizard shows this
+   step: **Settings → Split Tunnel**, click **Add Application**, pick `C:\Program Files\RealityHop\PC\rh-core.exe`
+   and set it to **Bypass VPN**.
 5. Connect.
 
 ![PIA Multi-Hop with the SOCKS5 proxy](images/pia-multihop-socks5.png)
+
+**Windows:** Reality Hop adds `rh-core.exe` and `rh-test.exe` (the copy that tests nodes) to PIA's Split Tunnel
+list as **Bypass VPN**, at setup and each time the background watcher starts. On Windows the app rule is enough; no IP
+rules are needed. It leaves Split Tunnel on or off as you set it, changes only the rules it added,
+and uninstalling removes them. It uses PIA's command line (`piactl -u applysettings`), which PIA marks unstable; if it
+refuses, the setup wizard shows step 4 to do by hand.
+
+**Mac: get PIA from [its website](https://www.privateinternetaccess.com/download/mac-vpn), not the Mac App Store.**
+The App Store version has no Multi-Hop or Split Tunnel, so it cannot connect through Reality Hop.
 
 **Mac:** skip step 4. Reality Hop adds itself to PIA's Split Tunnel list as **Bypass VPN** (and switches Split Tunnel
 on when it is off). That one app rule covers the tunnel engine too: Reality Hop signs its copy of sing-box with an id

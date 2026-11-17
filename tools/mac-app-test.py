@@ -25,11 +25,11 @@ def sh(*a):
     return subprocess.run(a, capture_output=True, text=True)
 
 
-def home(name, lang=None):
+def home(name, lang=None, dns='quad9'):
     h = os.path.join(tmp, name); os.makedirs(h)
-    if lang:
+    if lang:   # dns '': the France question has not been answered yet
         d = os.path.join(h, 'Library', 'Application Support', 'RealityHop'); os.makedirs(d)
-        open(os.path.join(d, 'settings.json'), 'w').write(f'{{"lang": "{lang}"}}')
+        open(os.path.join(d, 'settings.json'), 'w').write(f'{{"lang": "{lang}", "dns": "{dns}"}}')
     return h
 
 
@@ -84,6 +84,7 @@ sh('/usr/bin/hdiutil', 'detach', vol, '-force')
 exe = macos.app_exe(app)
 
 check('first start: language picker', launch(exe, home('first'), 'language'))
+check('first setup: France question', launch(exe, home('france', 'en', ''), 'france'))
 h = home('wizard', 'en')   # with an rh-core signed by someone else, as sing-box from GitHub is ("a.out")
 core = os.path.join(h, 'Library', 'Application Support', 'RealityHop', 'PC', 'rh-core'); os.makedirs(os.path.dirname(core))
 shutil.copy('/bin/echo', core)

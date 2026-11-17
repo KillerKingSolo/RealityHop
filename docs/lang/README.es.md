@@ -30,7 +30,7 @@ App VPN → Reality Hop en tu PC (SOCKS5 `127.0.0.1:2080`) → nodo REALITY púb
 
 ## Instalar
 
-1. Descarga `RealityHop.exe` de la [última versión](https://github.com/KillerKingSolo/RealityHop/releases/latest). Requiere Windows 10 u 11 de 64 bits. En Mac: `RealityHop-mac-apple-silicon.dmg` (M1 o posterior) o `RealityHop-mac-intel.dmg`. Requiere macOS 15 o posterior.
+1. Descarga `RealityHop.exe` de la [última versión](https://github.com/KillerKingSolo/RealityHop/releases/latest). Requiere Windows 10 u 11 de 64 bits. En Mac: `RealityHop-mac-apple-silicon.dmg` (M1 o posterior) o `RealityHop-mac-intel.dmg`. Requiere macOS 15 o posterior. Descarga PIA para Mac de [su sitio web](https://www.privateinternetaccess.com/download/mac-vpn), no de la Mac App Store: la versión de la App Store no tiene Multi-Hop ni Split Tunnel.
 2. Ejecútalo y elige tu idioma.
 3. El asistente instala Reality Hop (un aviso de UAC), descarga sing-box de sus versiones oficiales (comprueba el SHA-256), encuentra los primeros nodos e inicia el túnel. Alrededor de un minuto.
 
@@ -47,7 +47,7 @@ Apunta tu app VPN al proxy SOCKS5 `127.0.0.1`, puerto `2080`, sin usuario ni con
 1. PIA → **Settings → Protocols**: Protocol **OpenVPN**, Transport **TCP**, Remote Port **443**.
 2. **Settings → Multi-Hop**: marca **Multi-hop and Obfuscation** y elige **SOCKS5 Proxy**.
 3. Pulsa **EDIT**, host `127.0.0.1`, puerto `2080`, usuario y contraseña vacíos, y guarda.
-4. Solo si Split Tunnel tiene **All Other Apps** en **Use VPN**: **Settings → Split Tunnel**, **Add Application**, elige `C:\Program Files\RealityHop\PC\rh-core.exe` y ponlo en **Bypass VPN**. Con All Other Apps en Bypass VPN no hace falta esta regla.
+4. Reality Hop añade esta regla por sí solo; el asistente muestra este paso solo si eso falla. Solo si Split Tunnel tiene **All Other Apps** en **Use VPN**: **Settings → Split Tunnel**, **Add Application**, elige `C:\Program Files\RealityHop\PC\rh-core.exe` y ponlo en **Bypass VPN**. Con All Other Apps en Bypass VPN no hace falta esta regla.
 5. Conecta.
 
 ![PIA Split Tunnel con rh-core.exe en Bypass VPN](../images/pia-split-tunnel.png)

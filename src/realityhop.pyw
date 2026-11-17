@@ -1897,9 +1897,15 @@ class Candidates(tk.Toplevel):
     def test(self):
         if not self.nodes:
             self.msg = T('Nothing to test; ping first.'); return
-        top = [n for n in self.nodes if n.get('ok') is not False][:N.TOP]
-        self.app.say(f'candidates: this PC is testing the {len(top)} fastest, 5 at a time (about 20 seconds)...')
-        N.router_test(top, speed=True)
+        top, k = [], self.slots()
+        while True:   # fewer than a full set work: test the next ones that answered on 443, until k work or none are left
+            batch = [n for n in self.nodes if n.get('ok') is None and n not in top][:N.TOP]
+            if not batch:
+                break
+            self.app.say(f'candidates: this PC is testing the {len(batch)} fastest{" untested" if top else ""}, 5 at a time (about 20 seconds)...')
+            N.router_test(batch, speed=True); top += batch
+            if len(N.best_first(self.nodes)) >= k:
+                break
         ok = N.best_first(top)
         self.nodes.sort(key=lambda n: (n.get('ok') is not True, N.speed_rank(n) if n.get('ok') else (9, 9e9), n['tcp_ms']))
         self.msg = (T('{ok} of {n} tested candidates work.', ok=len(ok), n=len(top)) + ' '
@@ -2275,6 +2281,27 @@ def pick_language():
     except OSError:
         pass
     return code
+
+
+def ask_france():
+    """Asked once at the first setup, after the language: in France, Cloudflare instead of Quad9 as the name server.
+    Closing the window keeps Quad9."""
+    root = hidden_root(); theme(root); pick = []
+    w = tk.Toplevel(root); w.configure(bg=BG); w.title(N.NAME); w.resizable(False, False)
+    tk.Label(w, text=T('Do you live in France?'), bg=BG, fg=FG, font=(UIB, 14), anchor='e' if i18n.RTL else 'w').pack(fill='x', padx=30, pady=(22, 8))
+    tk.Label(w, text=T('Reality Hop looks up website names with Quad9 (9.9.9.9). After a Paris court order, Quad9 stops serving '
+                       'France on 24 November 2026. In France, Reality Hop uses Cloudflare (1.1.1.1) instead.'),
+             bg=BG, fg=MUTED, font=(UI, 10), justify=JL, anchor='e' if i18n.RTL else 'w', wraplength=420).pack(fill='x', padx=30, pady=(0, 14))
+    row = tk.Frame(w, bg=BG); row.pack(fill='x', padx=30, pady=(0, 22))
+    ttk.Button(row, text=T('Yes, use Cloudflare'), style='Accent.TButton', command=lambda: (pick.append('cloudflare'), root.quit())).pack(side='left', padx=(0, 8))
+    ttk.Button(row, text=T('No, keep Quad9'), command=lambda: (pick.append('quad9'), root.quit())).pack(side='left')
+    w.protocol('WM_DELETE_WINDOW', root.quit); dark_titlebar(w)
+    w.update_idletasks(); w.geometry(f'+{(w.winfo_screenwidth() - w.winfo_width()) // 2}+{(w.winfo_screenheight() - w.winfo_height()) // 3}')
+    w.lift(); w.focus_force(); root.mainloop(); root.destroy()
+    try:
+        N.settings_save({'dns': pick[0] if pick else 'quad9'}); N.dns_apply()
+    except OSError:
+        pass
 
 
 def restart_watcher():
@@ -2690,9 +2717,10 @@ class Wizard(tk.Tk):
         cols = tk.Frame(self.body, bg=BG); cols.pack(fill='both', expand=True)
         left = tk.Frame(cols, bg=BG, width=330); left.pack(side='left', fill='y', anchor='n'); left.pack_propagate(False)
         self.p(T('Private Internet Access (PIA)'), bold=True, parent=left)
-        split = (None if N.pia_bypass() else   # macOS: Reality Hop puts itself on PIA's split tunnel list
-                 T('Settings → Split Tunnel → Add Application → Applications → Reality Hop → Bypass VPN.')) if N.MAC else             T('Only if Split Tunnel has All Other Apps on Use VPN: Settings → Split Tunnel, Add Application {core}, set it '
-              'to Bypass VPN. Without it the VPN cannot connect.', core=N.CORE)
+        split = None if N.pia_bypass() else (   # Reality Hop puts itself on PIA's split tunnel list; by hand only when that fails
+            T('Settings → Split Tunnel → Add Application → Applications → Reality Hop → Bypass VPN.') if N.MAC else
+            T('Only if Split Tunnel has All Other Apps on Use VPN: Settings → Split Tunnel, Add Application {core}, set it '
+              'to Bypass VPN. Without it the VPN cannot connect.', core=N.CORE))
         self.items([T('PIA → Settings → Protocols: Protocol OpenVPN, Transport TCP, Remote Port 443.'),
                     T('Settings → Multi-Hop: tick "Multi-hop and Obfuscation" and choose SOCKS5 Proxy.'),
                     T('Click EDIT: host 127.0.0.1, port 2080. Leave username and password empty. Save.')] + ([split] if split else []) +
@@ -2795,6 +2823,8 @@ if __name__ == '__main__':
     if not N.settings_load()['lang'] and '--uninstall' not in sys.argv:   # first start: pick the language
         if pick_language() != i18n.LANG:
             restart_watcher(); restart_window(sys.argv[1:])   # the texts were set at start in the Windows language
+    if not N.settings_load()['dns'] and not N.is_setup() and '--uninstall' not in sys.argv:   # first setup, after the language
+        ask_france()
     if N.is_setup() and not N.this_pc().get('boot_priority_asked'):   # boot tasks made up to 1.4.0: checked once, asked once
         N.set_this_pc(boot_priority_asked=True)
         if N.boot_task_priority() not in (None, 5):

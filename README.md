@@ -108,8 +108,9 @@ Requirements: Windows 10 or 11 (64-bit), and a VPN app that can use a SOCKS5 pro
 5. PIA on a Mac: nothing to set in Split Tunnel. Reality Hop adds itself (Bypass VPN) and keeps its node addresses
    there, so PIA's kill switch can stay on. Run one DNS app at a time ([details](docs/vpn-setup.md)).
 
-Requirements: macOS 15 or newer, Apple silicon or Intel, and a VPN app that can use a SOCKS5 proxy. The website version
-of PIA: the App Store version has no Multi-Hop or Split Tunnel.
+Requirements: macOS 15 or newer, Apple silicon or Intel, and a VPN app that can use a SOCKS5 proxy.
+Get PIA for Mac from [its website](https://www.privateinternetaccess.com/download/mac-vpn), not the Mac App Store: the
+App Store version has no Multi-Hop or Split Tunnel, so it cannot connect through Reality Hop.
 
 ## Set up your VPN app
 
@@ -120,8 +121,9 @@ Your VPN must use **OpenVPN over TCP, port 443**. A SOCKS5 proxy carries TCP onl
 **Private Internet Access (PIA):**
 Settings → Protocols: Protocol **OpenVPN**, Transport **TCP**, Remote Port **443**. Then Settings → Multi-Hop: tick
 **Multi-hop and Obfuscation**, choose **SOCKS5 Proxy**, click **EDIT**, enter host `127.0.0.1` and port `2080`, and
-save. If Split Tunnel has **All Other Apps** set to **Use VPN**: in Settings → Split Tunnel, add
-`C:\Program Files\RealityHop\PC\rh-core.exe` and set it to **Bypass VPN**. Without that rule the VPN cannot connect.
+save. Split Tunnel needs nothing from you: Reality Hop adds `rh-core.exe` and its test copy `rh-test.exe` as
+**Bypass VPN** by itself. Only if PIA's command line refuses does the setup wizard show the step to do by hand: in
+Settings → Split Tunnel, add `C:\Program Files\RealityHop\PC\rh-core.exe` and set it to **Bypass VPN**.
 
 ![PIA Multi-Hop with the SOCKS5 proxy](docs/images/pia-multihop-socks5.png)
 

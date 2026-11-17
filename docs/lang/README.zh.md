@@ -30,7 +30,7 @@ VPN 应用 → 你电脑上的 Reality Hop（SOCKS5 `127.0.0.1:2080`）→ 公�
 
 ## 安装
 
-1. 从[最新版本](https://github.com/KillerKingSolo/RealityHop/releases/latest)下载 `RealityHop.exe`。需要 64 位 Windows 10 或 11。 Mac：下载 `RealityHop-mac-apple-silicon.dmg`（M1 及更新）或 `RealityHop-mac-intel.dmg`。需要 macOS 15 或更新。
+1. 从[最新版本](https://github.com/KillerKingSolo/RealityHop/releases/latest)下载 `RealityHop.exe`。需要 64 位 Windows 10 或 11。 Mac：下载 `RealityHop-mac-apple-silicon.dmg`（M1 及更新）或 `RealityHop-mac-intel.dmg`。需要 macOS 15 或更新。 Mac 版 PIA 请从[其官网](https://www.privateinternetaccess.com/download/mac-vpn)下载，不要从 Mac App Store 下载：App Store 版本没有 Multi-Hop 和 Split Tunnel。
 2. 运行它并选择语言。
 3. 向导会安装 Reality Hop（一次 UAC 提示），从官方版本下载 sing-box（校验 SHA-256），找到第一批节点并启动隧道。约一分钟。
 
@@ -47,7 +47,7 @@ Reality Hop 首次启动时会询问语言。之后可在 **设置 → 语言** 
 1. PIA → **Settings → Protocols**：Protocol **OpenVPN**，Transport **TCP**，Remote Port **443**。
 2. **Settings → Multi-Hop**：勾选 **Multi-hop and Obfuscation** 并选择 **SOCKS5 Proxy**。
 3. 点击 **EDIT**，主机 `127.0.0.1`，端口 `2080`，用户名和密码留空，然后保存。
-4. 仅当 Split Tunnel 中 **All Other Apps** 设为 **Use VPN** 时：**Settings → Split Tunnel**，**Add Application**，选择 `C:\Program Files\RealityHop\PC\rh-core.exe` 并设为 **Bypass VPN**。如果 All Other Apps 设为 Bypass VPN，则不需要这条规则。
+4. Reality Hop 会自动添加这条规则；只有失败时安装向导才会显示此步骤。 仅当 Split Tunnel 中 **All Other Apps** 设为 **Use VPN** 时：**Settings → Split Tunnel**，**Add Application**，选择 `C:\Program Files\RealityHop\PC\rh-core.exe` 并设为 **Bypass VPN**。如果 All Other Apps 设为 Bypass VPN，则不需要这条规则。
 5. 连接。
 
 ![PIA 分流：rh-core.exe 设为 Bypass VPN](../images/pia-split-tunnel.png)

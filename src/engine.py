@@ -108,8 +108,9 @@ MIRRORS = ('https://cdn.jsdelivr.net/gh/{0}@main/{1}', 'https://fastly.jsdelivr.
 TUNNEL_PROXY = 'http://127.0.0.1:2080'   # the PC tunnel's mixed inbound also speaks HTTP proxy
 DEFAULTS = {'check_min': 60, 'slow_ms': 200, 'tolerance_ms': 25, 'top': 50, 'router': 0, 'router_host': '192.168.8.1',
             'router_key': '', 'devices': '', 'auto_update': 1, 'singbox': 'stable', 'router_singbox': '', 'backend_files': 0,
-            'start_menu': 1, 'desktop_icon': 0, 'pc_tunnel': 1, 'min_mbps': 100, 'lang': ''}
+            'start_menu': 1, 'desktop_icon': 0, 'pc_tunnel': 1, 'min_mbps': 100, 'lang': '', 'dns': ''}
 LIMITS = {'check_min': (15, 1440), 'slow_ms': (50, 5000), 'tolerance_ms': (0, 1000), 'top': (10, 120), 'min_mbps': (0, 1000)}   # as in Settings
+DNS_IPS = {'quad9': '9.9.9.9', 'cloudflare': '1.1.1.1'}   # the configs' name server (Settings 'dns')
 FPS = {'chrome', 'firefox', 'safari', 'ios', 'android', 'edge', '360', 'qq', 'random', 'randomized'}   # uTLS fingerprints
 TOP = 50   # candidates tested per scan (settings)
 MIN_MBPS = 100   # a node must download at least this fast to be picked first; 0 turns the speed test off (settings.json)
@@ -192,6 +193,8 @@ def settings_load():
         d['router_host'] = DEFAULTS['router_host']
     if d['router_singbox'] not in ('', 'stable', 'testing'):   # '' = the PC's channel
         d['router_singbox'] = ''
+    if d['dns'] not in DNS_IPS and d['dns'] != '':   # '' until the setup asks: Quad9
+        d['dns'] = 'quad9'
     if d['lang'] not in i18n.CODES:   # '' until a language is picked: the Windows display language
         d['lang'] = ''
     i18n.use(d['lang'])
@@ -1023,49 +1026,63 @@ def _local_test(nodes, speed, base):
 
 
 def pia_bypass(extra=(), in_use=True):
-    """macOS with PIA: keep Reality Hop on PIA's Split Tunnel list, so nobody has to set it by hand:
+    """PIA: keep Reality Hop on PIA's Split Tunnel list, so nobody has to set it by hand.
+    macOS:
     - the app as an app rule (Bypass VPN); its signing id covers rh-core and rh-test (macos.core_sign)
     - the tunnel's node addresses as IP rules (Bypass VPN). PIA's Mac kill switch blocks every program whatever its
       app rules say; IP rules are its one exception. Without them a kill switch cuts the connection the VPN itself
       runs through. The nodes in use always, plus extra (nodes under test) for a moment.
-    Split Tunnel is switched on when it is off (both kinds of rule need it). in_use=False (uninstall) takes Reality
-    Hop's rules off again. Only what Reality Hop added is changed; the person's own rules stay. Through piactl's
-    applysettings, which PIA marks unstable: False when that fails (Check PIA then warns)."""
-    if not MAC or not os.path.exists(PIACTL):
+    Split Tunnel is switched on when it is off (both kinds of rule need it).
+    Windows: rh-core.exe and rh-test.exe as app rules (Bypass VPN), no IP rules: PIA's Windows kill switch lets a
+    Bypass VPN app through. Split Tunnel is left as the person set it.
+    in_use=False (uninstall) takes Reality Hop's rules off again. Only what Reality Hop added is changed; the person's
+    own rules stay. Through piactl's applysettings, which PIA marks unstable: False when that fails (Check PIA then warns)."""
+    if not os.path.exists(PIACTL):
         return False
     try:
         st = json.load(open(PIA_SETTINGS))
         cur, apps = st.get('bypassSubnets') or [], st.get('splitTunnelRules') or []
     except (OSError, ValueError, AttributeError):
         return False
-    me = this_pc()
-    mine = {ip + '/32' for ip in me.get('pia_ips', [])}
-    theirs = [r for r in cur if isinstance(r, dict) and r.get('subnet') not in mine]
-    keep = {r.get('subnet') for r in theirs}
-    want = sorted(({n['server'] for n in nodes_of(PC_CFG)} if in_use else set()) | set(extra), key=lambda ip: tuple(int(k) for k in ip.split('.')))
-    add = [ip for ip in want if public_ip(ip) and ip + '/32' not in keep]   # an address the person listed is theirs
-    rules = theirs + [{'subnet': ip + '/32', 'mode': 'exclude'} for ip in add]
-    change = {}
-    if [r.get('subnet') for r in rules] != [r.get('subnet') for r in cur if isinstance(r, dict)]:
-        change['bypassSubnets'] = rules
-    app = macos.bundle() if FROZEN else None   # the app rule: only for the installed app (from source there is none)
-    same = lambda r: isinstance(r, dict) and os.path.normcase(str(r.get('path', '')).rstrip('/')) == os.path.normcase(app or '')
-    added_app = me.get('pia_app', False)
-    if app and in_use:
-        if not any(same(r) and r.get('mode') == 'exclude' for r in apps):   # missing, or set to Only VPN: Bypass VPN
-            change['splitTunnelRules'] = [r for r in apps if not same(r)] + [{'path': app, 'linkTarget': '', 'mode': 'exclude'}]
-            added_app = added_app or not any(same(r) for r in apps)
-    elif app and added_app and any(same(r) for r in apps):   # uninstall: only a rule Reality Hop added itself
-        change['splitTunnelRules'] = [r for r in apps if not same(r)]; added_app = False
-    if in_use and (rules or 'splitTunnelRules' in change) and not st.get('splitTunnelEnabled', False):
+    me, change = this_pc(), {}
+    add = []
+    if MAC:
+        mine = {ip + '/32' for ip in me.get('pia_ips', [])}
+        theirs = [r for r in cur if isinstance(r, dict) and r.get('subnet') not in mine]
+        keep = {r.get('subnet') for r in theirs}
+        want = sorted(({n['server'] for n in nodes_of(PC_CFG)} if in_use else set()) | set(extra), key=lambda ip: tuple(int(k) for k in ip.split('.')))
+        add = [ip for ip in want if public_ip(ip) and ip + '/32' not in keep]   # an address the person listed is theirs
+        rules = theirs + [{'subnet': ip + '/32', 'mode': 'exclude'} for ip in add]
+        if [r.get('subnet') for r in rules] != [r.get('subnet') for r in cur if isinstance(r, dict)]:
+            change['bypassSubnets'] = rules
+        paths = [macos.bundle()] if FROZEN else []   # the app rule: only for the installed app (from source there is none)
+        added = set(me.get('pia_apps', [])) | (set(paths) if me.get('pia_app') else set())   # pia_app: up to 1.7.1
+    else:
+        rules, paths = [], [CORE, os.path.join(DATA, 'rh-test' + EXE)]
+        added = set(me.get('pia_apps', []))
+    key = lambda p: os.path.normcase(os.path.normpath(str(p).rstrip('/\\'))) if p else ''
+    same = lambda r, p: isinstance(r, dict) and key(r.get('path')) == key(p)
+    new = list(apps)
+    for p in paths:
+        if in_use:
+            if not any(same(r, p) and r.get('mode') == 'exclude' for r in new):   # missing, or set to Only VPN: Bypass VPN
+                if not any(same(r, p) for r in new):
+                    added.add(p)
+                new = [r for r in new if not same(r, p)] + [{'path': p, 'linkTarget': '', 'mode': 'exclude'}]
+        elif p in added:   # uninstall: only a rule Reality Hop added itself
+            new = [r for r in new if not same(r, p)]; added.discard(p)
+    if new != apps:
+        change['splitTunnelRules'] = new
+    if MAC and in_use and (rules or 'splitTunnelRules' in change) and not st.get('splitTunnelEnabled', False):
         change['splitTunnelEnabled'] = True
+    added = sorted(p for p in added if p in paths)
     if not change:
-        set_this_pc(pia_ips=add); return True
+        set_this_pc(pia_ips=add, pia_apps=added, pia_app=False); return True
     try:
         r = run([PIACTL, '-u', 'applysettings', json.dumps(change)], timeout=20)
     except Exception as e:
         r = subprocess.CompletedProcess([], 1, '', str(e))
-    dbg('PIA split tunnel:', sorted(change), len(add), 'addresses of Reality Hop,', len(theirs), 'of yours; piactl exit',
+    dbg('PIA split tunnel:', sorted(change), len(add), 'addresses of Reality Hop,', len(cur), 'before; piactl exit',
         r.returncode, (r.stderr or '').strip()[:200])
     if r.returncode:
         say(f"PIA: could not update its split tunnel list ({(r.stderr or r.stdout).strip()[:200]}); with a kill switch "
@@ -1073,7 +1090,7 @@ def pia_bypass(extra=(), in_use=True):
         return False
     if 'splitTunnelRules' in change and in_use:
         say('PIA: Reality Hop is in its split tunnel list (Bypass VPN)' + ('; split tunnel switched on' if 'splitTunnelEnabled' in change else ''))
-    set_this_pc(pia_ips=add, pia_app=added_app)
+    set_this_pc(pia_ips=add, pia_apps=added, pia_app=False)
     return True
 
 
@@ -2215,6 +2232,7 @@ PIACTL = macos.PIACTL if MAC else r'C:\Program Files\Private Internet Access\pia
 FULL_EVERY = 3600       # full check of every node, hourly
 SLOW = 200              # a working node slower than this (ms) shows amber in the tray ring (settings)
 TICK = 30 * 60           # how often the watcher wakes up; between wake-ups it does nothing at all
+APP_EVERY = 6 * 3600     # app update check: 1 GitHub API call (2 when there is a new version); the limit is 60 an hour per IP
 
 
 def pia_state():
@@ -2432,8 +2450,7 @@ def watch():
     if stopped():
         return   # stopped from the window: stay off until Start
     lnk_migrate(STARTUP_LNK); api_lockdown()
-    if MAC:
-        pia_bypass()   # at login, before the tunnel starts
+    pia_bypass()   # at login, before the tunnel starts
     started = core_fast_start()   # before anything else, so PIA finds the proxy when it connects
     try:
         kill_feeds()
@@ -2447,7 +2464,7 @@ def watch():
         startup(True)   # up to 1.4.0 the Startup folder started the watcher; move it to Task Scheduler once
     hold = started_at + (LOGON_HOLD if '--logon' in sys.argv else 0)   # no node is judged before the network is up
     st, last_full, last_fix = {}, hold - FULL_EVERY, 0   # first node check at `hold`, as soon as the tunnel answers
-    last_app = time.time() - 24 * 3600 + 900   # app update check 15 min after logon, then daily
+    last_app = time.time() - APP_EVERY + 120   # app update check 2 min after logon, then every APP_EVERY
     try:   # the last known state at once, so the tray icon is not grey while the first check runs
         t = json.load(open(TRAY_LAST)); st['last'], st['segs'] = tuple(t['last']), t.get('segs') or ()
     except (OSError, ValueError, KeyError, TypeError):
@@ -2521,7 +2538,7 @@ def watch():
                         core_update()
                     except Exception as e:   # no internet, GitHub down...: try again tomorrow, the nodes are not the problem
                         say(f'rh-core update check failed: {e}')
-                if FROZEN and now - last_app > 24 * 3600:
+                if FROZEN and now - last_app >= APP_EVERY:
                     last_app = now
                     try:
                         import install
@@ -2567,7 +2584,8 @@ def watch():
                 say(f'error: {e}'); st['last'] = ('bad', f'error: {e}'[:80], time.strftime('%H:%M'))
             show(); memory_trim()
             # sleep until the next check is due, a tray request, or a PIA change (re-checked a minute after a drop)
-            due = 60 if pia['bad_since'] is not None else max(30, min(TICK, last_full + FULL_EVERY - time.time()))
+            due = 60 if pia['bad_since'] is not None else max(30, min(TICK, last_full + FULL_EVERY - time.time(),
+                                                                  last_app + APP_EVERY - time.time() if FROZEN else TICK))
             wake.wait(due); wake.clear()
     if MAC:   # AppKit (the menu bar icon) needs the main thread: the checks run in their own
         threading.Thread(target=loop, daemon=True).start(); tray.run(); os._exit(0)
@@ -2603,11 +2621,41 @@ def prepare():
             if dst == PC_CFG:
                 c['log']['output'] = CORE_LOG
             json.dump(c, open(dst, 'w', encoding='utf-8'), indent=2)
+    dns_apply()
     for d, text in ((PC_DIR, PC_README), (ROUTER_DIR, ROUTER_README)):
         open(os.path.join(d, 'README.txt'), 'w', encoding='utf-8').write(text)
     if not os.path.exists(CORE):
         core_update(force=True)
     api_lockdown()
+
+
+def dns_apply():
+    """Both configs use the name server from Settings: Quad9, or Cloudflare for France, which Quad9 stops serving on
+    24 November 2026 after a Paris court order. pc-config.json applies from the next tunnel restart, router-config.json
+    from the next push to the router. True when a config changed."""
+    want = settings_load()['dns'] or 'quad9'; ip, changed = DNS_IPS[want], False
+    for path in (PC_CFG, ROUTER_CFG):
+        try:
+            c = json.load(open(path, encoding='utf-8')); old = c['dns']['final']
+            srv = next(x for x in c['dns']['servers'] if x.get('tag') == old)
+        except (OSError, ValueError, KeyError, StopIteration):
+            continue
+        if old == want or old not in DNS_IPS:   # a server the person set by hand stays
+            continue
+        srv['tag'] = c['dns']['final'] = want
+        if 'server' in srv:
+            srv['server'] = ip
+        if 'address' in srv:
+            srv['address'] = f'https://{ip}/dns-query'
+        if c.get('route', {}).get('default_domain_resolver') == old:
+            c['route']['default_domain_resolver'] = want
+        for i in c.get('inbounds', []):
+            if i.get('override_address') == DNS_IPS[old]:
+                i['override_address'] = ip
+        jsave(path, c, indent=2); changed = True
+    if changed:
+        say(f'name server: {want} ({ip})')
+    return changed
 
 
 API_ORIGIN = ['http://127.0.0.1:9090']   # web pages allowed to call the PC tunnel's control API: none

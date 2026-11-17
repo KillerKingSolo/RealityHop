@@ -526,5 +526,9 @@
  "Settings → Split Tunnel → Add Application → Applications → Reality Hop → Bypass VPN.": "Settings → Split Tunnel → Add Application → 应用程序 → Reality Hop → Bypass VPN。",
  "the kill switch is on: on a Mac it blocks the tunnel (Settings → Privacy, untick both kill switches)": "kill switch 已开启：在 Mac 上它会阻断隧道（Settings → Privacy，取消勾选两个 kill switch）",
  "macOS 15 or newer, Intel or Apple silicon.": "macOS 15 或更高版本，Intel 或 Apple 芯片。",
- "another DNS app (such as NextDNS) is on: with PIA connected no name resolves (turn it off, or PIA → Settings → Network → Name Servers: Use Existing DNS)": "另一个 DNS 应用（例如 NextDNS）正在运行：PIA 连接时任何域名都无法解析（关闭它，或在 PIA → Settings → Network → Name Servers 选择 Use Existing DNS）"
+ "another DNS app (such as NextDNS) is on: with PIA connected no name resolves (turn it off, or PIA → Settings → Network → Name Servers: Use Existing DNS)": "另一个 DNS 应用（例如 NextDNS）正在运行：PIA 连接时任何域名都无法解析（关闭它，或在 PIA → Settings → Network → Name Servers 选择 Use Existing DNS）",
+ "Do you live in France?": "你住在法国吗？",
+ "Reality Hop looks up website names with Quad9 (9.9.9.9). After a Paris court order, Quad9 stops serving France on 24 November 2026. In France, Reality Hop uses Cloudflare (1.1.1.1) instead.": "Reality Hop 使用 Quad9 (9.9.9.9) 查询网站名称。根据巴黎法院的命令，Quad9 将于 2026 年 11 月 24 日停止为法国提供服务。在法国，Reality Hop 改用 Cloudflare (1.1.1.1)。",
+ "Yes, use Cloudflare": "是，使用 Cloudflare",
+ "No, keep Quad9": "否，保留 Quad9"
 }

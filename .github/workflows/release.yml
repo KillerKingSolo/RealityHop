@@ -48,19 +48,16 @@ jobs:
           name: RealityHop-windows
           path: dist/RealityHop.exe
 
-  mac:   # build only, so the tests on every macOS version can start as soon as possible
+  mac-intel:   # build only; one job per chip, so each chip's tests start as soon as its own build is done
     permissions:
       contents: read   # builds and tests only; publish is the one job that writes
     strategy:
-      fail-fast: false
       matrix:
         include:
-          - runner: macos-15         # Apple silicon
-            chip: apple-silicon
-          - runner: macos-15-intel   # Intel
+          - runner: macos-15-intel
             chip: intel
     runs-on: ${{ matrix.runner }}
-    steps:
+    steps: &mac-build
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -89,6 +86,17 @@ jobs:
         with:
           name: RealityHop-mac-${{ matrix.chip }}
           path: dist/RealityHop-mac-${{ matrix.chip }}.dmg
+
+  mac-apple-silicon:
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        include:
+          - runner: macos-15
+            chip: apple-silicon
+    runs-on: ${{ matrix.runner }}
+    steps: *mac-build
 
   mac-smoke:   # from source, alongside the build: sing-box, nodes, tunnel, login items, menu bar icon, uninstall
     permissions:
@@ -136,32 +144,22 @@ jobs:
           name: screenshots-smoke-${{ matrix.runner }}
           path: ${{ runner.temp }}/shots
 
-  mac-test:   # the built apps on macOS 15, 26 and 27, and the Intel app on Apple silicon (Rosetta)
-    needs: mac
+  test-apple-silicon:   # the Apple silicon app on macOS 15, 26 and 27
+    needs: mac-apple-silicon
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-15           # macOS 15, Apple silicon
+          - runner: macos-15
             chip: apple-silicon
-          - runner: macos-15-intel     # macOS 15, Intel
-            chip: intel
-          - runner: macos-26           # macOS 26, Apple silicon
+          - runner: macos-26
             chip: apple-silicon
-          - runner: macos-26-intel     # macOS 26, Intel
-            chip: intel
-          - runner: macos-26           # the Intel app on Apple silicon, through Rosetta
-            chip: intel
-            rosetta: true
-          - runner: xcode-27           # macOS 27 (GitHub preview image), Apple silicon only
+          - runner: xcode-27           # macOS 27 (GitHub preview image)
             chip: apple-silicon
-          - runner: xcode-27           # macOS 27, the Intel app through Rosetta
-            chip: intel
-            rosetta: true
     runs-on: ${{ matrix.runner }}
-    steps:
+    steps: &mac-test
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -185,8 +183,29 @@ jobs:
           name: screenshots-${{ matrix.runner }}-${{ matrix.chip }}${{ matrix.rosetta && '-rosetta' || '' }}
           path: ${{ runner.temp }}/shots
 
+  test-intel:   # the Intel app on macOS 15 and 26, and on Apple silicon through Rosetta (macOS 26 and 27)
+    needs: mac-intel
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            chip: intel
+          - runner: macos-26-intel
+            chip: intel
+          - runner: macos-26
+            chip: intel
+            rosetta: true
+          - runner: xcode-27
+            chip: intel
+            rosetta: true
+    runs-on: ${{ matrix.runner }}
+    steps: *mac-test
+
   publish:
-    needs: [build, mac, mac-smoke, mac-test]
+    needs: [build, mac-intel, mac-apple-silicon, mac-smoke, test-apple-silicon, test-intel]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:

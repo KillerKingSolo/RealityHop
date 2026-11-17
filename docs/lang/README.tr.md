@@ -30,7 +30,7 @@ VPN uygulaması → PC'nizdeki Reality Hop (SOCKS5 `127.0.0.1:2080`) → genel R
 
 ## Kurulum
 
-1. `RealityHop.exe` dosyasını [son sürümden](https://github.com/KillerKingSolo/RealityHop/releases/latest) indirin. 64 bit Windows 10 veya 11 gerekir. Mac'te: `RealityHop-mac-apple-silicon.dmg` (M1 ve sonrası) veya `RealityHop-mac-intel.dmg`. macOS 15 veya üstü gerekir.
+1. `RealityHop.exe` dosyasını [son sürümden](https://github.com/KillerKingSolo/RealityHop/releases/latest) indirin. 64 bit Windows 10 veya 11 gerekir. Mac'te: `RealityHop-mac-apple-silicon.dmg` (M1 ve sonrası) veya `RealityHop-mac-intel.dmg`. macOS 15 veya üstü gerekir. Mac için PIA'yı Mac App Store'dan değil, [kendi web sitesinden](https://www.privateinternetaccess.com/download/mac-vpn) indirin: App Store sürümünde Multi-Hop ve Split Tunnel yoktur.
 2. Çalıştırın ve dilinizi seçin.
 3. Sihirbaz Reality Hop'u kurar (bir UAC istemi), sing-box'ı resmi sürümlerinden indirir (SHA-256 doğrular), ilk düğümleri bulur ve tüneli başlatır. Yaklaşık bir dakika.
 
@@ -47,7 +47,7 @@ VPN uygulamanızı SOCKS5 proxy `127.0.0.1`, port `2080`, kullanıcı adı ve pa
 1. PIA → **Settings → Protocols**: Protocol **OpenVPN**, Transport **TCP**, Remote Port **443**.
 2. **Settings → Multi-Hop**: **Multi-hop and Obfuscation** işaretleyin ve **SOCKS5 Proxy** seçin.
 3. **EDIT**'e tıklayın, host `127.0.0.1`, port `2080`, kullanıcı adı ve parola boş, kaydedin.
-4. Yalnızca Split Tunnel'da **All Other Apps** **Use VPN** ise: **Settings → Split Tunnel**, **Add Application**, `C:\Program Files\RealityHop\PC\rh-core.exe` seçin ve **Bypass VPN** yapın. All Other Apps Bypass VPN ise bu kurala gerek yoktur.
+4. Reality Hop bu kuralı kendisi ekler; kurulum sihirbazı bu adımı yalnızca bu başarısız olursa gösterir. Yalnızca Split Tunnel'da **All Other Apps** **Use VPN** ise: **Settings → Split Tunnel**, **Add Application**, `C:\Program Files\RealityHop\PC\rh-core.exe` seçin ve **Bypass VPN** yapın. All Other Apps Bypass VPN ise bu kurala gerek yoktur.
 5. Bağlanın.
 
 ![PIA Split Tunnel'da rh-core.exe Bypass VPN](../images/pia-split-tunnel.png)
