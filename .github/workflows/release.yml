@@ -49,6 +49,8 @@ jobs:
           path: dist/RealityHop.exe
 
   mac:
+    permissions:
+      contents: read   # builds and tests only; publish is the one job that writes
     strategy:
       fail-fast: false
       matrix:
@@ -81,6 +83,8 @@ jobs:
           echo "VERSION = '$v'" > src/version.py
 
       - name: Smoke test from source (sing-box, nodes, tunnel, login items, menu bar icon, uninstall)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}   # read-only use: GitHub API lookups of the sing-box releases
         run: |
           export RH_SMOKE_HOME="$RUNNER_TEMP/smoke-home" SHOTS="$RUNNER_TEMP/shots"
           mkdir -p "$RH_SMOKE_HOME" "$SHOTS"
@@ -109,6 +113,8 @@ jobs:
 
   mac-test:   # the built apps on the other macOS versions GitHub has, and the Intel app on Apple silicon (Rosetta)
     needs: mac
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:

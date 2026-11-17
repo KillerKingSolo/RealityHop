@@ -20,6 +20,17 @@ home = os.path.expanduser('~')
 if os.environ.get('RH_SMOKE_HOME') != home or os.listdir(home):
     sys.exit('set HOME and RH_SMOKE_HOME to the same empty test folder first')
 import engine as N, install, macos, report
+import urllib.request
+if os.environ.get('GITHUB_TOKEN'):   # test only: shared runners hit GitHub's anonymous API limit; the app never sends a token
+    _get = N.gh_get
+
+    def gh_get(url, timeout=30):
+        if isinstance(url, str) and url.startswith('https://api.github.com/'):
+            url = urllib.request.Request(url, headers={'Authorization': 'Bearer ' + os.environ['GITHUB_TOKEN']})
+        elif isinstance(url, urllib.request.Request) and url.full_url.startswith('https://api.github.com/'):
+            url.add_header('Authorization', 'Bearer ' + os.environ['GITHUB_TOKEN'])
+        return _get(url, timeout)
+    N.gh_get = gh_get
 
 check('platform', N.MAC and N.EXE == '', sys.platform)
 check('data folder in the test home', N.DATA == os.path.join(home, 'Library', 'Application Support', 'RealityHop'), N.DATA)
