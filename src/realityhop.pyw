@@ -2695,10 +2695,8 @@ class Wizard(tk.Tk):
                     T('Click EDIT: host 127.0.0.1, port 2080. Leave username and password empty. Save.'),
                     T('Settings → Split Tunnel → Add Application → Applications → Reality Hop → Bypass VPN.') if N.MAC else
                     T('Only if Split Tunnel has All Other Apps on Use VPN: Settings → Split Tunnel, Add Application {core}, set it '
-                      'to Bypass VPN. Without it the VPN cannot connect.', core=N.CORE)] +
-                   ([T('Settings → Privacy: untick VPN Kill Switch and Advanced Kill Switch. On a Mac they block the tunnel.')]
-                    if N.MAC else []) +   # PIA's Mac firewall blocks rh-core while Multi-Hop runs through it
-                   [T('Connect.')], parent=left, wrap=280, numbered=True)
+                      'to Bypass VPN. Without it the VPN cannot connect.', core=N.CORE),
+                    T('Connect.')], parent=left, wrap=280, numbered=True)
         row = tk.Frame(left, bg=BG); row.pack(fill='x', pady=(6, 4))
         ttk.Button(row, text=T('Check PIA'), command=lambda: self.note(N.vpn_check(T), 'ok' if N.vpn_state() == (True, []) else 'warn')).pack(side='left')
         self.p(T('Other VPN apps'), bold=True, parent=left)

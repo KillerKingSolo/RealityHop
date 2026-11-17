@@ -525,6 +525,5 @@
  "Makes an SSH key and adds it to the router. In a Terminal window ssh asks for the router password; Reality Hop never sees it.": "یک کلید SSH می‌سازد و به روتر اضافه می‌کند. ssh در یک پنجره ترمینال رمز روتر را می‌پرسد؛ Reality Hop هرگز آن را نمی‌بیند.",
  "Drag Reality Hop into the Applications folder first, then open it from there.": "اول Reality Hop را به پوشه Applications بکشید، سپس آن را از آنجا باز کنید.",
  "Settings → Split Tunnel → Add Application → Applications → Reality Hop → Bypass VPN.": "Settings → Split Tunnel → Add Application → Applications → Reality Hop → Bypass VPN.",
- "Settings → Privacy: untick VPN Kill Switch and Advanced Kill Switch. On a Mac they block the tunnel.": "Settings → Privacy: علامت VPN Kill Switch و Advanced Kill Switch را بردارید. روی مک این دو تونل را مسدود می‌کنند.",
  "the kill switch is on: on a Mac it blocks the tunnel (Settings → Privacy, untick both kill switches)": "kill switch روشن است: روی مک تونل را مسدود می‌کند (Settings → Privacy، علامت هر دو kill switch را بردارید)"
 }

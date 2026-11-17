@@ -948,7 +948,6 @@ def best_first(nodes):
 def local_test(nodes, speed=False):
     """The handshake test, run on this PC: one sing-box instance, one port per node, 10 fetches at a time. speed: then the
     download test (speed_test)."""
-    import tempfile
     if not os.path.exists(CORE):
         raise RuntimeError(f'{os.path.basename(CORE)} is missing; run the setup again (Settings > Run setup again)')
     if not nodes:
@@ -956,6 +955,16 @@ def local_test(nodes, speed=False):
     for n in nodes:
         n.pop('ok', None)
     base = free_base(len(nodes))
+    bypass = MAC and pia_bypass([n['server'] for n in nodes])   # PIA's kill switch would block the test connections
+    try:
+        return _local_test(nodes, speed, base)
+    finally:
+        if bypass:
+            pia_bypass()
+
+
+def _local_test(nodes, speed, base):
+    import tempfile
     with tempfile.TemporaryDirectory() as d:
         cfg = {'log': {'level': 'error', 'output': os.path.join(d, 'log')},
                'inbounds': [{'type': 'mixed', 'tag': f'in-{i}', 'listen': '127.0.0.1', 'listen_port': base + i} for i in range(len(nodes))],
@@ -996,6 +1005,40 @@ def local_test(nodes, speed=False):
             n.update(ok=False, exit='-', ms=None, why=next((x.group(0).lower() for x in m if x), 'no-response'))
         n.setdefault('where', '?')
     return nodes
+
+
+def pia_bypass(extra=(), in_use=True):
+    """macOS with PIA: keep the tunnel's node addresses on PIA's Split Tunnel list as IP rules (Bypass VPN). PIA's Mac
+    kill switch blocks every program, Reality Hop's tunnel too, whatever its app rules say; IP rules are the one
+    exception. Without them a kill switch cuts the connection the VPN itself runs through. The nodes in use always,
+    plus extra (nodes under test) for a moment; in_use=False (uninstall) takes them all off. Only the addresses
+    Reality Hop added are changed; the person's own rules stay. Through piactl's applysettings, which PIA marks
+    unstable: False when that fails (Check PIA then warns)."""
+    if not MAC or not os.path.exists(PIACTL):
+        return False
+    try:
+        cur = json.load(open(PIA_SETTINGS)).get('bypassSubnets') or []
+    except (OSError, ValueError, AttributeError):
+        return False
+    mine = {ip + '/32' for ip in this_pc().get('pia_ips', [])}
+    theirs = [r for r in cur if isinstance(r, dict) and r.get('subnet') not in mine]
+    keep = {r.get('subnet') for r in theirs}
+    want = sorted(({n['server'] for n in nodes_of(PC_CFG)} if in_use else set()) | set(extra), key=lambda ip: tuple(int(k) for k in ip.split('.')))
+    add = [ip for ip in want if public_ip(ip) and ip + '/32' not in keep]   # an address the person listed is theirs
+    rules = theirs + [{'subnet': ip + '/32', 'mode': 'exclude'} for ip in add]
+    if [r.get('subnet') for r in rules] == [r.get('subnet') for r in cur if isinstance(r, dict)]:
+        set_this_pc(pia_ips=add); return True
+    try:
+        r = run([PIACTL, '-u', 'applysettings', json.dumps({'bypassSubnets': rules})], timeout=20)
+    except Exception as e:
+        r = subprocess.CompletedProcess([], 1, '', str(e))
+    dbg('PIA split tunnel IPs:', len(add), 'of Reality Hop,', len(theirs), 'of yours; piactl exit', r.returncode, (r.stderr or '').strip()[:200])
+    if r.returncode:
+        say(f"PIA: could not update its split tunnel IP list ({(r.stderr or r.stdout).strip()[:200]}); "
+            'with a kill switch on, PIA cannot connect through Reality Hop')
+        return False
+    set_this_pc(pia_ips=add)
+    return True
 
 
 def free_base(k):
@@ -1549,6 +1592,8 @@ def core_restart():
     if router_only():
         say('router-only mode: no tunnel on this PC'); return True
     t0 = time.time(); dbg('restart requested; stopped:', stopped(), 'running:', core_running())
+    if MAC:
+        pia_bypass()   # before PIA reconnects: its kill switch lets only listed addresses through
     owner = port_blocker()
     if owner:
         say('PC tunnel: ' + blocker_hint(owner)); hist_add(event=('error', f'{owner} holds port 2080'))
@@ -2344,6 +2389,8 @@ def watch():
     if stopped():
         return   # stopped from the window: stay off until Start
     lnk_migrate(STARTUP_LNK); api_lockdown()
+    if MAC:
+        pia_bypass()   # at login, before the tunnel starts
     started = core_fast_start()   # before anything else, so PIA finds the proxy when it connects
     try:
         kill_feeds()
@@ -2604,7 +2651,7 @@ def vpn_state():
         wrong.append('remote port is not 443')
     if not (st.get('proxyType') == 'custom' and st.get('proxyEnabled', True) and pc.get('host') == '127.0.0.1' and pc.get('port') == 2080):
         wrong.append('the SOCKS5 proxy is not 127.0.0.1:2080')
-    if MAC and st.get('killswitch', 'auto') != 'off':   # auto = VPN Kill Switch, on = Advanced Kill Switch
+    if MAC and st.get('killswitch', 'auto') != 'off' and not pia_bypass():   # auto = VPN Kill Switch, on = Advanced
         wrong.append('the kill switch is on: on a Mac it blocks the tunnel (Settings → Privacy, untick both kill switches)')
     return True, wrong
 

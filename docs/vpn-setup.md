@@ -29,9 +29,18 @@ is the normal HTTPS port, the least likely to be blocked.
 Bypass VPN**. That one rule covers the tunnel engine too: Reality Hop signs its copy of sing-box with an id that
 starts with the app's own (`com.realityhop.app.core`), and PIA counts it as part of the app.
 
-**Mac: turn PIA's kill switch off.** Settings → Privacy: untick **VPN Kill Switch** and **Advanced Kill Switch**. With
-Multi-Hop running the VPN through Reality Hop, PIA's Mac firewall blocks rh-core's own connection to the node, and the
-VPN goes down. On Windows the kill switch works. The setup wizard's **Check PIA** button warns when it is on.
+**Mac: PIA's kill switch works, through IP rules Reality Hop keeps for you.** PIA's Mac kill switch (both the VPN Kill
+Switch and the Advanced Kill Switch) blocks every program whatever its app rules say, the tunnel too, so the VPN would
+lose the connection it runs through. Its one exception is Split Tunnel **IP** rules. So Reality Hop puts the addresses
+of the 6 nodes in use there (Bypass VPN), and keeps the list current: every node swap and tunnel restart updates it, and
+nodes under test are added for the test only. It changes only the addresses it added; your own rules stay, and
+uninstalling removes its addresses. You see them in PIA → Settings → Split Tunnel. It uses PIA's command line
+(`piactl -u applysettings`), which PIA marks unstable; if a PIA update breaks it, **Check PIA** warns that the kill
+switch is on, and turning both kill switches off is the fallback.
+
+**Mac: one DNS app at a time.** A DNS app or profile such as NextDNS sends every lookup through its own proxy, and PIA
+blocks that while connected: the VPN connects but no website loads (names do not resolve; addresses do). Turn the DNS
+app off while PIA is on, or set PIA → Settings → Network → Name Servers to **Use Existing DNS** so PIA leaves DNS to it.
 
 **Why rh-core.exe must bypass the VPN:** rh-core.exe carries the VPN's own connection to the node. When all other apps
 use the VPN, PIA routes that connection back into the VPN, which is not up yet, and the VPN cannot connect. Only
