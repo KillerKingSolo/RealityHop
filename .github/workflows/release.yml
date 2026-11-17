@@ -36,8 +36,7 @@ jobs:
           TAG: ${{ github.ref_name }}   # through the environment: a tag name must not become part of the script
         run: |
           $v = $env:TAG.TrimStart('v')
-          if ($v -notmatch '^\d+\.\d+\.\d+$') { $v = '0.0.0' }
-          "VERSION = '$v'" | Set-Content -Encoding ascii src/version.py
+          if ($v -match '^\d+\.\d+\.\d+$') { "VERSION = '$v'" | Set-Content -Encoding ascii src/version.py }   # a manual run keeps the version in the code
 
       - name: Build
         shell: pwsh
@@ -79,8 +78,7 @@ jobs:
           TAG: ${{ github.ref_name }}   # through the environment: a tag name must not become part of the script
         run: |
           v="${TAG#v}"
-          echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || v=0.0.0
-          echo "VERSION = '$v'" > src/version.py
+          if echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then echo "VERSION = '$v'" > src/version.py; fi   # a manual run keeps the version in the code
 
       - name: Build
         run: sh build-mac.sh
