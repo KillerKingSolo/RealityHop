@@ -30,7 +30,7 @@ Nó lấy các nút công khai miễn phí từ [rtwo2/FastNodes](https://github
 
 ## Cài đặt
 
-1. Tải `RealityHop.exe` từ [bản phát hành mới nhất](https://github.com/KillerKingSolo/RealityHop/releases/latest). Cần Windows 10 hoặc 11 bản 64-bit.
+1. Tải `RealityHop.exe` từ [bản phát hành mới nhất](https://github.com/KillerKingSolo/RealityHop/releases/latest). Cần Windows 10 hoặc 11 bản 64-bit. Trên Mac: `RealityHop-mac-apple-silicon.dmg` (M1 trở lên) hoặc `RealityHop-mac-intel.dmg`. Cần macOS 15 trở lên.
 2. Chạy nó và chọn ngôn ngữ.
 3. Trình hướng dẫn cài Reality Hop (một lời nhắc UAC), tải sing-box từ bản phát hành chính thức (kiểm tra SHA-256), tìm các nút đầu tiên và khởi động đường hầm. Khoảng một phút.
 

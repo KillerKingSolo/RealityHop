@@ -30,7 +30,7 @@ VPN 应用 → 你电脑上的 Reality Hop（SOCKS5 `127.0.0.1:2080`）→ 公�
 
 ## 安装
 
-1. 从[最新版本](https://github.com/KillerKingSolo/RealityHop/releases/latest)下载 `RealityHop.exe`。需要 64 位 Windows 10 或 11。
+1. 从[最新版本](https://github.com/KillerKingSolo/RealityHop/releases/latest)下载 `RealityHop.exe`。需要 64 位 Windows 10 或 11。 Mac：下载 `RealityHop-mac-apple-silicon.dmg`（M1 及更新）或 `RealityHop-mac-intel.dmg`。需要 macOS 15 或更新。
 2. 运行它并选择语言。
 3. 向导会安装 Reality Hop（一次 UAC 提示），从官方版本下载 sing-box（校验 SHA-256），找到第一批节点并启动隧道。约一分钟。
 

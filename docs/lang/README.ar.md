@@ -32,7 +32,7 @@
 
 ## التثبيت
 
-1. نزّل `RealityHop.exe` من [أحدث إصدار](https://github.com/KillerKingSolo/RealityHop/releases/latest). يتطلب Windows 10 أو 11 بنظام 64 بت.
+1. نزّل `RealityHop.exe` من [أحدث إصدار](https://github.com/KillerKingSolo/RealityHop/releases/latest). يتطلب Windows 10 أو 11 بنظام 64 بت. على Mac: `RealityHop-mac-apple-silicon.dmg` (M1 وأحدث) أو `RealityHop-mac-intel.dmg`. يتطلب macOS 15 أو أحدث.
 2. شغّله واختر لغتك.
 3. يثبّت المعالج Reality Hop (مطالبة UAC واحدة)، وينزّل sing-box من إصداراته الرسمية (يتحقق من SHA-256)، ويجد العقد الأولى ويشغّل النفق. نحو دقيقة.
 

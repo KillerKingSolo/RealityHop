@@ -30,7 +30,7 @@ VPN uygulaması → PC'nizdeki Reality Hop (SOCKS5 `127.0.0.1:2080`) → genel R
 
 ## Kurulum
 
-1. `RealityHop.exe` dosyasını [son sürümden](https://github.com/KillerKingSolo/RealityHop/releases/latest) indirin. 64 bit Windows 10 veya 11 gerekir.
+1. `RealityHop.exe` dosyasını [son sürümden](https://github.com/KillerKingSolo/RealityHop/releases/latest) indirin. 64 bit Windows 10 veya 11 gerekir. Mac'te: `RealityHop-mac-apple-silicon.dmg` (M1 ve sonrası) veya `RealityHop-mac-intel.dmg`. macOS 15 veya üstü gerekir.
 2. Çalıştırın ve dilinizi seçin.
 3. Sihirbaz Reality Hop'u kurar (bir UAC istemi), sing-box'ı resmi sürümlerinden indirir (SHA-256 doğrular), ilk düğümleri bulur ve tüneli başlatır. Yaklaşık bir dakika.
 

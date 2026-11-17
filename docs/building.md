@@ -36,9 +36,9 @@ Releases are built by GitHub Actions ([`.github/workflows/release.yml`](../.gith
    git tag v1.2.1
    git push origin v1.2.1
    ```
-4. The workflow writes the version from the tag into `src/version.py` and builds `RealityHop.exe` on Windows. It then
-   publishes a release with `RealityHop.exe`. The release notes are the CHANGELOG section for that version, plus the
-   SHA-256 checksum of the exe.
+4. The workflow writes the version from the tag into `src/version.py` and builds `RealityHop.exe` on Windows and the two
+   Mac disk images on macOS. It then publishes a release with `RealityHop.exe`, `RealityHop-mac-apple-silicon.dmg` and
+   `RealityHop-mac-intel.dmg`. The release notes are the CHANGELOG section for that version, plus the SHA-256 checksums.
 
 Installed copies find the new release within a day (the watcher checks daily, and the window checks when it opens).
 They download `RealityHop.exe` and check it against the release's SHA-256, then run it with `--unpack-to`. It puts the

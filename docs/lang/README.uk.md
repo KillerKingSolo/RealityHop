@@ -30,7 +30,7 @@ VPN-застосунок → Reality Hop на вашому ПК (SOCKS5 `127.0.0
 
 ## Встановлення
 
-1. Завантажте `RealityHop.exe` з [останнього релізу](https://github.com/KillerKingSolo/RealityHop/releases/latest). Потрібна 64-бітна Windows 10 або 11.
+1. Завантажте `RealityHop.exe` з [останнього релізу](https://github.com/KillerKingSolo/RealityHop/releases/latest). Потрібна 64-бітна Windows 10 або 11. На Mac: `RealityHop-mac-apple-silicon.dmg` (M1 і новіші) або `RealityHop-mac-intel.dmg`. Потрібна macOS 15 або новіша.
 2. Запустіть його й виберіть мову.
 3. Майстер встановлює Reality Hop (один запит UAC), завантажує sing-box з офіційних релізів (перевіряє SHA-256), знаходить перші вузли й запускає тунель. Близько хвилини.
 

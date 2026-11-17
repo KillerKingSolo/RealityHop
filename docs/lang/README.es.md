@@ -30,7 +30,7 @@ App VPN → Reality Hop en tu PC (SOCKS5 `127.0.0.1:2080`) → nodo REALITY púb
 
 ## Instalar
 
-1. Descarga `RealityHop.exe` de la [última versión](https://github.com/KillerKingSolo/RealityHop/releases/latest). Requiere Windows 10 u 11 de 64 bits.
+1. Descarga `RealityHop.exe` de la [última versión](https://github.com/KillerKingSolo/RealityHop/releases/latest). Requiere Windows 10 u 11 de 64 bits. En Mac: `RealityHop-mac-apple-silicon.dmg` (M1 o posterior) o `RealityHop-mac-intel.dmg`. Requiere macOS 15 o posterior.
 2. Ejecútalo y elige tu idioma.
 3. El asistente instala Reality Hop (un aviso de UAC), descarga sing-box de sus versiones oficiales (comprueba el SHA-256), encuentra los primeros nodos e inicia el túnel. Alrededor de un minuto.
 

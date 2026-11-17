@@ -4,6 +4,13 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 1.7.1 (2026-11-17)
+
+**Why update:** the install steps in every language now cover the Mac.
+
+- Fixed: the translated READMEs named only the Windows download. Each now lists the Apple silicon and Intel `.dmg` files and macOS 15 or newer.
+- Fixed: the build guide now says each release has the exe and both Mac disk images, with a SHA-256 for each.
+
 ## 1.7.0 (2026-11-17)
 
 **Why update:** Reality Hop now runs on Macs, Apple silicon and Intel, with PIA's kill switch on.
