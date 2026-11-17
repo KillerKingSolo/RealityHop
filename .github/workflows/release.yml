@@ -126,6 +126,11 @@ jobs:
           - runner: macos-26           # the Intel app on Apple silicon, through Rosetta
             chip: intel
             rosetta: true
+          - runner: xcode-27           # macOS 27 (GitHub preview image), Apple silicon only
+            chip: apple-silicon
+          - runner: xcode-27           # macOS 27, the Intel app through Rosetta
+            chip: intel
+            rosetta: true
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
