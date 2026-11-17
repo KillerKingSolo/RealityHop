@@ -2,6 +2,11 @@
 
 [English](../../README.md) · [Español](README.es.md) · [简体中文](README.zh.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · **فارسی** · [العربية](README.ar.md) · [Türkçe](README.tr.md) · [Tiếng Việt](README.vi.md)
 
+<p align="center">
+  <a href="https://github.com/KillerKingSolo/RealityHop/releases/latest"><img alt="Windows 10 and 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0067C0?style=flat-square&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0wIDBoNy41djcuNUgwek04LjUgMEgxNnY3LjVIOC41ek0wIDguNWg3LjVWMTZIMHpNOC41IDguNUgxNlYxNkg4LjV6Ii8+PC9zdmc+"></a>
+  <a href="#نصب"><img alt="macOS 15 Sequoia, 26 Tahoe and 27 Golden Gate" src="https://img.shields.io/badge/macOS-15%20Sequoia%20%7C%2026%20Tahoe%20%7C%2027%20Golden%20Gate-8E8E93?style=flat-square&logo=apple&logoColor=white"></a>
+</p>
+
 <div dir="rtl">
 
 > این متن ترجمه ماشینی README انگلیسی است. اگر چیزی روشن نیست، نسخه انگلیسی مرجع است. اصلاحات را در یک issue گیت‌هاب بفرستید.

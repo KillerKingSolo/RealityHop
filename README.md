@@ -8,6 +8,11 @@
 </p>
 
 <p align="center">
+  <a href="../../releases/latest"><img alt="Windows 10 and 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0067C0?style=flat-square&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0wIDBoNy41djcuNUgwek04LjUgMEgxNnY3LjVIOC41ek0wIDguNWg3LjVWMTZIMHpNOC41IDguNUgxNlYxNkg4LjV6Ii8+PC9zdmc+"></a>
+  <a href="#install"><img alt="macOS 15 Sequoia, 26 Tahoe and 27 Golden Gate" src="https://img.shields.io/badge/macOS-15%20Sequoia%20%7C%2026%20Tahoe%20%7C%2027%20Golden%20Gate-8E8E93?style=flat-square&logo=apple&logoColor=white"></a>
+</p>
+
+<p align="center">
   <b>English</b> · <a href="docs/lang/README.es.md">Español</a> · <a href="docs/lang/README.zh.md">简体中文</a> ·
   <a href="docs/lang/README.ru.md">Русский</a> · <a href="docs/lang/README.uk.md">Українська</a> ·
   <a href="docs/lang/README.fa.md">فارسی</a> · <a href="docs/lang/README.ar.md">العربية</a> ·

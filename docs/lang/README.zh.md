@@ -2,6 +2,11 @@
 
 [English](../../README.md) · [Español](README.es.md) · **简体中文** · [Русский](README.ru.md) · [Українська](README.uk.md) · [فارسی](README.fa.md) · [العربية](README.ar.md) · [Türkçe](README.tr.md) · [Tiếng Việt](README.vi.md)
 
+<p align="center">
+  <a href="https://github.com/KillerKingSolo/RealityHop/releases/latest"><img alt="Windows 10 and 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0067C0?style=flat-square&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0wIDBoNy41djcuNUgwek04LjUgMEgxNnY3LjVIOC41ek0wIDguNWg3LjVWMTZIMHpNOC41IDguNUgxNlYxNkg4LjV6Ii8+PC9zdmc+"></a>
+  <a href="#安装"><img alt="macOS 15 Sequoia, 26 Tahoe and 27 Golden Gate" src="https://img.shields.io/badge/macOS-15%20Sequoia%20%7C%2026%20Tahoe%20%7C%2027%20Golden%20Gate-8E8E93?style=flat-square&logo=apple&logoColor=white"></a>
+</p>
+
 > 本文由英文 README 机器翻译而来。如有不清楚之处，以英文版为准。欢迎在 GitHub issue 中提出更正。
 
 **让你的 VPN 穿过封锁 VPN 的网络。** Reality Hop 把你的 VPN 连接包裹在 VLESS + REALITY 隧道（[sing-box](https://github.com/SagerNet/sing-box)）中。在网络看来，它就像访问 cloudflare.com 等大网站的普通 HTTPS。适用于：
