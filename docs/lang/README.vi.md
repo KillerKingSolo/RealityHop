@@ -1,10 +1,20 @@
 # Reality Hop (Tiếng Việt)
 
-[English](../../README.md) · [Español](README.es.md) · [简体中文](README.zh.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [فارسی](README.fa.md) · [العربية](README.ar.md) · [Türkçe](README.tr.md) · **Tiếng Việt**
-
 <p align="center">
+  <a href="https://github.com/KillerKingSolo/RealityHop/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/KillerKingSolo/RealityHop?style=flat-square&label=Stars&color=F5C518&logo=github"></a>
+  <a href="https://github.com/KillerKingSolo/RealityHop/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/KillerKingSolo/RealityHop/total?style=flat-square&label=Downloads&color=brightgreen"></a>
+  <a href="https://github.com/KillerKingSolo/RealityHop/releases/latest"><img alt="Version" src="https://img.shields.io/github/v/release/KillerKingSolo/RealityHop?style=flat-square&label=Version&color=blue"></a>
+  <a href="../../LICENSE"><img alt="License" src="https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-orange?style=flat-square"></a>
+  <br>
   <a href="https://github.com/KillerKingSolo/RealityHop/releases/latest"><img alt="Windows 10 and 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0067C0?style=flat-square&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0wIDBoNy41djcuNUgwek04LjUgMEgxNnY3LjVIOC41ek0wIDguNWg3LjVWMTZIMHpNOC41IDguNUgxNlYxNkg4LjV6Ii8+PC9zdmc+"></a>
   <a href="#cài-đặt"><img alt="macOS 15 Sequoia, 26 Tahoe and 27 Golden Gate" src="https://img.shields.io/badge/macOS-15%20Sequoia%20%7C%2026%20Tahoe%20%7C%2027%20Golden%20Gate-8E8E93?style=flat-square&logo=apple&logoColor=white"></a>
+</p>
+
+<p align="center">
+  <a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.zh.md">简体中文</a> ·
+  <a href="README.ru.md">Русский</a> · <a href="README.uk.md">Українська</a> ·
+  <a href="README.fa.md">فارسی</a> · <a href="README.ar.md">العربية</a> ·
+  <a href="README.tr.md">Türkçe</a> · <b>Tiếng Việt</b>
 </p>
 
 > Đây là bản dịch máy của README tiếng Anh. Nếu có gì chưa rõ, bản tiếng Anh là bản chuẩn. Mọi góp ý sửa lỗi xin gửi qua issue trên GitHub.
