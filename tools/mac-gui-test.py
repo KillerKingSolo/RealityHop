@@ -31,12 +31,6 @@ def guarded(what, fn, *a):
         check(what, False, f'{type(e).__name__}: {e}'); traceback.print_exc(); return None
 
 
-def pump(root, secs, until=None):
-    end = time.time() + secs
-    while time.time() < end and not (until and until()):
-        root.update(); time.sleep(0.05)
-
-
 def shot(name):
     subprocess.run(['/usr/sbin/screencapture', '-x', os.path.join(shots, f'gui-{name}.png')])
 
@@ -59,45 +53,75 @@ answers = []
 R.messagebox.askyesno = lambda *a, **k: answers.pop(0) if answers else True
 R.messagebox.showinfo = R.messagebox.showerror = R.messagebox.showwarning = lambda *a, **k: None
 
-# the setup wizard, every page, as the built app shows them
-N.FROZEN = install.N.FROZEN = True
-w = R.Wizard(); pump(w, 2)
-w.use_router = True   # the router pages too (no router here: their actions log "unreachable", which is fine)
-for page in w.seq():
-    guarded(f'wizard page: {page}', w.show, page); pump(w, 3, lambda: not w.busy); shot(f'wizard-{page}')
-guarded('install (frozen path): nothing to install on a Mac', lambda: install.install() == 'nothing to install' or 1 / 0)
-w.use_router = False; N.settings_save({'router': 0})
-guarded('wizard: Install', w.do_install, False, True, False, None); pump(w, 2); shot('wizard-installed')
-check('wizard: Install finished', 'install' in w.ok, w.note_lbl.cget('text') if w.note_lbl else '')
-N.FROZEN = install.N.FROZEN = False   # from here the watcher and login items start this source copy
-guarded('wizard: Finish', w.finish, True, True, True, True); pump(w, 2)
-check('setup done', N.is_setup() and N.startup_on() and N.boot_task_exists())
-w.lock.close(); w.destroy()   # the window's "open" lock, as when the wizard exits
+def drive(root, steps):
+    """Run the steps inside Tk's own main loop, as in the app: worker threads hand their results to it. Each step
+    yields how many seconds to let the window run before the next one."""
+    it = steps()
 
-# the main window
-app = guarded('main window opens', R.App)
-if app:
-    pump(app, 5); pump(app, 90, lambda: not app.busy); shot('main')
-    check('main window: first check ran', not app.busy)
-    s = guarded('Settings opens', R.SettingsDialog, app); pump(app, 2); shot('settings')
+    def nxt():
+        try:
+            wait = next(it)
+        except StopIteration:
+            root.quit(); return
+        except Exception as e:
+            check('test step', False, f'{type(e).__name__}: {e}'); traceback.print_exc(); root.quit(); return
+        root.after(int(wait * 1000), nxt)
+    root.after(0, nxt); root.mainloop()
+
+
+def until(cond, secs):
+    end = time.time() + secs
+    while time.time() < end and not cond():
+        yield 0.5
+
+
+def wizard_steps():   # the setup wizard, every page, as the built app shows them
+    N.FROZEN = install.N.FROZEN = True
+    yield 2
+    w.use_router = True   # the router pages too (no router here: their actions log "unreachable", which is fine)
+    for page in w.seq():
+        guarded(f'wizard page: {page}', w.show, page); yield 1; yield from until(lambda: not w.busy, 20); shot(f'wizard-{page}')
+    guarded('install (frozen path): nothing to install on a Mac', lambda: install.install() == 'nothing to install' or 1 / 0)
+    w.use_router = False; N.settings_save({'router': 0})
+    w.show('install'); yield 1
+    guarded('wizard: Install', w.work, w.do_install, False, True, False, None)   # as the Install button does
+    yield 1; yield from until(lambda: not w.busy, 300); shot('wizard-installed')
+    check('wizard: Install finished', 'install' in w.ok, w.note_lbl.cget('text') if w.note_lbl else '')
+    N.FROZEN = install.N.FROZEN = False   # from here the watcher and login items start this source copy
+    w.show('finish'); yield 1
+    guarded('wizard: Finish', w.work, w.finish, True, True, True, True); yield 1; yield from until(lambda: not w.busy, 120)
+    check('setup done', N.is_setup() and N.startup_on() and N.boot_task_exists())
+
+
+def app_steps():   # the main window
+    yield 5; yield from until(lambda: not app.busy, 120); shot('main')
+    check('main window: first check ran', not app.busy and app.status_state != 'unk', f'{app.status_state}: {app.status_text}')
+    s = guarded('Settings opens', R.SettingsDialog, app); yield 2; shot('settings')
     if s:
         N.FROZEN = install.N.FROZEN = True
         guarded('Settings: check for updates (frozen path)', install.check_update)
         N.FROZEN = install.N.FROZEN = False
-        guarded('Settings: save', s.save); pump(app, 2)
-    guarded('Stop', app.do_power, True); pump(app, 3); shot('stopped')
+        guarded('Settings: save', s.save); yield 2
+    guarded('Stop', app.work, app.do_power, True); yield 1; yield from until(lambda: not app.busy, 60); shot('stopped')
     check('Stop: tunnel and login start off', not N.core_running() and N.task_state() == 'Disabled')
-    guarded('Start', app.do_power, False); pump(app, 5)
+    guarded('Start', app.work, app.do_power, False); yield 1; yield from until(lambda: not app.busy, 60)
     check('Start: tunnel and login start on', N.core_running() and N.task_state() == 'Ready')
-    guarded('Report a problem', R.ReportDialog, app); pump(app, 3); shot('report')
+    guarded('Report a problem', R.ReportDialog, app); yield 3; shot('report')
     check('report written', bool(os.listdir(N.REPORTS)) if os.path.isdir(N.REPORTS) else False)
-    s = R.SettingsDialog(app); pump(app, 1)
+    s = R.SettingsDialog(app); yield 1
     answers[:] = [True, False]   # remove: yes; keep settings: no
     real_exit = os._exit
     os._exit = lambda code=0: (_ for _ in ()).throw(SystemExit(code))
     guarded('Uninstall from Settings', s.uninstall)
     os._exit = real_exit
     check('Uninstall: login items gone', not N.startup_on() and not N.boot_task_exists())
+
+
+w = R.Wizard(); drive(w, wizard_steps)
+w.lock.close(); w.destroy()   # the window's "open" lock, as when the wizard exits
+app = guarded('main window opens', R.App)
+if app:
+    drive(app, app_steps)
 
 logs = ''
 for f in ('window.log', 'watch.log'):
