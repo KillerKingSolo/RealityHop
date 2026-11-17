@@ -234,8 +234,9 @@ def cleanup(app):
         return
     d = os.path.dirname(app)
     for p in glob.glob(os.path.join(d, '.RealityHop.old-*.app')) + glob.glob(os.path.join(d, 'RealityHop.app.new')):
-        try:
-            if time.time() - os.path.getmtime(p) > 600:
+        try:   # an old copy's age counts from the swap, in its name: a rename keeps the folder's build-time mtime
+            m = re.search(r'\.RealityHop\.old-(\d+)\.app$', p)
+            if time.time() - (int(m.group(1)) if m else os.path.getmtime(p)) > 600:
                 shutil.rmtree(p, ignore_errors=True)
         except OSError:
             pass

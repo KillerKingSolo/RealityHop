@@ -107,8 +107,10 @@ check('update: old copy kept hidden until it has exited', len(olds) == 1, str(ol
 check('update: no leftovers', not os.path.exists(app + '.new') and not os.path.exists(os.path.join(data, 'update.dmg')))
 check('update: signature', sh('/usr/bin/codesign', '--verify', '--deep', '--strict', app).returncode == 0)
 check('update: new copy starts', launch(exe, home('after-update', 'en'), 'after-update'))
-os.utime(os.path.join(apps, olds[0]), (time.time() - 3600, time.time() - 3600))
-macos.cleanup(app)
+old = os.path.join(apps, olds[0])
+check('update: the new copy leaves the old one for 10 minutes', os.path.exists(old))   # it may still be exiting
+aged = os.path.join(apps, f'.RealityHop.old-{int(time.time()) - 3600}.app')   # the swap time is in the name
+os.rename(old, aged); macos.cleanup(app)
 check('update: old copy removed later', not [f for f in os.listdir(apps) if f.startswith('.RealityHop.')])
 bad = dict(rel, asset=dict(rel['asset'], digest='sha256:' + '0' * 64)); before = os.stat(exe).st_ino
 try:
