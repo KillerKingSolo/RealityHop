@@ -1592,8 +1592,8 @@ def core_restart():
     if router_only():
         say('router-only mode: no tunnel on this PC'); return True
     t0 = time.time(); dbg('restart requested; stopped:', stopped(), 'running:', core_running())
-    if MAC:
-        pia_bypass()   # before PIA reconnects: its kill switch lets only listed addresses through
+    if MAC:   # make before break: the new nodes join PIA's list next to the old ones, which carry the VPN until the restart
+        pia_bypass(this_pc().get('pia_ips', []))
     owner = port_blocker()
     if owner:
         say('PC tunnel: ' + blocker_hint(owner)); hist_add(event=('error', f'{owner} holds port 2080'))
@@ -1603,12 +1603,16 @@ def core_restart():
     how = core_start()
     if core_up():
         dbg(f'restart: up in {time.time() - t0:.1f} s ({how})', rh_procs())
+        if MAC:
+            pia_bypass()   # the new nodes carry the VPN now: the old addresses come off PIA's list
         say(f'PC tunnel restarted ({how})'); return True
     dbg(f'restart: NOT up after {time.time() - t0:.1f} s ({how})', rh_procs())
     if how == 'task':
         say('the boot task did not bring rh-core up; starting it directly instead')
         core_stop(); core_direct()
         if core_up():
+            if MAC:
+                pia_bypass()
             say('PC tunnel restarted (direct)'); return True
     chk = run([CORE, 'check', '-c', PC_CFG], timeout=30, cwd=os.path.dirname(CORE))
     say('PC tunnel did not come back after the restart'
