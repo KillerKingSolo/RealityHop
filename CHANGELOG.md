@@ -1,7 +1,8 @@
 # Changelog
 
 Each release explains what changed and why it matters to you. Installed copies update themselves (Settings → Install
-Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac from the release.
+Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
+from the release.
 
 ## 1.7.0 (2026-11-17)
 
