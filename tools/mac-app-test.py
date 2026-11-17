@@ -61,6 +61,8 @@ check('dmg mounts under /Volumes', vol.startswith('/Volumes/'), vol)
 check('dmg holds RealityHop.app', os.path.isfile(macos.app_exe(os.path.join(vol, 'RealityHop.app'))))
 check('dmg holds the Applications link', os.path.islink(os.path.join(vol, 'Applications')) and
       os.readlink(os.path.join(vol, 'Applications')) == '/Applications')
+check('disk icon', os.path.getsize(os.path.join(vol, '.VolumeIcon.icns')) > 1000 and
+      sh('/usr/bin/xattr', '-px', 'com.apple.FinderInfo', vol).stdout.split()[8:9] == ['04'])
 src = os.path.join(vol, 'RealityHop.app'); exe = macos.app_exe(src)
 check('chip', sh('/usr/bin/lipo', '-archs', exe).stdout.split() == [ARCH], sh('/usr/bin/lipo', '-archs', exe).stdout.strip())
 check('signature', sh('/usr/bin/codesign', '--verify', '--deep', '--strict', src).returncode == 0)

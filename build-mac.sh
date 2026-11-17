@@ -31,6 +31,14 @@ codesign --verify --deep --strict "$app"
 stage="$out/dmg"; mkdir -p "$stage"
 ditto "$app" "$stage/RealityHop.app"
 ln -s /Applications "$stage/Applications"
-dmg="dist/RealityHop-mac-$chip.dmg"; rm -f "$dmg"
-hdiutil create -volname "Reality Hop" -srcfolder "$stage" -fs HFS+ -format UDZO -ov "$dmg"
+dmg="dist/RealityHop-mac-$chip.dmg"; rm -f "$dmg" "$out/rw.dmg"
+# the disk's own icon (window title, Finder sidebar, desktop): the app icon as .VolumeIcon.icns, plus the volume's
+# "has custom icon" Finder flag, set on a writable image that is then compressed
+icon=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$plist")
+cp "$app/Contents/Resources/${icon%.icns}.icns" "$stage/.VolumeIcon.icns"
+hdiutil create -volname "Reality Hop" -srcfolder "$stage" -fs HFS+ -format UDRW -ov "$out/rw.dmg"
+mnt=$(mktemp -d); hdiutil attach -nobrowse -noautoopen -mountpoint "$mnt" "$out/rw.dmg"
+xattr -wx com.apple.FinderInfo 0000000000000000040000000000000000000000000000000000000000000000 "$mnt"
+hdiutil detach "$mnt"; rmdir "$mnt"
+hdiutil convert "$out/rw.dmg" -format UDZO -o "$dmg"
 echo "$dmg  SHA-256 $(shasum -a 256 "$dmg" | cut -d' ' -f1)"
