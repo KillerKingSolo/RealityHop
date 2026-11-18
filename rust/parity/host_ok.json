@@ -1,0 +1,84 @@
+{
+ "fn": "host_ok",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "192.168.8.1"
+   ],
+   "out": true
+  },
+  {
+   "args": [
+    "router.lan"
+   ],
+   "out": true
+  },
+  {
+   "args": [
+    "gl-mt6000"
+   ],
+   "out": true
+  },
+  {
+   "args": [
+    "-bad"
+   ],
+   "out": false
+  },
+  {
+   "args": [
+    ".bad"
+   ],
+   "out": false
+  },
+  {
+   "args": [
+    ""
+   ],
+   "out": false
+  },
+  {
+   "args": [
+    null
+   ],
+   "out": false
+  },
+  {
+   "args": [
+    "a b"
+   ],
+   "out": false
+  },
+  {
+   "args": [
+    "a;rm"
+   ],
+   "out": false
+  },
+  {
+   "args": [
+    "a_b"
+   ],
+   "out": false
+  },
+  {
+   "args": [
+    "ä.com"
+   ],
+   "out": false
+  },
+  {
+   "args": [
+    "1.2.3.4\n"
+   ],
+   "out": false
+  },
+  {
+   "args": [
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+   ],
+   "out": true
+  }
+ ]
+}

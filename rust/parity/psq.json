@@ -1,0 +1,54 @@
+{
+ "fn": "psq",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "plain"
+   ],
+   "out": "'plain'"
+  },
+  {
+   "args": [
+    "O'Brien"
+   ],
+   "out": "'O''Brien'"
+  },
+  {
+   "args": [
+    "‘x’"
+   ],
+   "out": "'‘‘x’’'"
+  },
+  {
+   "args": [
+    "a‚b‛c"
+   ],
+   "out": "'a‚‚b‛‛c'"
+  },
+  {
+   "args": [
+    ""
+   ],
+   "out": "''"
+  },
+  {
+   "args": [
+    "$(evil)"
+   ],
+   "out": "'$(evil)'"
+  },
+  {
+   "args": [
+    "''"
+   ],
+   "out": "''''''"
+  },
+  {
+   "args": [
+    "C:\\Program Files\\Reality Hop"
+   ],
+   "out": "'C:\\Program Files\\Reality Hop'"
+  }
+ ]
+}

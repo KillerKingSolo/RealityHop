@@ -25,3 +25,6 @@ tray-window.json
 
 # router-core build output
 router-core/out/
+
+# Rust build output
+rust/target/

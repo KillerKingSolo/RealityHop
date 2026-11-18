@@ -1,0 +1,49 @@
+{
+ "fn": "set_mark",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    [
+     {
+      "server": "1.2.3.4"
+     },
+     {
+      "server": "5.6.7.8"
+     }
+    ]
+   ],
+   "out": "set-3662df85c3"
+  },
+  {
+   "args": [
+    [
+     {
+      "server": "5.6.7.8"
+     },
+     {
+      "server": "1.2.3.4"
+     }
+    ]
+   ],
+   "out": "set-75af3b4a2a"
+  },
+  {
+   "args": [
+    []
+   ],
+   "out": "set-d41d8cd98f"
+  },
+  {
+   "args": [
+    [
+     {
+      "server": "9.9.9.9",
+      "uuid": "x"
+     }
+    ]
+   ],
+   "out": "set-f0ec62cd46"
+  }
+ ]
+}

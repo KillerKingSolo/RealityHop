@@ -1,0 +1,86 @@
+{
+ "fn": "parse_delay",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "{\"delay\": 123}"
+   ],
+   "out": [
+    123,
+    ""
+   ]
+  },
+  {
+   "args": [
+    "{\"delay\": 0}"
+   ],
+   "out": [
+    0,
+    ""
+   ]
+  },
+  {
+   "args": [
+    "{\"delay\": 12.5}"
+   ],
+   "out": [
+    12.5,
+    ""
+   ]
+  },
+  {
+   "args": [
+    "{\"message\": \"timeout\"}"
+   ],
+   "out": [
+    null,
+    "timeout"
+   ]
+  },
+  {
+   "args": [
+    "{}"
+   ],
+   "out": [
+    null,
+    "failed"
+   ]
+  },
+  {
+   "args": [
+    "garbage"
+   ],
+   "out": [
+    null,
+    "no response"
+   ]
+  },
+  {
+   "args": [
+    ""
+   ],
+   "out": [
+    null,
+    "no response"
+   ]
+  },
+  {
+   "args": [
+    "[1]"
+   ],
+   "out": {
+    "error": "AttributeError"
+   }
+  },
+  {
+   "args": [
+    "{\"delay\": null}"
+   ],
+   "out": [
+    null,
+    ""
+   ]
+  }
+ ]
+}

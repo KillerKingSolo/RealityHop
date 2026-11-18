@@ -1,0 +1,54 @@
+{
+ "fn": "mirrors",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt"
+   ],
+   "out": [
+    "https://cdn.jsdelivr.net/gh/rtwo2/FastNodes@main/sub/verified_tls.txt",
+    "https://fastly.jsdelivr.net/gh/rtwo2/FastNodes@main/sub/verified_tls.txt"
+   ]
+  },
+  {
+   "args": [
+    "https://raw.githubusercontent.com/a/b/c/d/e/f.txt"
+   ],
+   "out": [
+    "https://cdn.jsdelivr.net/gh/a/b@main/d/e/f.txt",
+    "https://fastly.jsdelivr.net/gh/a/b@main/d/e/f.txt"
+   ]
+  },
+  {
+   "args": [
+    "https://raw.githubusercontent.com/a/b"
+   ],
+   "out": [
+    "https://cdn.jsdelivr.net/gh/a/b@main/",
+    "https://fastly.jsdelivr.net/gh/a/b@main/"
+   ]
+  },
+  {
+   "args": [
+    "https://example.com/a/b/c/d.txt"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "https://RAW.githubusercontent.com/a/b/main/x.txt"
+   ],
+   "out": [
+    "https://cdn.jsdelivr.net/gh/a/b@main/x.txt",
+    "https://fastly.jsdelivr.net/gh/a/b@main/x.txt"
+   ]
+  },
+  {
+   "args": [
+    ""
+   ],
+   "out": []
+  }
+ ]
+}
