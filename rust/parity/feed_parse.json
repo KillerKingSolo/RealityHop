@@ -1,0 +1,600 @@
+{
+ "fn": "feed_parse",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n\nvless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@1.1.1.1:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n\r\nvless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@9.9.9.9:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n\rvless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.4.4:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": [
+    {
+     "server": "1.1.1.1",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    },
+    {
+     "server": "9.9.9.9",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    },
+    {
+     "server": "8.8.4.4",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@1.1.1.1:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n\u000bvless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@9.9.9.9:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n\u001cvless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.4.4:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@4.4.4.4:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#nvless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@4.2.2.2:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": [
+    {
+     "server": "1.1.1.1",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    },
+    {
+     "server": "9.9.9.9",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    },
+    {
+     "server": "8.8.4.4",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    },
+    {
+     "server": "4.4.4.4",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    },
+    {
+     "server": "4.2.2.2",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:8443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:99999?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:0443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:44 3?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:٤٤٣?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@10.0.0.1:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@224.0.0.1:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": [
+    {
+     "server": "224.0.0.1",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@100.64.0.1:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@01.1.1.1:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@1.1.\t1.1:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": [
+    {
+     "server": "1.1.1.1",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@[::1]:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@[1.1.1.1:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@١.1.1.1:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://A1B2C3D4-E5F6-7890-ABCD-EF1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "A1B2C3D4-E5F6-7890-ABCD-EF1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890:pw@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4%2De5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://é1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "",
+     "sni": "www.apple.com",
+     "fp": "chrome"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com&sid=#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "",
+     "sni": "www.apple.com",
+     "fp": "chrome"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com&sid=abc#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com&sid=0a0a0a0a0a0a0a0a#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a0a0a0a0a0a0a0a",
+     "sni": "www.apple.com",
+     "fp": "chrome"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com&sid=0a0a0a0a0a0a0a0a0a#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com&fp=unknown#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "",
+     "sni": "www.apple.com",
+     "fp": "chrome"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com&fp=qq#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "",
+     "sni": "www.apple.com",
+     "fp": "qq"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com&fp=#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "",
+     "sni": "www.apple.com",
+     "fp": "chrome"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=WWW.APPLE.COM#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=example.com#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_&sni=www.apple.com#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_+&sni=www.apple.com#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=%41bAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "",
+     "sni": "www.apple.com",
+     "fp": "chrome"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=REALITY&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=none&security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com&security=none#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "",
+     "sni": "www.apple.com",
+     "fp": "chrome"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?junk&&=x&security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "",
+     "sni": "www.apple.com",
+     "fp": "chrome"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=%77ww.apple.com&x=www.apple.com#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "",
+     "sni": "www.apple.com",
+     "fp": "chrome"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com&pbk=zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "",
+     "sni": "www.apple.com",
+     "fp": "chrome"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#reality?vision"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ]
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=x&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com#reality"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n　"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ]
+  },
+  {
+   "args": [
+    "  vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n \t"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ]
+  },
+  {
+   "args": [
+    "VLESS://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-Vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=Reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n"
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "vless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sid=0a1b&sni=www.apple.com&fp=firefox&type=tcp#n\nvless://a1b2c3d4-e5f6-7890-abcd-ef1234567890@8.8.8.8:443?security=reality&flow=xtls-rprx-vision&pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-&sni=www.apple.com&sid=ff#n"
+   ],
+   "out": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ]
+  },
+  {
+   "args": [
+    ""
+   ],
+   "out": []
+  },
+  {
+   "args": [
+    "garbage\nmore"
+   ],
+   "out": []
+  }
+ ]
+}

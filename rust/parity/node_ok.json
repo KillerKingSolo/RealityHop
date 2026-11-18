@@ -1,0 +1,123 @@
+{
+ "fn": "node_ok",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ],
+   "out": true
+  },
+  {
+   "args": [
+    {
+     "server": "10.0.0.1",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ],
+   "out": false
+  },
+  {
+   "args": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "x",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ],
+   "out": false
+  },
+  {
+   "args": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ],
+   "out": false
+  },
+  {
+   "args": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "abc",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ],
+   "out": false
+  },
+  {
+   "args": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "bad host",
+     "fp": "firefox"
+    }
+   ],
+   "out": false
+  },
+  {
+   "args": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "example.com",
+     "fp": "firefox"
+    }
+   ],
+   "out": true
+  },
+  {
+   "args": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "opera"
+    }
+   ],
+   "out": false
+  },
+  {
+   "args": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    }
+   ],
+   "out": true
+  }
+ ]
+}

@@ -1,0 +1,70 @@
+{
+ "fn": "known_where",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "VERIFIED REALITY NODES  -  tested 2026-11-18 by Reality Hop (REALITY handshake + HTTPS fetch)\n\ntunnel ms = full HTTPS fetch through the node. TCP-open alone proves nothing:\na rejected key is silently forwarded to the front site and looks like a healthy host.\n\nIN USE  (both configs, urltest group \"auto\")\n  vless-1  1.1.1.1          www.apple.com           80ms  Łódź, PL                    Cloudflare\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=(empty)\n  vless-2  8.8.8.8          www.apple.com          120ms  Mountain View, US           Google\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n\nSPARES  (passed, not in use; the window or  python engine.py --apply N  rotates them in)\n           123.123.123.123  www.microsoft.com    12345ms  ?                           ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n           4.4.4.4          www.apple.com              ?  A place name that is far too long  ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n\nFAILED  (do not retest until the feed changes their key)\n  9.9.9.9          cdnjs.com            timeout\n  5.5.5.5          www.apple.com        reality verification failed\n\nWORKFLOW: Reality Hop window     python engine.py --check (health)     python engine.py (find + rank + apply)\n",
+    false
+   ],
+   "out": {
+    "1.1.1.1": "Łódź, PL",
+    "8.8.8.8": "Mountain View, US",
+    "4.4.4.4": "A place name that is far too long"
+   }
+  },
+  {
+   "args": [
+    "VERIFIED REALITY NODES  -  tested 2026-11-18 by Reality Hop (REALITY handshake + HTTPS fetch)\n\ntunnel ms = full HTTPS fetch through the node. TCP-open alone proves nothing:\na rejected key is silently forwarded to the front site and looks like a healthy host.\n\nIN USE  (both configs, urltest group \"auto\")\n  vless-1  1.1.1.1          www.apple.com           80ms  Łódź, PL                    Cloudflare\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=(empty)\n  vless-2  8.8.8.8          www.apple.com          120ms  Mountain View, US           Google\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n\nSPARES  (passed, not in use; the window or  python engine.py --apply N  rotates them in)\n           123.123.123.123  www.microsoft.com    12345ms  ?                           ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n           4.4.4.4          www.apple.com              ?  A place name that is far too long  ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n\nFAILED  (do not retest until the feed changes their key)\n  9.9.9.9          cdnjs.com            timeout\n  5.5.5.5          www.apple.com        reality verification failed\n\nWORKFLOW: Reality Hop window     python engine.py --check (health)     python engine.py (find + rank + apply)\n",
+    true
+   ],
+   "out": {
+    "1.1.1.1": {
+     "where": "Łódź, PL",
+     "isp": "Cloudflare"
+    },
+    "8.8.8.8": {
+     "where": "Mountain View, US",
+     "isp": "Google"
+    },
+    "4.4.4.4": {
+     "where": "A place name that is far too long",
+     "isp": "?"
+    }
+   }
+  },
+  {
+   "args": [
+    "",
+    true
+   ],
+   "out": {}
+  },
+  {
+   "args": [
+    "  vless-1  1.2.3.4  www.apple.com  ?  Somewhere   ISP X\n  5.6.7.8 x 12ms  ?\n 9.9.9.9 a 5ms Here  There\n",
+    true
+   ],
+   "out": {
+    "1.2.3.4": {
+     "where": "Somewhere",
+     "isp": "ISP X"
+    },
+    "9.9.9.9": {
+     "where": "Here",
+     "isp": "There"
+    }
+   }
+  },
+  {
+   "args": [
+    "\tvless-12 2.2.2.2 s 1ms  City,  Land    Isp  Co\n  300.1.1.1 s ?   Big\n",
+    false
+   ],
+   "out": {
+    "2.2.2.2": "City,",
+    "300.1.1.1": "Big"
+   }
+  }
+ ]
+}

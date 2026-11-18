@@ -1,0 +1,1376 @@
+{
+ "fn": "settings_load",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    {},
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "top": 40
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"top\": 50\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "top": 40.0
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"top\": 50\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "top": "40"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 40,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"top\": \"40\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "top": 5
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 10,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"top\": 5\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "top": 500
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 120,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"top\": 500\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "check_min": 0
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 15,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"check_min\": 0\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "check_min": "30"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 30,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"check_min\": \"30\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "check_min": " 30 "
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 30,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"check_min\": \" 30 \"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "check_min": "1_000"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 1000,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"check_min\": \"1_000\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "check_min": "30.5"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"check_min\": \"30.5\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "check_min": 29.9
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 29,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"check_min\": 29.9\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "check_min": null
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"check_min\": null\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "check_min": true
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 15,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"check_min\": true\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "check_min": [
+      1
+     ]
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"check_min\": [\n  1\n ]\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "slow_ms": -5
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 50,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"slow_ms\": -5\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "tolerance_ms": "+7"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 7,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"tolerance_ms\": \"+7\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "min_mbps": 2000
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 1000,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"min_mbps\": 2000\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router": "yes"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router\": \"yes\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router": "1"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 1,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router\": \"1\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router": 1.7
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 1,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router\": 1.7\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router_host": "bad host"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router_host\": \"bad host\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router_host": "10.0.0.1"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "10.0.0.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router_host\": \"10.0.0.1\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router_host": null
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "None",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router_host\": null\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router_key": null
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "None",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router_key\": null\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router_key": 5
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "5",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router_key\": 5\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router_key": true
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "True",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router_key\": true\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router_key": 1.5
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "1.5",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router_key\": 1.5\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router_key": [
+      1,
+      "a"
+     ]
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "[1, 'a']",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router_key\": [\n  1,\n  \"a\"\n ]\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router_key": {
+      "a": 1
+     }
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "{'a': 1}",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router_key\": {\n  \"a\": 1\n }\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router_key": 1e+20
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "1e+20",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router_key\": 1e+20\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router_key": 1e-07
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "1e-07",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router_key\": 1e-07\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "singbox": "testing"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "testing",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"singbox\": \"testing\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router_singbox": "nightly"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router_singbox\": \"nightly\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "router_singbox": "stable"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "stable",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"router_singbox\": \"stable\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "dns": "cloudflare"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": "cloudflare"
+    },
+    "{\n \"dns\": \"cloudflare\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "dns": "google"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": "quad9"
+    },
+    "{\n \"dns\": \"google\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "dns": ""
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"dns\": \"\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "lang": "fa"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "fa",
+     "dns": ""
+    },
+    "{\n \"lang\": \"fa\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "lang": "xx"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"lang\": \"xx\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "lang": null
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"lang\": null\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "extra": 1,
+     "auto_update": 0
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 0,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"extra\": 1,\n \"auto_update\": 0\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "devices": "192.168.8.10 192.168.8.11"
+    },
+    false
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 50,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "192.168.8.10 192.168.8.11",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"devices\": \"192.168.8.10 192.168.8.11\"\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "top": 40
+    },
+    true
+   ],
+   "out": [
+    {
+     "check_min": 60,
+     "slow_ms": 200,
+     "tolerance_ms": 25,
+     "top": 40,
+     "router": 0,
+     "router_host": "192.168.8.1",
+     "router_key": "",
+     "devices": "",
+     "auto_update": 1,
+     "singbox": "stable",
+     "router_singbox": "",
+     "backend_files": 0,
+     "start_menu": 1,
+     "desktop_icon": 0,
+     "pc_tunnel": 1,
+     "min_mbps": 100,
+     "lang": "",
+     "dns": ""
+    },
+    "{\n \"top\": 40\n}"
+   ]
+  }
+ ]
+}

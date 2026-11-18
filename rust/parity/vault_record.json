@@ -1,0 +1,170 @@
+{
+ "fn": "vault_record",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    },
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": true,
+      "ms": 33,
+      "where": "Here",
+      "isp": null
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "ok": false
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "2.2.2.2",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": false
+     },
+     {
+      "server": "3.3.3.3",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": true,
+      "ms": null
+     }
+    ]
+   ],
+   "out": "{\n \"8.8.8.8\": {\n  \"server\": \"8.8.8.8\",\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"pbk\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n  \"sid\": \"0a1b\",\n  \"sni\": \"www.apple.com\",\n  \"fp\": \"firefox\",\n  \"where\": \"Here\",\n  \"isp\": \"G\",\n  \"ms\": 33,\n  \"last_ok\": \"2026-11-18 12:34:56\",\n  \"passes\": 4,\n  \"fail_streak\": 0\n },\n \"3.3.3.3\": {\n  \"passes\": 1,\n  \"server\": \"3.3.3.3\",\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"pbk\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n  \"sid\": \"0a1b\",\n  \"sni\": \"www.apple.com\",\n  \"fp\": \"firefox\",\n  \"last_ok\": \"2026-11-18 12:34:56\",\n  \"ms\": null,\n  \"fail_streak\": 0\n },\n \"9.9.9.9\": {\n  \"server\": \"9.9.9.9\",\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"pbk\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n  \"sid\": \"0a1b\",\n  \"sni\": \"cdnjs.com\",\n  \"fp\": \"\",\n  \"ms\": 20,\n  \"last_ok\": \"2026-11-17 09:00:00\",\n  \"passes\": 1,\n  \"fail_streak\": 0\n }\n}"
+  },
+  {
+   "args": [
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    },
+    [
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "ok": false
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox",
+      "ok": false
+     }
+    ]
+   ],
+   "out": "{\n \"8.8.8.8\": {\n  \"server\": \"8.8.8.8\",\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"pbk\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n  \"sid\": \"0a1b\",\n  \"sni\": \"www.apple.com\",\n  \"fp\": \"firefox\",\n  \"where\": \"US\",\n  \"isp\": \"G\",\n  \"ms\": 50,\n  \"last_ok\": \"2026-11-17 10:00:00\",\n  \"passes\": 3,\n  \"fail_streak\": 0\n },\n \"9.9.9.9\": {\n  \"server\": \"9.9.9.9\",\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"pbk\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n  \"sid\": \"0a1b\",\n  \"sni\": \"cdnjs.com\",\n  \"fp\": \"\",\n  \"ms\": 20,\n  \"last_ok\": \"2026-11-17 09:00:00\",\n  \"passes\": 1,\n  \"fail_streak\": 1\n }\n}"
+  }
+ ]
+}

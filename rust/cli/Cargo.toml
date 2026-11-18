@@ -1,6 +1,6 @@
 [package]
-name = "rh"
-description = "Reality Hop test command line"
+name = "realityhop-cli"
+description = "Reality Hop engine command line, for tests"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

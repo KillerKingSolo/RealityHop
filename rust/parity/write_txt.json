@@ -1,0 +1,295 @@
+{
+ "fn": "write_txt",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": true,
+      "ms": 120,
+      "exit": "8.8.8.8",
+      "where": "Mountain View, US",
+      "isp": "Google",
+      "tcp_ms": 15
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "ok": true,
+      "ms": 80,
+      "exit": "1.1.1.1",
+      "mbps": 250,
+      "where": "Łódź, PL",
+      "isp": "Cloudflare",
+      "tcp_ms": 9,
+      "inuse": true
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox",
+      "ok": false,
+      "ms": null,
+      "exit": "-",
+      "why": "timeout",
+      "tcp_ms": null
+     },
+     {
+      "server": "4.4.4.4",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": true,
+      "ms": 0,
+      "exit": "4.4.4.4",
+      "mbps": null,
+      "where": "A place name that is far too long",
+      "isp": "?"
+     },
+     {
+      "server": "123.123.123.123",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.microsoft.com",
+      "fp": "firefox",
+      "ok": true,
+      "ms": 12345,
+      "exit": "x",
+      "mbps": 3,
+      "tcp_ms": 1234567
+     },
+     {
+      "server": "5.5.5.5",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": false,
+      "ms": null,
+      "why": "reality verification failed",
+      "where": "?"
+     }
+    ],
+    [
+     1,
+     0
+    ]
+   ],
+   "out": "VERIFIED REALITY NODES  -  tested 2026-11-18 by Reality Hop (REALITY handshake + HTTPS fetch)\n\ntunnel ms = full HTTPS fetch through the node. TCP-open alone proves nothing:\na rejected key is silently forwarded to the front site and looks like a healthy host.\n\nIN USE  (both configs, urltest group \"auto\")\n  vless-1  1.1.1.1          www.apple.com           80ms  Łódź, PL                    Cloudflare\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=(empty)\n  vless-2  8.8.8.8          www.apple.com          120ms  Mountain View, US           Google\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n\nSPARES  (passed, not in use; the window or  python engine.py --apply N  rotates them in)\n           123.123.123.123  www.microsoft.com    12345ms  ?                           ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n           4.4.4.4          www.apple.com              ?  A place name that is far too long  ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n\nFAILED  (do not retest until the feed changes their key)\n  9.9.9.9          cdnjs.com            timeout\n  5.5.5.5          www.apple.com        reality verification failed\n\nWORKFLOW: Reality Hop window     python engine.py --check (health)     python engine.py (find + rank + apply)\n"
+  },
+  {
+   "args": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": true,
+      "ms": 120,
+      "exit": "8.8.8.8",
+      "where": "Mountain View, US",
+      "isp": "Google",
+      "tcp_ms": 15
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "ok": true,
+      "ms": 80,
+      "exit": "1.1.1.1",
+      "mbps": 250,
+      "where": "Łódź, PL",
+      "isp": "Cloudflare",
+      "tcp_ms": 9,
+      "inuse": true
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox",
+      "ok": false,
+      "ms": null,
+      "exit": "-",
+      "why": "timeout",
+      "tcp_ms": null
+     },
+     {
+      "server": "4.4.4.4",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": true,
+      "ms": 0,
+      "exit": "4.4.4.4",
+      "mbps": null,
+      "where": "A place name that is far too long",
+      "isp": "?"
+     },
+     {
+      "server": "123.123.123.123",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.microsoft.com",
+      "fp": "firefox",
+      "ok": true,
+      "ms": 12345,
+      "exit": "x",
+      "mbps": 3,
+      "tcp_ms": 1234567
+     },
+     {
+      "server": "5.5.5.5",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": false,
+      "ms": null,
+      "why": "reality verification failed",
+      "where": "?"
+     }
+    ],
+    []
+   ],
+   "out": "VERIFIED REALITY NODES  -  tested 2026-11-18 by Reality Hop (REALITY handshake + HTTPS fetch)\n\ntunnel ms = full HTTPS fetch through the node. TCP-open alone proves nothing:\na rejected key is silently forwarded to the front site and looks like a healthy host.\n\nIN USE  (both configs, urltest group \"auto\")\n\nSPARES  (passed, not in use; the window or  python engine.py --apply N  rotates them in)\n           1.1.1.1          www.apple.com           80ms  Łódź, PL                    Cloudflare\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=(empty)\n           8.8.8.8          www.apple.com          120ms  Mountain View, US           Google\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n           123.123.123.123  www.microsoft.com    12345ms  ?                           ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n           4.4.4.4          www.apple.com              ?  A place name that is far too long  ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n\nFAILED  (do not retest until the feed changes their key)\n  9.9.9.9          cdnjs.com            timeout\n  5.5.5.5          www.apple.com        reality verification failed\n\nWORKFLOW: Reality Hop window     python engine.py --check (health)     python engine.py (find + rank + apply)\n"
+  },
+  {
+   "args": [
+    [],
+    []
+   ],
+   "out": "VERIFIED REALITY NODES  -  tested 2026-11-18 by Reality Hop (REALITY handshake + HTTPS fetch)\n\ntunnel ms = full HTTPS fetch through the node. TCP-open alone proves nothing:\na rejected key is silently forwarded to the front site and looks like a healthy host.\n\nIN USE  (both configs, urltest group \"auto\")\n\nSPARES  (passed, not in use; the window or  python engine.py --apply N  rotates them in)\n\nFAILED  (do not retest until the feed changes their key)\n\nWORKFLOW: Reality Hop window     python engine.py --check (health)     python engine.py (find + rank + apply)\n"
+  },
+  {
+   "args": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": true,
+      "ms": 120,
+      "exit": "8.8.8.8",
+      "where": "Mountain View, US",
+      "isp": "Google",
+      "tcp_ms": 15
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "ok": true,
+      "ms": 80,
+      "exit": "1.1.1.1",
+      "mbps": 250,
+      "where": "Łódź, PL",
+      "isp": "Cloudflare",
+      "tcp_ms": 9,
+      "inuse": true
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox",
+      "ok": false,
+      "ms": null,
+      "exit": "-",
+      "why": "timeout",
+      "tcp_ms": null
+     },
+     {
+      "server": "4.4.4.4",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": true,
+      "ms": 0,
+      "exit": "4.4.4.4",
+      "mbps": null,
+      "where": "A place name that is far too long",
+      "isp": "?"
+     },
+     {
+      "server": "123.123.123.123",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.microsoft.com",
+      "fp": "firefox",
+      "ok": true,
+      "ms": 12345,
+      "exit": "x",
+      "mbps": 3,
+      "tcp_ms": 1234567
+     },
+     {
+      "server": "5.5.5.5",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": false,
+      "ms": null,
+      "why": "reality verification failed",
+      "where": "?"
+     }
+    ],
+    [
+     {
+      "server": "7.7.7.7",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     }
+    ]
+   ],
+   "out": "VERIFIED REALITY NODES  -  tested 2026-11-18 by Reality Hop (REALITY handshake + HTTPS fetch)\n\ntunnel ms = full HTTPS fetch through the node. TCP-open alone proves nothing:\na rejected key is silently forwarded to the front site and looks like a healthy host.\n\nIN USE  (both configs, urltest group \"auto\")\n  vless-1  7.7.7.7          www.apple.com              ?  ?                           ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=(empty)\n\nSPARES  (passed, not in use; the window or  python engine.py --apply N  rotates them in)\n           1.1.1.1          www.apple.com           80ms  Łódź, PL                    Cloudflare\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=(empty)\n           8.8.8.8          www.apple.com          120ms  Mountain View, US           Google\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n           123.123.123.123  www.microsoft.com    12345ms  ?                           ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n           4.4.4.4          www.apple.com              ?  A place name that is far too long  ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n\nFAILED  (do not retest until the feed changes their key)\n  9.9.9.9          cdnjs.com            timeout\n  5.5.5.5          www.apple.com        reality verification failed\n\nWORKFLOW: Reality Hop window     python engine.py --check (health)     python engine.py (find + rank + apply)\n"
+  }
+ ]
+}

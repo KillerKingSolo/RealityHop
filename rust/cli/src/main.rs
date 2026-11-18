@@ -1,4 +1,4 @@
-//! rh: the test command line of the engine. Phase 2 adds --check, --once and scan.
+//! realityhop-cli: the test command line of the engine. Phase 2 adds --check, --once and scan.
 
 use std::process::ExitCode;
 
@@ -11,7 +11,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         _ => {
-            eprintln!("usage: rh --version");
+            eprintln!("usage: realityhop-cli --version");
             ExitCode::from(2)
         }
     }

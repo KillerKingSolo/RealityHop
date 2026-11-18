@@ -1,0 +1,87 @@
+{
+ "fn": "status_table",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "tag": "vless-1",
+      "where": "US",
+      "phone_ms": 50,
+      "phone_why": "",
+      "pc_ms": null,
+      "pc_why": "timeout"
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "tag": "vless-2",
+      "phone_ms": null,
+      "phone_why": "no-response",
+      "pc_ms": 7,
+      "pc_why": ""
+     }
+    ],
+    {
+     "service": true,
+     "now": "vless-1"
+    },
+    {
+     "now": "vless-2",
+     "exit": "8.8.8.8"
+    }
+   ],
+   "out": [
+    "\nslot     server           front                where                         phone          PC",
+    "vless-1  8.8.8.8          www.apple.com        US                             50ms  FAIL timeout",
+    "vless-2  1.1.1.1          www.apple.com        ?                        FAIL no-response         7ms",
+    "\nrouter: service running, active vless-1",
+    "PC: active vless-2, exit 8.8.8.8"
+   ]
+  },
+  {
+   "args": [
+    [],
+    {
+     "service": false,
+     "now": null
+    },
+    null
+   ],
+   "out": [
+    "\nslot     server           front                where                         phone          PC",
+    "\nrouter: SERVICE NOT RUNNING, active ?",
+    "PC: control API not reachable; rh-core is not running the current config yet (restart the PC tunnel)"
+   ]
+  },
+  {
+   "args": [
+    [],
+    {
+     "service": true,
+     "now": ""
+    },
+    {
+     "now": null,
+     "exit": ""
+    }
+   ],
+   "out": [
+    "\nslot     server           front                where                         phone          PC",
+    "\nrouter: service running, active ?",
+    "PC: active ?, exit ?"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,645 @@
+{
+ "fn": "json_dumps",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    },
+    null
+   ],
+   "out": "{\"log\": {\"level\": \"warn\", \"timestamp\": true, \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"}, \"dns\": {\"servers\": [{\"type\": \"https\", \"tag\": \"quad9\", \"detour\": \"auto\", \"server\": \"9.9.9.9\"}], \"final\": \"quad9\", \"strategy\": \"prefer_ipv4\"}, \"inbounds\": [{\"type\": \"mixed\", \"tag\": \"socks-in\", \"listen\": \"127.0.0.1\", \"listen_port\": 2080}], \"outbounds\": [{\"type\": \"urltest\", \"tag\": \"auto\", \"outbounds\": [], \"url\": \"https://www.gstatic.com/generate_204\", \"interval\": \"10m\", \"tolerance\": 25}, {\"type\": \"direct\", \"tag\": \"direct\"}], \"route\": {\"rules\": [{\"action\": \"sniff\"}, {\"ip_is_private\": true, \"outbound\": \"direct\"}], \"final\": \"auto\", \"auto_detect_interface\": true, \"default_domain_resolver\": \"quad9\"}, \"experimental\": {\"clash_api\": {\"external_controller\": \"127.0.0.1:9090\", \"secret\": \"0123456789abcdef0123456789abcdef\", \"access_control_allow_origin\": [\"http://127.0.0.1:9090\"], \"access_control_allow_private_network\": false}}}"
+  },
+  {
+   "args": [
+    {},
+    null
+   ],
+   "out": "{}"
+  },
+  {
+   "args": [
+    [],
+    null
+   ],
+   "out": "[]"
+  },
+  {
+   "args": [
+    {
+     "a": []
+    },
+    null
+   ],
+   "out": "{\"a\": []}"
+  },
+  {
+   "args": [
+    {
+     "a": {}
+    },
+    null
+   ],
+   "out": "{\"a\": {}}"
+  },
+  {
+   "args": [
+    [
+     1,
+     [
+      2,
+      []
+     ]
+    ],
+    null
+   ],
+   "out": "[1, [2, []]]"
+  },
+  {
+   "args": [
+    "café 😀 ‫",
+    null
+   ],
+   "out": "\"caf\\u00e9 \\ud83d\\ude00 \\u202b\""
+  },
+  {
+   "args": [
+    "\u0000\u001f\"\\/\n\t\b\f\r",
+    null
+   ],
+   "out": "\"\\u0000\\u001f\\u007f\\\"\\\\/\\n\\t\\b\\f\\r\""
+  },
+  {
+   "args": [
+    1.0,
+    null
+   ],
+   "out": "1.0"
+  },
+  {
+   "args": [
+    0.1,
+    null
+   ],
+   "out": "0.1"
+  },
+  {
+   "args": [
+    1e-05,
+    null
+   ],
+   "out": "1e-05"
+  },
+  {
+   "args": [
+    1e+16,
+    null
+   ],
+   "out": "1e+16"
+  },
+  {
+   "args": [
+    123456789.123,
+    null
+   ],
+   "out": "123456789.123"
+  },
+  {
+   "args": [
+    -0.0,
+    null
+   ],
+   "out": "-0.0"
+  },
+  {
+   "args": [
+    1e+22,
+    null
+   ],
+   "out": "1e+22"
+  },
+  {
+   "args": [
+    5e-324,
+    null
+   ],
+   "out": "5e-324"
+  },
+  {
+   "args": [
+    true,
+    null
+   ],
+   "out": "true"
+  },
+  {
+   "args": [
+    null,
+    null
+   ],
+   "out": "null"
+  },
+  {
+   "args": [
+    {
+     "k": [
+      null,
+      false,
+      3
+     ]
+    },
+    null
+   ],
+   "out": "{\"k\": [null, false, 3]}"
+  },
+  {
+   "args": [
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    },
+    1
+   ],
+   "out": "{\n \"log\": {\n  \"level\": \"warn\",\n  \"timestamp\": true,\n  \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n },\n \"dns\": {\n  \"servers\": [\n   {\n    \"type\": \"https\",\n    \"tag\": \"quad9\",\n    \"detour\": \"auto\",\n    \"server\": \"9.9.9.9\"\n   }\n  ],\n  \"final\": \"quad9\",\n  \"strategy\": \"prefer_ipv4\"\n },\n \"inbounds\": [\n  {\n   \"type\": \"mixed\",\n   \"tag\": \"socks-in\",\n   \"listen\": \"127.0.0.1\",\n   \"listen_port\": 2080\n  }\n ],\n \"outbounds\": [\n  {\n   \"type\": \"urltest\",\n   \"tag\": \"auto\",\n   \"outbounds\": [],\n   \"url\": \"https://www.gstatic.com/generate_204\",\n   \"interval\": \"10m\",\n   \"tolerance\": 25\n  },\n  {\n   \"type\": \"direct\",\n   \"tag\": \"direct\"\n  }\n ],\n \"route\": {\n  \"rules\": [\n   {\n    \"action\": \"sniff\"\n   },\n   {\n    \"ip_is_private\": true,\n    \"outbound\": \"direct\"\n   }\n  ],\n  \"final\": \"auto\",\n  \"auto_detect_interface\": true,\n  \"default_domain_resolver\": \"quad9\"\n },\n \"experimental\": {\n  \"clash_api\": {\n   \"external_controller\": \"127.0.0.1:9090\",\n   \"secret\": \"0123456789abcdef0123456789abcdef\",\n   \"access_control_allow_origin\": [\n    \"http://127.0.0.1:9090\"\n   ],\n   \"access_control_allow_private_network\": false\n  }\n }\n}"
+  },
+  {
+   "args": [
+    {},
+    1
+   ],
+   "out": "{}"
+  },
+  {
+   "args": [
+    [],
+    1
+   ],
+   "out": "[]"
+  },
+  {
+   "args": [
+    {
+     "a": []
+    },
+    1
+   ],
+   "out": "{\n \"a\": []\n}"
+  },
+  {
+   "args": [
+    {
+     "a": {}
+    },
+    1
+   ],
+   "out": "{\n \"a\": {}\n}"
+  },
+  {
+   "args": [
+    [
+     1,
+     [
+      2,
+      []
+     ]
+    ],
+    1
+   ],
+   "out": "[\n 1,\n [\n  2,\n  []\n ]\n]"
+  },
+  {
+   "args": [
+    "café 😀 ‫",
+    1
+   ],
+   "out": "\"caf\\u00e9 \\ud83d\\ude00 \\u202b\""
+  },
+  {
+   "args": [
+    "\u0000\u001f\"\\/\n\t\b\f\r",
+    1
+   ],
+   "out": "\"\\u0000\\u001f\\u007f\\\"\\\\/\\n\\t\\b\\f\\r\""
+  },
+  {
+   "args": [
+    1.0,
+    1
+   ],
+   "out": "1.0"
+  },
+  {
+   "args": [
+    0.1,
+    1
+   ],
+   "out": "0.1"
+  },
+  {
+   "args": [
+    1e-05,
+    1
+   ],
+   "out": "1e-05"
+  },
+  {
+   "args": [
+    1e+16,
+    1
+   ],
+   "out": "1e+16"
+  },
+  {
+   "args": [
+    123456789.123,
+    1
+   ],
+   "out": "123456789.123"
+  },
+  {
+   "args": [
+    -0.0,
+    1
+   ],
+   "out": "-0.0"
+  },
+  {
+   "args": [
+    1e+22,
+    1
+   ],
+   "out": "1e+22"
+  },
+  {
+   "args": [
+    5e-324,
+    1
+   ],
+   "out": "5e-324"
+  },
+  {
+   "args": [
+    true,
+    1
+   ],
+   "out": "true"
+  },
+  {
+   "args": [
+    null,
+    1
+   ],
+   "out": "null"
+  },
+  {
+   "args": [
+    {
+     "k": [
+      null,
+      false,
+      3
+     ]
+    },
+    1
+   ],
+   "out": "{\n \"k\": [\n  null,\n  false,\n  3\n ]\n}"
+  },
+  {
+   "args": [
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    },
+    2
+   ],
+   "out": "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"timestamp\": true,\n    \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"detour\": \"auto\",\n        \"server\": \"9.9.9.9\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"mixed\",\n      \"tag\": \"socks-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 2080\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"action\": \"sniff\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\",\n      \"access_control_allow_origin\": [\n        \"http://127.0.0.1:9090\"\n      ],\n      \"access_control_allow_private_network\": false\n    }\n  }\n}"
+  },
+  {
+   "args": [
+    {},
+    2
+   ],
+   "out": "{}"
+  },
+  {
+   "args": [
+    [],
+    2
+   ],
+   "out": "[]"
+  },
+  {
+   "args": [
+    {
+     "a": []
+    },
+    2
+   ],
+   "out": "{\n  \"a\": []\n}"
+  },
+  {
+   "args": [
+    {
+     "a": {}
+    },
+    2
+   ],
+   "out": "{\n  \"a\": {}\n}"
+  },
+  {
+   "args": [
+    [
+     1,
+     [
+      2,
+      []
+     ]
+    ],
+    2
+   ],
+   "out": "[\n  1,\n  [\n    2,\n    []\n  ]\n]"
+  },
+  {
+   "args": [
+    "café 😀 ‫",
+    2
+   ],
+   "out": "\"caf\\u00e9 \\ud83d\\ude00 \\u202b\""
+  },
+  {
+   "args": [
+    "\u0000\u001f\"\\/\n\t\b\f\r",
+    2
+   ],
+   "out": "\"\\u0000\\u001f\\u007f\\\"\\\\/\\n\\t\\b\\f\\r\""
+  },
+  {
+   "args": [
+    1.0,
+    2
+   ],
+   "out": "1.0"
+  },
+  {
+   "args": [
+    0.1,
+    2
+   ],
+   "out": "0.1"
+  },
+  {
+   "args": [
+    1e-05,
+    2
+   ],
+   "out": "1e-05"
+  },
+  {
+   "args": [
+    1e+16,
+    2
+   ],
+   "out": "1e+16"
+  },
+  {
+   "args": [
+    123456789.123,
+    2
+   ],
+   "out": "123456789.123"
+  },
+  {
+   "args": [
+    -0.0,
+    2
+   ],
+   "out": "-0.0"
+  },
+  {
+   "args": [
+    1e+22,
+    2
+   ],
+   "out": "1e+22"
+  },
+  {
+   "args": [
+    5e-324,
+    2
+   ],
+   "out": "5e-324"
+  },
+  {
+   "args": [
+    true,
+    2
+   ],
+   "out": "true"
+  },
+  {
+   "args": [
+    null,
+    2
+   ],
+   "out": "null"
+  },
+  {
+   "args": [
+    {
+     "k": [
+      null,
+      false,
+      3
+     ]
+    },
+    2
+   ],
+   "out": "{\n  \"k\": [\n    null,\n    false,\n    3\n  ]\n}"
+  }
+ ]
+}

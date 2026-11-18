@@ -1,0 +1,111 @@
+{
+ "fn": "outbound19",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox"
+    },
+    "vless-1"
+   ],
+   "out": {
+    "type": "vless",
+    "tag": "vless-1",
+    "server": "8.8.8.8",
+    "server_port": 443,
+    "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "flow": "xtls-rprx-vision",
+    "packet_encoding": "xudp",
+    "tls": {
+     "enabled": true,
+     "server_name": "www.apple.com",
+     "utls": {
+      "enabled": true,
+      "fingerprint": "firefox"
+     },
+     "reality": {
+      "enabled": true,
+      "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "short_id": "0a1b"
+     }
+    }
+   }
+  },
+  {
+   "args": [
+    {
+     "server": "1.1.1.1",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "",
+     "sni": "www.apple.com",
+     "fp": "chrome"
+    },
+    "vless-2"
+   ],
+   "out": {
+    "type": "vless",
+    "tag": "vless-2",
+    "server": "1.1.1.1",
+    "server_port": 443,
+    "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "flow": "xtls-rprx-vision",
+    "packet_encoding": "xudp",
+    "tls": {
+     "enabled": true,
+     "server_name": "www.apple.com",
+     "utls": {
+      "enabled": true,
+      "fingerprint": "chrome"
+     },
+     "reality": {
+      "enabled": true,
+      "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "short_id": ""
+     }
+    }
+   }
+  },
+  {
+   "args": [
+    {
+     "server": "9.9.9.9",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "cdnjs.com",
+     "fp": "firefox"
+    },
+    "vless-3"
+   ],
+   "out": {
+    "type": "vless",
+    "tag": "vless-3",
+    "server": "9.9.9.9",
+    "server_port": 443,
+    "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "flow": "xtls-rprx-vision",
+    "packet_encoding": "xudp",
+    "tls": {
+     "enabled": true,
+     "server_name": "cdnjs.com",
+     "utls": {
+      "enabled": true,
+      "fingerprint": "firefox"
+     },
+     "reality": {
+      "enabled": true,
+      "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "short_id": "0a1b"
+     }
+    }
+   }
+  }
+ ]
+}

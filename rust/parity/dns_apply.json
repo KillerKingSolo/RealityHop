@@ -1,0 +1,608 @@
+{
+ "fn": "dns_apply",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    },
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    "cloudflare"
+   ],
+   "out": [
+    true,
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"timestamp\": true,\n    \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"cloudflare\",\n        \"detour\": \"auto\",\n        \"server\": \"1.1.1.1\"\n      }\n    ],\n    \"final\": \"cloudflare\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"mixed\",\n      \"tag\": \"socks-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 2080\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"action\": \"sniff\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_domain_resolver\": \"cloudflare\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\",\n      \"access_control_allow_origin\": [\n        \"http://127.0.0.1:9090\"\n      ],\n      \"access_control_allow_private_network\": false\n    }\n  }\n}",
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"cloudflare\",\n        \"address\": \"https://1.1.1.1/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"cloudflare\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"1.1.1.1\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    },
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    "quad9"
+   ],
+   "out": [
+    false,
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"timestamp\": true,\n    \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"detour\": \"auto\",\n        \"server\": \"9.9.9.9\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"mixed\",\n      \"tag\": \"socks-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 2080\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"action\": \"sniff\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\",\n      \"access_control_allow_origin\": [\n        \"http://127.0.0.1:9090\"\n      ],\n      \"access_control_allow_private_network\": false\n    }\n  }\n}",
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    },
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    ""
+   ],
+   "out": [
+    false,
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"timestamp\": true,\n    \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"detour\": \"auto\",\n        \"server\": \"9.9.9.9\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"mixed\",\n      \"tag\": \"socks-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 2080\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"action\": \"sniff\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\",\n      \"access_control_allow_origin\": [\n        \"http://127.0.0.1:9090\"\n      ],\n      \"access_control_allow_private_network\": false\n    }\n  }\n}",
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}"
+   ]
+  },
+  {
+   "args": [
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "mine",
+        "server": "8.8.8.8"
+       }
+      ],
+      "final": "mine"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    },
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    "cloudflare"
+   ],
+   "out": [
+    true,
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"timestamp\": true,\n    \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"mine\",\n        \"server\": \"8.8.8.8\"\n      }\n    ],\n    \"final\": \"mine\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"mixed\",\n      \"tag\": \"socks-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 2080\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"action\": \"sniff\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\",\n      \"access_control_allow_origin\": [\n        \"http://127.0.0.1:9090\"\n      ],\n      \"access_control_allow_private_network\": false\n    }\n  }\n}",
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"cloudflare\",\n        \"address\": \"https://1.1.1.1/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"cloudflare\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"1.1.1.1\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}"
+   ]
+  }
+ ]
+}

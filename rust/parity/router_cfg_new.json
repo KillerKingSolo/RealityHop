@@ -1,0 +1,314 @@
+{
+ "fn": "router_cfg_new",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    }
+   ],
+   "out": {
+    "log": {
+     "level": "warn",
+     "output": "/tmp/sb-run.log",
+     "timestamp": true
+    },
+    "dns": {
+     "servers": [
+      {
+       "type": "https",
+       "tag": "quad9",
+       "server": "9.9.9.9",
+       "detour": "auto"
+      }
+     ],
+     "final": "quad9",
+     "strategy": "prefer_ipv4"
+    },
+    "inbounds": [
+     {
+      "type": "tproxy",
+      "tag": "tproxy-in",
+      "listen": "::",
+      "listen_port": 7895
+     },
+     {
+      "type": "direct",
+      "tag": "dns-in",
+      "listen": "127.0.0.1",
+      "listen_port": 5354
+     }
+    ],
+    "outbounds": [
+     {
+      "type": "urltest",
+      "tag": "auto",
+      "outbounds": [],
+      "url": "https://www.gstatic.com/generate_204",
+      "interval": "10m",
+      "tolerance": 25
+     },
+     {
+      "type": "direct",
+      "tag": "direct"
+     }
+    ],
+    "route": {
+     "rules": [
+      {
+       "inbound": [
+        "tproxy-in"
+       ],
+       "action": "sniff"
+      },
+      {
+       "inbound": [
+        "dns-in"
+       ],
+       "action": "hijack-dns"
+      },
+      {
+       "ip_is_private": true,
+       "outbound": "direct"
+      }
+     ],
+     "final": "auto",
+     "auto_detect_interface": true,
+     "default_mark": 255,
+     "default_domain_resolver": "quad9"
+    },
+    "experimental": {
+     "clash_api": {
+      "external_controller": "127.0.0.1:9090",
+      "secret": "0123456789abcdef0123456789abcdef"
+     }
+    }
+   }
+  },
+  {
+   "args": [
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": false
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    }
+   ],
+   "out": {
+    "log": {
+     "level": "warn",
+     "output": "/tmp/sb-run.log",
+     "timestamp": true
+    },
+    "dns": {
+     "servers": [
+      {
+       "type": "https",
+       "tag": "quad9",
+       "server": "9.9.9.9",
+       "detour": "auto"
+      }
+     ],
+     "final": "quad9",
+     "strategy": "prefer_ipv4"
+    },
+    "inbounds": [
+     {
+      "type": "tproxy",
+      "tag": "tproxy-in",
+      "listen": "::",
+      "listen_port": 7895
+     },
+     {
+      "type": "direct",
+      "tag": "dns-in",
+      "listen": "127.0.0.1",
+      "listen_port": 5354
+     }
+    ],
+    "outbounds": [
+     {
+      "type": "urltest",
+      "tag": "auto",
+      "outbounds": [],
+      "url": "https://www.gstatic.com/generate_204",
+      "interval": "10m",
+      "tolerance": 25
+     },
+     {
+      "type": "direct",
+      "tag": "direct"
+     }
+    ],
+    "route": {
+     "rules": [
+      {
+       "inbound": [
+        "dns-in"
+       ],
+       "action": "hijack-dns"
+      },
+      {
+       "ip_is_private": true,
+       "outbound": "direct"
+      }
+     ],
+     "final": "auto",
+     "auto_detect_interface": true,
+     "default_mark": 255,
+     "default_domain_resolver": "quad9"
+    },
+    "experimental": {
+     "clash_api": {
+      "external_controller": "127.0.0.1:9090",
+      "secret": "0123456789abcdef0123456789abcdef"
+     }
+    }
+   }
+  }
+ ]
+}

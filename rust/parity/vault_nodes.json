@@ -1,0 +1,177 @@
+{
+ "fn": "vault_nodes",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    },
+    []
+   ],
+   "out": [
+    {
+     "server": "1.1.1.1",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "",
+     "sni": "www.apple.com",
+     "fp": "chrome",
+     "where": null,
+     "isp": null,
+     "ms": null,
+     "last_ok": "2026-11-18",
+     "passes": 1,
+     "fail_streak": 2,
+     "tcp_ms": null
+    },
+    {
+     "server": "9.9.9.9",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "cdnjs.com",
+     "fp": "chrome",
+     "ms": 20,
+     "last_ok": "2026-11-17 09:00:00",
+     "passes": 1,
+     "fail_streak": 0,
+     "tcp_ms": null
+    },
+    {
+     "server": "8.8.8.8",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "www.apple.com",
+     "fp": "firefox",
+     "where": "US",
+     "isp": "G",
+     "ms": 50,
+     "last_ok": "2026-11-17 10:00:00",
+     "passes": 3,
+     "fail_streak": 0,
+     "tcp_ms": null
+    }
+   ]
+  },
+  {
+   "args": [
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    },
+    [
+     "8.8.8.8"
+    ]
+   ],
+   "out": [
+    {
+     "server": "1.1.1.1",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "",
+     "sni": "www.apple.com",
+     "fp": "chrome",
+     "where": null,
+     "isp": null,
+     "ms": null,
+     "last_ok": "2026-11-18",
+     "passes": 1,
+     "fail_streak": 2,
+     "tcp_ms": null
+    },
+    {
+     "server": "9.9.9.9",
+     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+     "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+     "sid": "0a1b",
+     "sni": "cdnjs.com",
+     "fp": "chrome",
+     "ms": 20,
+     "last_ok": "2026-11-17 09:00:00",
+     "passes": 1,
+     "fail_streak": 0,
+     "tcp_ms": null
+    }
+   ]
+  }
+ ]
+}
