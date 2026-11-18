@@ -1,0 +1,38 @@
+{
+ "fn": "add_key_console",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "192.168.8.1",
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHk realityhop"
+   ],
+   "out": [
+    "@echo off\r\nchcp 65001 >nul\r\ntitle Reality Hop: add key to router\r\necho Type the router admin password (the one for the GL.iNet web panel) and press Enter.\r\necho Nothing shows while you type. Reality Hop never sees it.\r\necho.\r\n\"<ssh>\" -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=known_hosts root@192.168.8.1 \"mkdir -p /etc/dropbear; touch /etc/dropbear/authorized_keys; grep -q AAAAC3NzaC1lZDI1NTE5AAAAIHk /etc/dropbear/authorized_keys || echo ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHk realityhop >> /etc/dropbear/authorized_keys; chmod 600 /etc/dropbear/authorized_keys; echo; echo Key added. Close this window.\"\r\necho.\r\npause\r\n",
+    [
+     [
+      "cmd.exe",
+      "/c",
+      ".\\add-router-key.cmd"
+     ]
+    ]
+   ]
+  },
+  {
+   "args": [
+    "router.lan",
+    "ssh-ed25519 AAAA%B realityhop"
+   ],
+   "out": [
+    "@echo off\r\nchcp 65001 >nul\r\ntitle Reality Hop: add key to router\r\necho Type the router admin password (the one for the GL.iNet web panel) and press Enter.\r\necho Nothing shows while you type. Reality Hop never sees it.\r\necho.\r\n\"<ssh>\" -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=known_hosts root@router.lan \"mkdir -p /etc/dropbear; touch /etc/dropbear/authorized_keys; grep -q AAAA%B /etc/dropbear/authorized_keys || echo ssh-ed25519 AAAA%B realityhop >> /etc/dropbear/authorized_keys; chmod 600 /etc/dropbear/authorized_keys; echo; echo Key added. Close this window.\"\r\necho.\r\npause\r\n",
+    [
+     [
+      "cmd.exe",
+      "/c",
+      ".\\add-router-key.cmd"
+     ]
+    ]
+   ]
+  }
+ ]
+}

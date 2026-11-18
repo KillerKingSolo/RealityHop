@@ -1,0 +1,3466 @@
+{
+ "fn": "router_sync",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n---\n\n\n---\n\n\n---\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"4.4.4.4\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"5.5.5.5\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"safari\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"fedcba9876543210fedcba9876543210\"\n    }\n  }\n}\n",
+    {
+     "router_md5": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    },
+    "",
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    }
+   ],
+   "out": [
+    null,
+    [
+     {
+      "cmd": "md5sum /etc/sing-box/config.json 2>/dev/null | cut -c1-32; echo ---; cat /etc/sing-box/rh-devices 2>/dev/null; echo; echo ---; cat /etc/sing-box/heal.state 2>/dev/null; echo; echo ---; cat /etc/sing-box/config.json 2>/dev/null",
+      "stdin": null,
+      "timeout": 240
+     }
+    ],
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}",
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"timestamp\": true,\n    \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"detour\": \"auto\",\n        \"server\": \"9.9.9.9\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"mixed\",\n      \"tag\": \"socks-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 2080\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"action\": \"sniff\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\",\n      \"access_control_allow_origin\": [\n        \"http://127.0.0.1:9090\"\n      ],\n      \"access_control_allow_private_network\": false\n    }\n  }\n}",
+    null,
+    "",
+    {
+     "router_md5": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+   ]
+  },
+  {
+   "args": [
+    "",
+    {},
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    },
+    "",
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    }
+   ],
+   "out": [
+    null,
+    [
+     {
+      "cmd": "md5sum /etc/sing-box/config.json 2>/dev/null | cut -c1-32; echo ---; cat /etc/sing-box/rh-devices 2>/dev/null; echo; echo ---; cat /etc/sing-box/heal.state 2>/dev/null; echo; echo ---; cat /etc/sing-box/config.json 2>/dev/null",
+      "stdin": null,
+      "timeout": 240
+     }
+    ],
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}",
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"timestamp\": true,\n    \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"detour\": \"auto\",\n        \"server\": \"9.9.9.9\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"mixed\",\n      \"tag\": \"socks-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 2080\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"action\": \"sniff\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\",\n      \"access_control_allow_origin\": [\n        \"http://127.0.0.1:9090\"\n      ],\n      \"access_control_allow_private_network\": false\n    }\n  }\n}",
+    null,
+    "",
+    {}
+   ]
+  },
+  {
+   "args": [
+    "cccccccccccccccccccccccccccccccc\n---\n192.168.8.10 192.168.8.11\n\n---\n\n\n---\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"4.4.4.4\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"5.5.5.5\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"safari\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"fedcba9876543210fedcba9876543210\"\n    }\n  }\n}\n",
+    {
+     "router_md5": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "4.4.4.4": {
+      "server": "4.4.4.4",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "",
+      "where": "Paris, FR",
+      "isp": "OVH",
+      "ms": 33,
+      "last_ok": "2026-11-17",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    },
+    "",
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    }
+   ],
+   "out": [
+    "Another PC changed the router's nodes (4.4.4.4, 5.5.5.5, 9.9.9.9); this PC follows them now.",
+    [
+     {
+      "cmd": "md5sum /etc/sing-box/config.json 2>/dev/null | cut -c1-32; echo ---; cat /etc/sing-box/rh-devices 2>/dev/null; echo; echo ---; cat /etc/sing-box/heal.state 2>/dev/null; echo; echo ---; cat /etc/sing-box/config.json 2>/dev/null",
+      "stdin": null,
+      "timeout": 240
+     }
+    ],
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"4.4.4.4\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"5.5.5.5\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"safari\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"fedcba9876543210fedcba9876543210\"\n    }\n  }\n}",
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"timestamp\": true,\n    \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"detour\": \"auto\",\n        \"server\": \"9.9.9.9\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"mixed\",\n      \"tag\": \"socks-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 2080\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"4.4.4.4\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"5.5.5.5\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"safari\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"set-fb5c043093\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"action\": \"sniff\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\",\n      \"access_control_allow_origin\": [\n        \"http://127.0.0.1:9090\"\n      ],\n      \"access_control_allow_private_network\": false\n    }\n  }\n}",
+    "VERIFIED REALITY NODES  -  tested 2026-11-18 by Reality Hop (REALITY handshake + HTTPS fetch)\n\ntunnel ms = full HTTPS fetch through the node. TCP-open alone proves nothing:\na rejected key is silently forwarded to the front site and looks like a healthy host.\n\nIN USE  (both configs, urltest group \"auto\")\n  vless-1  4.4.4.4          www.apple.com           33ms  Paris, FR                   OVH\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n  vless-2  5.5.5.5          www.apple.com              ?  ?                           ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=(empty)\n  vless-3  9.9.9.9          cdnjs.com               20ms  ?                           ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n\nSPARES  (passed, not in use; the window or  python engine.py --apply N  rotates them in)\n\nFAILED  (do not retest until the feed changes their key)\n  4.4.4.4          www.apple.com        \n  5.5.5.5          www.apple.com        \n  9.9.9.9          cdnjs.com            \n\nWORKFLOW: Reality Hop window     python engine.py --check (health)     python engine.py (find + rank + apply)\n",
+    "192.168.8.10 192.168.8.11",
+    {
+     "router_md5": "cccccccccccccccccccccccccccccccc",
+     "router_local": true
+    }
+   ]
+  },
+  {
+   "args": [
+    "cccccccccccccccccccccccccccccccc\n---\nall\n\n---\n2026-11-18 vless-2 swapped\n\n---\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"4.4.4.4\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"5.5.5.5\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"safari\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"fedcba9876543210fedcba9876543210\"\n    }\n  }\n}\n",
+    {},
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "4.4.4.4": {
+      "server": "4.4.4.4",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "",
+      "where": "Paris, FR",
+      "isp": "OVH",
+      "ms": 33,
+      "last_ok": "2026-11-17",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    },
+    "192.168.8.20",
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    }
+   ],
+   "out": [
+    "The router repaired itself with vault nodes (4.4.4.4, 5.5.5.5, 9.9.9.9); this PC follows them now.",
+    [
+     {
+      "cmd": "md5sum /etc/sing-box/config.json 2>/dev/null | cut -c1-32; echo ---; cat /etc/sing-box/rh-devices 2>/dev/null; echo; echo ---; cat /etc/sing-box/heal.state 2>/dev/null; echo; echo ---; cat /etc/sing-box/config.json 2>/dev/null",
+      "stdin": null,
+      "timeout": 240
+     },
+     {
+      "cmd": "rm -f /etc/sing-box/heal.state",
+      "stdin": null,
+      "timeout": 240
+     }
+    ],
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"4.4.4.4\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"5.5.5.5\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"safari\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"fedcba9876543210fedcba9876543210\"\n    }\n  }\n}",
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"timestamp\": true,\n    \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"detour\": \"auto\",\n        \"server\": \"9.9.9.9\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"mixed\",\n      \"tag\": \"socks-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 2080\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"4.4.4.4\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"5.5.5.5\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"safari\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"set-fb5c043093\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"action\": \"sniff\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\",\n      \"access_control_allow_origin\": [\n        \"http://127.0.0.1:9090\"\n      ],\n      \"access_control_allow_private_network\": false\n    }\n  }\n}",
+    "VERIFIED REALITY NODES  -  tested 2026-11-18 by Reality Hop (REALITY handshake + HTTPS fetch)\n\ntunnel ms = full HTTPS fetch through the node. TCP-open alone proves nothing:\na rejected key is silently forwarded to the front site and looks like a healthy host.\n\nIN USE  (both configs, urltest group \"auto\")\n  vless-1  4.4.4.4          www.apple.com           33ms  Paris, FR                   OVH\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n  vless-2  5.5.5.5          www.apple.com              ?  ?                           ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=(empty)\n  vless-3  9.9.9.9          cdnjs.com               20ms  ?                           ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n\nSPARES  (passed, not in use; the window or  python engine.py --apply N  rotates them in)\n\nFAILED  (do not retest until the feed changes their key)\n  4.4.4.4          www.apple.com        \n  5.5.5.5          www.apple.com        \n  9.9.9.9          cdnjs.com            \n\nWORKFLOW: Reality Hop window     python engine.py --check (health)     python engine.py (find + rank + apply)\n",
+    "all",
+    {
+     "router_md5": "cccccccccccccccccccccccccccccccc",
+     "router_local": true
+    }
+   ]
+  },
+  {
+   "args": [
+    "cccccccccccccccccccccccccccccccc\n---\nbad; rm -rf /\n\n---\n\n\n---\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}\n",
+    {
+     "router_md5": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    },
+    "192.168.8.20",
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    }
+   ],
+   "out": [
+    null,
+    [
+     {
+      "cmd": "md5sum /etc/sing-box/config.json 2>/dev/null | cut -c1-32; echo ---; cat /etc/sing-box/rh-devices 2>/dev/null; echo; echo ---; cat /etc/sing-box/heal.state 2>/dev/null; echo; echo ---; cat /etc/sing-box/config.json 2>/dev/null",
+      "stdin": null,
+      "timeout": 240
+     }
+    ],
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}",
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"timestamp\": true,\n    \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"detour\": \"auto\",\n        \"server\": \"9.9.9.9\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"mixed\",\n      \"tag\": \"socks-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 2080\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"set-59b28524b4\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"action\": \"sniff\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\",\n      \"access_control_allow_origin\": [\n        \"http://127.0.0.1:9090\"\n      ],\n      \"access_control_allow_private_network\": false\n    }\n  }\n}",
+    "VERIFIED REALITY NODES  -  tested 2026-11-18 by Reality Hop (REALITY handshake + HTTPS fetch)\n\ntunnel ms = full HTTPS fetch through the node. TCP-open alone proves nothing:\na rejected key is silently forwarded to the front site and looks like a healthy host.\n\nIN USE  (both configs, urltest group \"auto\")\n  vless-1  8.8.8.8          www.apple.com           50ms  US                          G\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n  vless-2  1.1.1.1          www.apple.com              ?  ?                           ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=(empty)\n  vless-3  9.9.9.9          cdnjs.com               20ms  ?                           ?\n           uuid=a1b2c3d4-e5f6-7890-abcd-ef1234567890  pbk=AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-  sid=0a1b\n\nSPARES  (passed, not in use; the window or  python engine.py --apply N  rotates them in)\n\nFAILED  (do not retest until the feed changes their key)\n  8.8.8.8          www.apple.com        \n  1.1.1.1          www.apple.com        \n  9.9.9.9          cdnjs.com            \n\nWORKFLOW: Reality Hop window     python engine.py --check (health)     python engine.py (find + rank + apply)\n",
+    "192.168.8.20",
+    {
+     "router_md5": "cccccccccccccccccccccccccccccccc",
+     "router_local": true
+    }
+   ]
+  },
+  {
+   "args": [
+    "cccccccccccccccccccccccccccccccc\n---\n\n\n---\n\n\n---\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"4.4.4.4\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"10.0.0.5\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"safari\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"fedcba9876543210fedcba9876543210\"\n    }\n  }\n}\n",
+    {},
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    },
+    "",
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    }
+   ],
+   "out": [
+    null,
+    [
+     {
+      "cmd": "md5sum /etc/sing-box/config.json 2>/dev/null | cut -c1-32; echo ---; cat /etc/sing-box/rh-devices 2>/dev/null; echo; echo ---; cat /etc/sing-box/heal.state 2>/dev/null; echo; echo ---; cat /etc/sing-box/config.json 2>/dev/null",
+      "stdin": null,
+      "timeout": 240
+     }
+    ],
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}",
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"timestamp\": true,\n    \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"detour\": \"auto\",\n        \"server\": \"9.9.9.9\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"mixed\",\n      \"tag\": \"socks-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 2080\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"action\": \"sniff\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\",\n      \"access_control_allow_origin\": [\n        \"http://127.0.0.1:9090\"\n      ],\n      \"access_control_allow_private_network\": false\n    }\n  }\n}",
+    null,
+    "",
+    {}
+   ]
+  },
+  {
+   "args": [
+    "cccccccccccccccccccccccccccccccc\n---\n\n\n---\n\n\n---\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"4.4.4.4\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"5.5.5.5\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"safari\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"not hex\"\n    }\n  }\n}\n",
+    {},
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    },
+    "",
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    }
+   ],
+   "out": [
+    null,
+    [
+     {
+      "cmd": "md5sum /etc/sing-box/config.json 2>/dev/null | cut -c1-32; echo ---; cat /etc/sing-box/rh-devices 2>/dev/null; echo; echo ---; cat /etc/sing-box/heal.state 2>/dev/null; echo; echo ---; cat /etc/sing-box/config.json 2>/dev/null",
+      "stdin": null,
+      "timeout": 240
+     }
+    ],
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}",
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"timestamp\": true,\n    \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"detour\": \"auto\",\n        \"server\": \"9.9.9.9\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"mixed\",\n      \"tag\": \"socks-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 2080\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"action\": \"sniff\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\",\n      \"access_control_allow_origin\": [\n        \"http://127.0.0.1:9090\"\n      ],\n      \"access_control_allow_private_network\": false\n    }\n  }\n}",
+    null,
+    "",
+    {}
+   ]
+  },
+  {
+   "args": [
+    "cccccccccccccccccccccccccccccccc\n---\n\n\n---\n\n\n---\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"4.4.4.4\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"5.5.5.5\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"safari\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  }\n}\n",
+    {},
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    },
+    "",
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    }
+   ],
+   "out": [
+    null,
+    [
+     {
+      "cmd": "md5sum /etc/sing-box/config.json 2>/dev/null | cut -c1-32; echo ---; cat /etc/sing-box/rh-devices 2>/dev/null; echo; echo ---; cat /etc/sing-box/heal.state 2>/dev/null; echo; echo ---; cat /etc/sing-box/config.json 2>/dev/null",
+      "stdin": null,
+      "timeout": 240
+     }
+    ],
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}",
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"timestamp\": true,\n    \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"detour\": \"auto\",\n        \"server\": \"9.9.9.9\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"mixed\",\n      \"tag\": \"socks-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 2080\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"action\": \"sniff\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\",\n      \"access_control_allow_origin\": [\n        \"http://127.0.0.1:9090\"\n      ],\n      \"access_control_allow_private_network\": false\n    }\n  }\n}",
+    null,
+    "",
+    {}
+   ]
+  },
+  {
+   "args": [
+    "cccccccccccccccccccccccccccccccc\n---\n\n\n---\n\n\n---\n{\"outbounds\": [}\n",
+    {},
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    },
+    "",
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    }
+   ],
+   "out": [
+    null,
+    [
+     {
+      "cmd": "md5sum /etc/sing-box/config.json 2>/dev/null | cut -c1-32; echo ---; cat /etc/sing-box/rh-devices 2>/dev/null; echo; echo ---; cat /etc/sing-box/heal.state 2>/dev/null; echo; echo ---; cat /etc/sing-box/config.json 2>/dev/null",
+      "stdin": null,
+      "timeout": 240
+     }
+    ],
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}",
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"timestamp\": true,\n    \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"detour\": \"auto\",\n        \"server\": \"9.9.9.9\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"mixed\",\n      \"tag\": \"socks-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 2080\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"action\": \"sniff\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\",\n      \"access_control_allow_origin\": [\n        \"http://127.0.0.1:9090\"\n      ],\n      \"access_control_allow_private_network\": false\n    }\n  }\n}",
+    null,
+    "",
+    {}
+   ]
+  },
+  {
+   "args": [
+    "cccccccccccccccccccccccccccccccc\n---\n\n\n---\n\n\n---\n{\n  \"outbounds\": [],\n  \"experimental\": {\n    \"clash_api\": {\n      \"secret\": \"abababababababababababababababab\"\n    }\n  }\n}\n",
+    {},
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    },
+    "",
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    {
+     "log": {
+      "level": "warn",
+      "timestamp": true,
+      "output": "C:\\Program Files\\RealityHop\\logs\\core.log"
+     },
+     "dns": {
+      "servers": [
+       {
+        "type": "https",
+        "tag": "quad9",
+        "detour": "auto",
+        "server": "9.9.9.9"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "mixed",
+       "tag": "socks-in",
+       "listen": "127.0.0.1",
+       "listen_port": 2080
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "action": "sniff"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_domain_resolver": "quad9"
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef",
+       "access_control_allow_origin": [
+        "http://127.0.0.1:9090"
+       ],
+       "access_control_allow_private_network": false
+      }
+     }
+    }
+   ],
+   "out": [
+    null,
+    [
+     {
+      "cmd": "md5sum /etc/sing-box/config.json 2>/dev/null | cut -c1-32; echo ---; cat /etc/sing-box/rh-devices 2>/dev/null; echo; echo ---; cat /etc/sing-box/heal.state 2>/dev/null; echo; echo ---; cat /etc/sing-box/config.json 2>/dev/null",
+      "stdin": null,
+      "timeout": 240
+     }
+    ],
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}",
+    "{\n  \"log\": {\n    \"level\": \"warn\",\n    \"timestamp\": true,\n    \"output\": \"C:\\\\Program Files\\\\RealityHop\\\\logs\\\\core.log\"\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"detour\": \"auto\",\n        \"server\": \"9.9.9.9\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"mixed\",\n      \"tag\": \"socks-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 2080\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"action\": \"sniff\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\",\n      \"access_control_allow_origin\": [\n        \"http://127.0.0.1:9090\"\n      ],\n      \"access_control_allow_private_network\": false\n    }\n  }\n}",
+    null,
+    "",
+    {}
+   ]
+  }
+ ]
+}

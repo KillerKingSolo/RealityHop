@@ -184,3 +184,15 @@ pub fn api_lockdown(c: &mut Value, store_ok: bool) -> Vec<&'static str> {
     }
     fix
 }
+
+// The vless nodes in one config file, either schema, with their tags (engine.nodes_of)
+pub fn nodes_of(cfg: &std::path::Path) -> std::io::Result<Vec<(String, Node)>> {
+    let c = crate::data_files::read_json(cfg)?;
+    Ok(c["outbounds"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|o| o["type"] == "vless")
+        .filter_map(from_outbound)
+        .collect())
+}

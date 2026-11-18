@@ -1,0 +1,428 @@
+{
+ "fn": "pia_bypass",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    {},
+    {},
+    false,
+    [],
+    [],
+    false,
+    true
+   ],
+   "out": [
+    true,
+    [
+     [
+      "-u",
+      "applysettings",
+      "{\"splitTunnelRules\": [{\"path\": \"C:\\\\Program Files\\\\RealityHop\\\\PC\\\\rh-core.exe\", \"linkTarget\": \"\", \"mode\": \"exclude\"}, {\"path\": \"C:\\\\Program Files\\\\RealityHop\\\\rh-test.exe\", \"linkTarget\": \"\", \"mode\": \"exclude\"}]}"
+     ]
+    ],
+    [
+     "PIA: Reality Hop is in its split tunnel list (Bypass VPN)"
+    ],
+    {
+     "pia_ips": [],
+     "pia_apps": [
+      "C:\\Program Files\\RealityHop\\PC\\rh-core.exe",
+      "C:\\Program Files\\RealityHop\\rh-test.exe"
+     ],
+     "pia_app": false
+    }
+   ]
+  },
+  {
+   "args": [
+    {
+     "splitTunnelRules": [
+      {
+       "path": "c:/program files/RealityHop/PC/RH-CORE.EXE",
+       "linkTarget": "",
+       "mode": "include"
+      },
+      {
+       "path": "C:\\Games\\game.exe",
+       "linkTarget": "",
+       "mode": "exclude"
+      }
+     ]
+    },
+    {},
+    false,
+    [],
+    [],
+    false,
+    true
+   ],
+   "out": [
+    true,
+    [
+     [
+      "-u",
+      "applysettings",
+      "{\"splitTunnelRules\": [{\"path\": \"C:\\\\Games\\\\game.exe\", \"linkTarget\": \"\", \"mode\": \"exclude\"}, {\"path\": \"C:\\\\Program Files\\\\RealityHop\\\\PC\\\\rh-core.exe\", \"linkTarget\": \"\", \"mode\": \"exclude\"}, {\"path\": \"C:\\\\Program Files\\\\RealityHop\\\\rh-test.exe\", \"linkTarget\": \"\", \"mode\": \"exclude\"}]}"
+     ]
+    ],
+    [
+     "PIA: Reality Hop is in its split tunnel list (Bypass VPN)"
+    ],
+    {
+     "pia_ips": [],
+     "pia_apps": [
+      "C:\\Program Files\\RealityHop\\rh-test.exe"
+     ],
+     "pia_app": false
+    }
+   ]
+  },
+  {
+   "args": [
+    {
+     "splitTunnelRules": [
+      {
+       "path": "C:\\Program Files\\RealityHop\\PC\\rh-core.exe",
+       "linkTarget": "",
+       "mode": "exclude"
+      },
+      {
+       "path": "C:\\Program Files\\RealityHop\\rh-test.exe",
+       "linkTarget": "",
+       "mode": "exclude"
+      }
+     ]
+    },
+    {
+     "pia_apps": [
+      "C:\\Program Files\\RealityHop\\PC\\rh-core.exe"
+     ]
+    },
+    false,
+    [],
+    [],
+    false,
+    true
+   ],
+   "out": [
+    true,
+    [],
+    [],
+    {
+     "pia_apps": [
+      "C:\\Program Files\\RealityHop\\PC\\rh-core.exe"
+     ],
+     "pia_ips": [],
+     "pia_app": false
+    }
+   ]
+  },
+  {
+   "args": [
+    {
+     "splitTunnelRules": [
+      {
+       "path": "C:\\Program Files\\RealityHop\\PC\\rh-core.exe",
+       "linkTarget": "",
+       "mode": "exclude"
+      },
+      {
+       "path": "C:\\Program Files\\RealityHop\\rh-test.exe",
+       "linkTarget": "",
+       "mode": "exclude"
+      },
+      "junk"
+     ]
+    },
+    {
+     "pia_apps": [
+      "C:\\Program Files\\RealityHop\\PC\\rh-core.exe"
+     ]
+    },
+    false,
+    [],
+    [],
+    false,
+    false
+   ],
+   "out": [
+    true,
+    [
+     [
+      "-u",
+      "applysettings",
+      "{\"splitTunnelRules\": [{\"path\": \"C:\\\\Program Files\\\\RealityHop\\\\rh-test.exe\", \"linkTarget\": \"\", \"mode\": \"exclude\"}, \"junk\"]}"
+     ]
+    ],
+    [],
+    {
+     "pia_apps": [],
+     "pia_ips": [],
+     "pia_app": false
+    }
+   ]
+  },
+  {
+   "args": [
+    {},
+    {
+     "pia_apps": [
+      "x"
+     ]
+    },
+    false,
+    [],
+    [],
+    false,
+    true,
+    true
+   ],
+   "out": [
+    false,
+    [
+     [
+      "-u",
+      "applysettings",
+      "{\"splitTunnelRules\": [{\"path\": \"C:\\\\Program Files\\\\RealityHop\\\\PC\\\\rh-core.exe\", \"linkTarget\": \"\", \"mode\": \"exclude\"}, {\"path\": \"C:\\\\Program Files\\\\RealityHop\\\\rh-test.exe\", \"linkTarget\": \"\", \"mode\": \"exclude\"}]}"
+     ]
+    ],
+    [
+     "PIA: could not update its split tunnel list (bad settings); with a kill switch on, PIA cannot connect through Reality Hop"
+    ],
+    {
+     "pia_apps": [
+      "x"
+     ]
+    }
+   ]
+  },
+  {
+   "args": [
+    {
+     "bypassSubnets": [
+      {
+       "subnet": "8.8.8.8/32",
+       "mode": "exclude"
+      },
+      {
+       "subnet": "5.5.5.5/32",
+       "mode": "exclude"
+      },
+      "junk"
+     ],
+     "splitTunnelEnabled": false
+    },
+    {
+     "pia_ips": [
+      "5.5.5.5"
+     ]
+    },
+    true,
+    [
+     "8.8.8.8",
+     "1.1.1.1"
+    ],
+    [
+     "100.0.0.1",
+     "9.9.9.9",
+     "10.0.0.1"
+    ],
+    true,
+    true
+   ],
+   "out": [
+    true,
+    [
+     [
+      "-u",
+      "applysettings",
+      "{\"bypassSubnets\": [{\"subnet\": \"8.8.8.8/32\", \"mode\": \"exclude\"}, {\"subnet\": \"1.1.1.1/32\", \"mode\": \"exclude\"}, {\"subnet\": \"9.9.9.9/32\", \"mode\": \"exclude\"}, {\"subnet\": \"100.0.0.1/32\", \"mode\": \"exclude\"}], \"splitTunnelRules\": [{\"path\": \"/Applications/RealityHop.app\", \"linkTarget\": \"\", \"mode\": \"exclude\"}], \"splitTunnelEnabled\": true}"
+     ]
+    ],
+    [
+     "PIA: Reality Hop is in its split tunnel list (Bypass VPN); split tunnel switched on"
+    ],
+    {
+     "pia_ips": [
+      "1.1.1.1",
+      "9.9.9.9",
+      "100.0.0.1"
+     ],
+     "pia_apps": [
+      "/Applications/RealityHop.app"
+     ],
+     "pia_app": false
+    }
+   ]
+  },
+  {
+   "args": [
+    {
+     "bypassSubnets": [
+      {
+       "subnet": "1.1.1.1/32",
+       "mode": "exclude"
+      }
+     ],
+     "splitTunnelRules": [
+      {
+       "path": "/Applications/RealityHop.app",
+       "linkTarget": "",
+       "mode": "exclude"
+      }
+     ],
+     "splitTunnelEnabled": true
+    },
+    {
+     "pia_ips": [
+      "1.1.1.1"
+     ],
+     "pia_apps": [
+      "/Applications/RealityHop.app"
+     ]
+    },
+    true,
+    [
+     "1.1.1.1"
+    ],
+    [],
+    true,
+    true
+   ],
+   "out": [
+    true,
+    [],
+    [],
+    {
+     "pia_ips": [
+      "1.1.1.1"
+     ],
+     "pia_apps": [
+      "/Applications/RealityHop.app"
+     ],
+     "pia_app": false
+    }
+   ]
+  },
+  {
+   "args": [
+    {
+     "bypassSubnets": [
+      {
+       "subnet": "1.1.1.1/32",
+       "mode": "exclude"
+      }
+     ],
+     "splitTunnelRules": [
+      {
+       "path": "/Applications/RealityHop.app",
+       "linkTarget": "",
+       "mode": "exclude"
+      }
+     ],
+     "splitTunnelEnabled": true
+    },
+    {
+     "pia_ips": [
+      "1.1.1.1"
+     ],
+     "pia_app": true
+    },
+    true,
+    [
+     "1.1.1.1"
+    ],
+    [],
+    true,
+    false
+   ],
+   "out": [
+    true,
+    [
+     [
+      "-u",
+      "applysettings",
+      "{\"bypassSubnets\": [], \"splitTunnelRules\": []}"
+     ]
+    ],
+    [],
+    {
+     "pia_ips": [],
+     "pia_app": false,
+     "pia_apps": []
+    }
+   ]
+  },
+  {
+   "args": [
+    {},
+    {
+     "pia_app": true
+    },
+    true,
+    [
+     "1.1.1.1"
+    ],
+    [],
+    false,
+    true
+   ],
+   "out": [
+    true,
+    [
+     [
+      "-u",
+      "applysettings",
+      "{\"bypassSubnets\": [{\"subnet\": \"1.1.1.1/32\", \"mode\": \"exclude\"}], \"splitTunnelEnabled\": true}"
+     ]
+    ],
+    [],
+    {
+     "pia_app": false,
+     "pia_ips": [
+      "1.1.1.1"
+     ],
+     "pia_apps": []
+    }
+   ]
+  },
+  {
+   "args": [
+    null,
+    {},
+    false,
+    [],
+    [],
+    false,
+    true
+   ],
+   "out": [
+    false,
+    [],
+    [],
+    {}
+   ]
+  },
+  {
+   "args": [
+    [
+     1,
+     2
+    ],
+    {},
+    false,
+    [],
+    [],
+    false,
+    true
+   ],
+   "out": [
+    false,
+    [],
+    [],
+    {}
+   ]
+  }
+ ]
+}

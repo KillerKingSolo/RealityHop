@@ -1,0 +1,31 @@
+{
+ "fn": "agent_plist",
+ "source": "src/macos.py",
+ "cases": [
+  {
+   "args": [
+    "com.realityhop.watcher",
+    [
+     "/Applications/RealityHop.app/Contents/MacOS/RealityHop",
+     "--watch",
+     "--logon"
+    ],
+    "/Users/pat/Library/Application Support/RealityHop"
+   ],
+   "out": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n\t<key>Label</key>\n\t<string>com.realityhop.watcher</string>\n\t<key>LimitLoadToSessionType</key>\n\t<string>Aqua</string>\n\t<key>ProcessType</key>\n\t<string>Interactive</string>\n\t<key>ProgramArguments</key>\n\t<array>\n\t\t<string>/Applications/RealityHop.app/Contents/MacOS/RealityHop</string>\n\t\t<string>--watch</string>\n\t\t<string>--logon</string>\n\t</array>\n\t<key>RunAtLoad</key>\n\t<true/>\n\t<key>WorkingDirectory</key>\n\t<string>/Users/pat/Library/Application Support/RealityHop</string>\n</dict>\n</plist>\n"
+  },
+  {
+   "args": [
+    "com.realityhop.tunnel",
+    [
+     "/x/rh-core",
+     "run",
+     "-c",
+     "/x/a&b <c> \"d\" 'e'.json"
+    ],
+    "/x"
+   ],
+   "out": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n\t<key>Label</key>\n\t<string>com.realityhop.tunnel</string>\n\t<key>LimitLoadToSessionType</key>\n\t<string>Aqua</string>\n\t<key>ProcessType</key>\n\t<string>Interactive</string>\n\t<key>ProgramArguments</key>\n\t<array>\n\t\t<string>/x/rh-core</string>\n\t\t<string>run</string>\n\t\t<string>-c</string>\n\t\t<string>/x/a&amp;b &lt;c&gt; \"d\" 'e'.json</string>\n\t</array>\n\t<key>RunAtLoad</key>\n\t<true/>\n\t<key>WorkingDirectory</key>\n\t<string>/x</string>\n</dict>\n</plist>\n"
+  }
+ ]
+}

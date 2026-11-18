@@ -1,0 +1,218 @@
+{
+ "fn": "core_release",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    [
+     {
+      "tag_name": "v1.15.0-alpha.13",
+      "prerelease": true,
+      "assets": [
+       {
+        "name": "sing-box-1.15.0-alpha.13-windows-amd64.zip"
+       }
+      ]
+     },
+     {
+      "tag_name": "v1.14.4",
+      "prerelease": false,
+      "assets": [
+       {
+        "name": "x.txt"
+       },
+       {
+        "name": "sing-box-1.14.4-windows-amd64.zip"
+       }
+      ]
+     },
+     {
+      "tag_name": "v1.14.5",
+      "prerelease": false,
+      "assets": [
+       {
+        "name": "sing-box-1.14.5-darwin-arm64.tar.gz"
+       }
+      ]
+     },
+     {
+      "tag_name": "v1.16.0",
+      "prerelease": false,
+      "draft": true,
+      "assets": [
+       {
+        "name": "sing-box-1.16.0-windows-amd64.zip"
+       }
+      ]
+     },
+     {
+      "tag_name": "v1.13.9",
+      "assets": [
+       {
+        "name": "sing-box-1.13.9-windows-amd64.zip"
+       }
+      ]
+     }
+    ],
+    "stable"
+   ],
+   "out": [
+    "v1.14.4",
+    {
+     "stable": "1.14.4",
+     "testing": "1.15.0-alpha.13"
+    }
+   ]
+  },
+  {
+   "args": [
+    [
+     {
+      "tag_name": "v1.15.0-alpha.13",
+      "prerelease": true,
+      "assets": [
+       {
+        "name": "sing-box-1.15.0-alpha.13-windows-amd64.zip"
+       }
+      ]
+     },
+     {
+      "tag_name": "v1.14.4",
+      "prerelease": false,
+      "assets": [
+       {
+        "name": "x.txt"
+       },
+       {
+        "name": "sing-box-1.14.4-windows-amd64.zip"
+       }
+      ]
+     },
+     {
+      "tag_name": "v1.14.5",
+      "prerelease": false,
+      "assets": [
+       {
+        "name": "sing-box-1.14.5-darwin-arm64.tar.gz"
+       }
+      ]
+     },
+     {
+      "tag_name": "v1.16.0",
+      "prerelease": false,
+      "draft": true,
+      "assets": [
+       {
+        "name": "sing-box-1.16.0-windows-amd64.zip"
+       }
+      ]
+     },
+     {
+      "tag_name": "v1.13.9",
+      "assets": [
+       {
+        "name": "sing-box-1.13.9-windows-amd64.zip"
+       }
+      ]
+     }
+    ],
+    "testing"
+   ],
+   "out": [
+    "v1.15.0-alpha.13",
+    {
+     "stable": "1.14.4",
+     "testing": "1.15.0-alpha.13"
+    }
+   ]
+  },
+  {
+   "args": [
+    [
+     {
+      "tag_name": "v1.15.0-alpha.13",
+      "prerelease": true,
+      "assets": [
+       {
+        "name": "sing-box-1.15.0-alpha.13-windows-amd64.zip"
+       }
+      ]
+     },
+     {
+      "tag_name": "v1.14.5",
+      "prerelease": false,
+      "assets": [
+       {
+        "name": "sing-box-1.14.5-darwin-arm64.tar.gz"
+       }
+      ]
+     }
+    ],
+    "stable"
+   ],
+   "out": [
+    {
+     "error": "no sing-box release for Windows found on GitHub"
+    },
+    {
+     "stable": null,
+     "testing": "1.15.0-alpha.13"
+    }
+   ]
+  },
+  {
+   "args": [
+    [],
+    "stable"
+   ],
+   "out": [
+    {
+     "error": "no sing-box release for Windows found on GitHub"
+    },
+    {
+     "stable": null,
+     "testing": null
+    }
+   ]
+  },
+  {
+   "args": [
+    [
+     {
+      "tag_name": "v1.14.4",
+      "prerelease": false,
+      "assets": [
+       {
+        "name": "x.txt"
+       },
+       {
+        "name": "sing-box-1.14.4-windows-amd64.zip"
+       }
+      ]
+     },
+     {
+      "tag_name": "1.14.4",
+      "prerelease": false,
+      "assets": [
+       {
+        "name": "x.txt"
+       },
+       {
+        "name": "sing-box-1.14.4-windows-amd64.zip"
+       }
+      ],
+      "body": "second"
+     }
+    ],
+    "stable"
+   ],
+   "out": [
+    "v1.14.4",
+    {
+     "stable": "1.14.4",
+     "testing": "1.14.4"
+    }
+   ]
+  }
+ ]
+}

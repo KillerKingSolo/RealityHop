@@ -1,0 +1,10 @@
+{
+ "fn": "legacy_ps",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [],
+   "out": "Get-ScheduledTask | Where-Object { $_.Actions.Execute -like '*sb-core.exe*' } | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue; Stop-Process -Name sb-core -Force -ErrorAction SilentlyContinue"
+  }
+ ]
+}

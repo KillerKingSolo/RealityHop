@@ -1,0 +1,62 @@
+{
+ "fn": "shortcuts",
+ "source": "src/install.py",
+ "cases": [
+  {
+   "args": [
+    "C:\\Program Files\\RealityHop\\RealityHop.exe",
+    1,
+    1
+   ],
+   "out": [
+    {
+     "cmd": [
+      "powershell",
+      "-NoProfile",
+      "-Command",
+      "$s = (New-Object -ComObject WScript.Shell).CreateShortcut('C:\\Users\\Pat\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Reality Hop.lnk'); $s.TargetPath = 'C:\\Program Files\\RealityHop\\RealityHop.exe'; $s.WorkingDirectory = 'C:\\Program Files\\RealityHop'; $s.IconLocation = 'C:\\Program Files\\RealityHop\\RealityHop.exe,0'; $s.Description = 'Reality Hop: get your VPN through networks that block VPNs'; $s.Save()"
+     ],
+     "stdin": null,
+     "timeout": 30
+    },
+    {
+     "cmd": [
+      "powershell",
+      "-NoProfile",
+      "-Command",
+      "$s = (New-Object -ComObject WScript.Shell).CreateShortcut('C:\\Users\\Pat O’’Neil\\Desktop\\Reality Hop.lnk'); $s.TargetPath = 'C:\\Program Files\\RealityHop\\RealityHop.exe'; $s.WorkingDirectory = 'C:\\Program Files\\RealityHop'; $s.IconLocation = 'C:\\Program Files\\RealityHop\\RealityHop.exe,0'; $s.Description = 'Reality Hop: get your VPN through networks that block VPNs'; $s.Save()"
+     ],
+     "stdin": null,
+     "timeout": 30
+    }
+   ]
+  },
+  {
+   "args": [
+    "D:\\Pat's\\RealityHop\\RealityHop.exe",
+    1,
+    0
+   ],
+   "out": [
+    {
+     "cmd": [
+      "powershell",
+      "-NoProfile",
+      "-Command",
+      "$s = (New-Object -ComObject WScript.Shell).CreateShortcut('C:\\Users\\Pat\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Reality Hop.lnk'); $s.TargetPath = 'D:\\Pat''s\\RealityHop\\RealityHop.exe'; $s.WorkingDirectory = 'D:\\Pat''s\\RealityHop'; $s.IconLocation = 'D:\\Pat''s\\RealityHop\\RealityHop.exe,0'; $s.Description = 'Reality Hop: get your VPN through networks that block VPNs'; $s.Save()"
+     ],
+     "stdin": null,
+     "timeout": 30
+    }
+   ]
+  },
+  {
+   "args": [
+    "C:\\x\\RealityHop.exe",
+    0,
+    0
+   ],
+   "out": []
+  }
+ ]
+}

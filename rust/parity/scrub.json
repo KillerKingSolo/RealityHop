@@ -1,0 +1,61 @@
+{
+ "fn": "scrub",
+ "source": "src/report.py",
+ "cases": [
+  {
+   "args": [
+    [
+     "user patricia on DESKTOP-7Q2 opened C:\\Users\\patricia\\AppData\\Local\\RealityHop\\settings.json and PATRICIA.txt",
+     "D:\\Users\\Someone Else\\x.txt and /Users/sam/Library and /Users/Shared/x and a/Users/kept",
+     "+0100 2026-11-18 10:00:00 ERROR [12 3.2ms] outbound/vless[vless-1]: dial 8.8.8.8:443 via 192.168.8.20 to 10.1.2.3",
+     "connected to 1.1.1.1, 127.0.0.1, 9.9.9.9, 100.64.1.1, 169.254.3.4, 203.0.113.7, 01.2.3.4, 999.1.1.1, 1.2.3.4.5, 172.16.0.9",
+     "node 8.8.8.8 again and 1.1.1.1 and 9.9.9.9 and lan 192.168.8.20 again",
+     "sid=0a1b&pbk=x secret: abc token=xyz Bearer 0123456789abcdef password = hunter2 short_id:ff",
+     "mail pat.o-neil+rh@example.co.uk now; www.apple.com and cdnjs.com, evil-site.org, sub.domain.example.net, engine.py, heal.sh, crt.sh, report.pyw, obsidian.md, readme.md",
+     "sing-box-1.14.4-windows-amd64.zip RealityHop-mac-apple-silicon.dmg com.realityhop.watcher.plist realityhop.app x.y",
+     "uuid a1b2c3d4-e5f6-7890-abcd-ef1234567890 mac AA:BB:CC:DD:EE:FF and aa-bb-cc-dd-ee-ff and aabb.ccdd.eeff again AA:BB:CC:DD:EE:FF",
+     "ipv6 fe80::1 2001:db8:0:0:0:0:2:1 and ::1 and 10:30:45 and a:b:c and 2001:db8::1%eth0",
+     "key AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_- hash aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa sha BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB too long ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc id 0123456789abcdef0123456789abcdef",
+     "path $1 \\1 C:\\Users\\patricia\\$x",
+     ""
+    ],
+    {
+     "USERNAME": "patricia",
+     "COMPUTERNAME": "DESKTOP-7Q2",
+     "USERDOMAIN": "DESKTOP-7Q2",
+     "USERPROFILE": "C:\\Users\\patricia"
+    }
+   ],
+   "out": [
+    "user <user> on <pc> opened C:\\Users\\<user>\\AppData\\Local\\RealityHop\\settings.json and <user>.txt",
+    "D:\\Users\\<user> Else\\x.txt and /Users/<user>/Library and /Users/Shared/x and a/Users/kept",
+    "2026-11-18 10:00:00 ERROR [12 3.2ms] outbound/vless[vless-1]: dial 8.8.8.8:443 via lan-1 to lan-2",
+    "connected to 1.1.1.1, 127.0.0.1, 9.9.9.9, ip-1, lan-3, lan-4, 01.2.3.4, 999.1.1.1, 1.2.3.4.5, lan-5",
+    "node 8.8.8.8 again and 1.1.1.1 and 9.9.9.9 and lan lan-1 again",
+    "sid=<secret>&pbk=x secret: <secret> token=<secret> Bearer <secret> password = <secret> short_id:<secret>",
+    "mail <email> now; www.apple.com and cdnjs.com, host-1, host-2, engine.py, heal.sh, host-3, report.pyw, host-4, readme.md",
+    "sing-box-1.14.4-windows-amd64.zip RealityHop-mac-apple-silicon.dmg com.realityhop.watcher.plist realityhop.app x.y",
+    "uuid <uuid> mac mac-1 and mac-2 and host-5 again mac-1",
+    "ipv6 ipv6-1 ipv6-2 and ipv6-3 and 10:30:45 and a:b:c and ipv6-4%eth0",
+    "key AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_- hash <secret> sha <secret> too long ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc id <secret>",
+    "path $1 \\1 C:\\Users\\<user>\\$x",
+    ""
+   ]
+  },
+  {
+   "args": [
+    [
+     "admin on WINDOWS as user, pc ab, home C:\\Users\\admin\\x"
+    ],
+    {
+     "USERNAME": "admin",
+     "COMPUTERNAME": "ab",
+     "USERPROFILE": "C:\\Users\\admin"
+    }
+   ],
+   "out": [
+    "admin on WINDOWS as user, pc ab, home C:\\Users\\<user>\\x"
+   ]
+  }
+ ]
+}

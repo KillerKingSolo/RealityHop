@@ -12,7 +12,8 @@ pub fn host_ok(h: &str) -> bool {
 
 // A plain IPv4 internet address: a node list must never point the tunnel or the pings at this PC or the LAN
 pub fn public_ip(h: &str) -> bool {
-    python_compat::ipv4(h).is_some_and(python_compat::is_global)
+    // Python's is_global also passes multicast (224.0.0.0/4), which no node can be; 1.7.x let it through
+    python_compat::ipv4(h).is_some_and(|a| python_compat::is_global(a) && !a.is_multicast())
 }
 
 // A valid address of a device on the local network (what the router tunnel goes by)

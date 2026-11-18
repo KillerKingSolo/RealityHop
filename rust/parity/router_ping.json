@@ -1,0 +1,437 @@
+{
+ "fn": "router_ping",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome"
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox"
+     }
+    ],
+    [
+     "0 0.031\n1 0,120\n2 0.000\n"
+    ]
+   ],
+   "out": [
+    [
+     "8.8.8.8",
+     "1.1.1.1"
+    ],
+    [
+     31,
+     120,
+     null
+    ],
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "( echo \"0 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://8.8.8.8/)\" ) &\nW=\"$W $!\"\n( echo \"1 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.1/)\" ) &\nW=\"$W $!\"\n( echo \"2 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://9.9.9.9/)\" ) &\nW=\"$W $!\"\n[ -n \"$W\" ] && wait $W\n",
+      "timeout": 240
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome"
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox"
+     }
+    ],
+    [
+     "2 0.5\nx 1\n1 abc\n0\n"
+    ]
+   ],
+   "out": [
+    [
+     "9.9.9.9"
+    ],
+    [
+     null,
+     null,
+     500
+    ],
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "( echo \"0 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://8.8.8.8/)\" ) &\nW=\"$W $!\"\n( echo \"1 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.1/)\" ) &\nW=\"$W $!\"\n( echo \"2 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://9.9.9.9/)\" ) &\nW=\"$W $!\"\n[ -n \"$W\" ] && wait $W\n",
+      "timeout": 240
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    [
+     {
+      "server": "1.1.1.0",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.2",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.3",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.4",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.5",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.6",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.7",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.10",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.11",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.12",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.13",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.14",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.15",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.16",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.17",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.18",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.19",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.20",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.21",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.22",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.23",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.24",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.25",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.26",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.27",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.28",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.29",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.30",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.31",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.32",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.33",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     }
+    ],
+    [
+     "5 0.0101\n33 0.2\n"
+    ]
+   ],
+   "out": [
+    [
+     "1.1.1.5",
+     "1.1.1.33"
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     10,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     200
+    ],
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "( echo \"0 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.0/)\" ) &\nW=\"$W $!\"\n( echo \"1 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.1/)\" ) &\nW=\"$W $!\"\n( echo \"2 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.2/)\" ) &\nW=\"$W $!\"\n( echo \"3 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.3/)\" ) &\nW=\"$W $!\"\n( echo \"4 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.4/)\" ) &\nW=\"$W $!\"\n( echo \"5 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.5/)\" ) &\nW=\"$W $!\"\n( echo \"6 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.6/)\" ) &\nW=\"$W $!\"\n( echo \"7 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.7/)\" ) &\nW=\"$W $!\"\n( echo \"8 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.8/)\" ) &\nW=\"$W $!\"\n( echo \"9 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.9/)\" ) &\nW=\"$W $!\"\n( echo \"10 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.10/)\" ) &\nW=\"$W $!\"\n( echo \"11 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.11/)\" ) &\nW=\"$W $!\"\n( echo \"12 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.12/)\" ) &\nW=\"$W $!\"\n( echo \"13 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.13/)\" ) &\nW=\"$W $!\"\n( echo \"14 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.14/)\" ) &\nW=\"$W $!\"\n( echo \"15 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.15/)\" ) &\nW=\"$W $!\"\n( echo \"16 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.16/)\" ) &\nW=\"$W $!\"\n( echo \"17 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.17/)\" ) &\nW=\"$W $!\"\n( echo \"18 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.18/)\" ) &\nW=\"$W $!\"\n( echo \"19 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.19/)\" ) &\nW=\"$W $!\"\n( echo \"20 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.20/)\" ) &\nW=\"$W $!\"\n( echo \"21 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.21/)\" ) &\nW=\"$W $!\"\n( echo \"22 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.22/)\" ) &\nW=\"$W $!\"\n( echo \"23 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.23/)\" ) &\nW=\"$W $!\"\n( echo \"24 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.24/)\" ) &\nW=\"$W $!\"\n( echo \"25 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.25/)\" ) &\nW=\"$W $!\"\n( echo \"26 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.26/)\" ) &\nW=\"$W $!\"\n( echo \"27 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.27/)\" ) &\nW=\"$W $!\"\n( echo \"28 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.28/)\" ) &\nW=\"$W $!\"\n( echo \"29 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.29/)\" ) &\nW=\"$W $!\"\n( echo \"30 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.30/)\" ) &\nW=\"$W $!\"\n( echo \"31 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.31/)\" ) &\nW=\"$W $!\"\nwait $W\nW=\n( echo \"32 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.32/)\" ) &\nW=\"$W $!\"\n( echo \"33 $(curl -sk -o /dev/null --connect-timeout 2 -m 3 -w '%{time_connect}' https://1.1.1.33/)\" ) &\nW=\"$W $!\"\n[ -n \"$W\" ] && wait $W\n",
+      "timeout": 240
+     }
+    ]
+   ]
+  }
+ ]
+}

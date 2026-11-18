@@ -1,0 +1,58 @@
+{
+ "fn": "logon_task",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    [
+     "C:\\Program Files\\RealityHop\\RealityHop.exe",
+     "--watch",
+     "--logon"
+    ],
+    "DESKTOP-1",
+    "pat"
+   ],
+   "out": [
+    true,
+    [
+     {
+      "cmd": [
+       "powershell",
+       "-NoProfile",
+       "-Command",
+       "try { $a = New-ScheduledTaskAction -Execute 'C:\\Program Files\\RealityHop\\RealityHop.exe' -Argument '--watch --logon' -WorkingDirectory 'C:\\Program Files\\RealityHop'; $t = New-ScheduledTaskTrigger -AtLogOn -User 'DESKTOP-1\\pat'; $p = New-ScheduledTaskPrincipal -UserId 'DESKTOP-1\\pat' -LogonType Interactive -RunLevel Limited; $s = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -Priority 5 -MultipleInstances IgnoreNew -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries; Register-ScheduledTask -TaskName 'RealityHop watcher' -Action $a -Trigger $t -Principal $p -Settings $s -Force -ErrorAction Stop | Out-Null; exit 0 } catch { exit 1 }"
+      ],
+      "stdin": null,
+      "timeout": 60
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    [
+     "C:\\Python315\\pythonw.exe",
+     "C:\\My Code\\engine.py",
+     "--watch"
+    ],
+    "",
+    "o'neil"
+   ],
+   "out": [
+    true,
+    [
+     {
+      "cmd": [
+       "powershell",
+       "-NoProfile",
+       "-Command",
+       "try { $a = New-ScheduledTaskAction -Execute 'C:\\Python315\\pythonw.exe' -Argument '\"C:\\My Code\\engine.py\" --watch' -WorkingDirectory 'C:\\Program Files\\RealityHop'; $t = New-ScheduledTaskTrigger -AtLogOn -User 'o''neil'; $p = New-ScheduledTaskPrincipal -UserId 'o''neil' -LogonType Interactive -RunLevel Limited; $s = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -Priority 5 -MultipleInstances IgnoreNew -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries; Register-ScheduledTask -TaskName 'RealityHop watcher' -Action $a -Trigger $t -Principal $p -Settings $s -Force -ErrorAction Stop | Out-Null; exit 0 } catch { exit 1 }"
+      ],
+      "stdin": null,
+      "timeout": 60
+     }
+    ]
+   ]
+  }
+ ]
+}

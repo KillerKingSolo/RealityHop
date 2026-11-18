@@ -1,0 +1,29 @@
+{
+ "fn": "core_lines",
+ "source": "src/report.py",
+ "cases": [
+  {
+   "args": [
+    [
+     "2026-11-18 10:00:00 ERROR [1234 5.2ms] outbound/vless[vless-1]: dial tcp 1.1.1.1:443->x: i/o timeout\n",
+     "2026-11-18 10:00:05 ERROR [99 1m2.5s] outbound/vless[vless-1]: dial tcp 1.1.1.1:5555->x: i/o timeout\n",
+     "not a log line\n",
+     "2026-11-18 10:01:00 WARN [7 300µs] something else\n",
+     "2026-11-18 10:02:00 ERROR [1 2ns] outbound/vless[vless-1]: dial tcp 1.1.1.1:80->x: i/o timeout\n",
+     "2026-11-18 10:03:00 INFO port :8->y kept\n"
+    ]
+   ],
+   "out": [
+    "2026-11-18 10:01:00  WARN something else",
+    "2026-11-18 10:02:00  ERROR outbound/vless[vless-1]: dial tcp 1.1.1.1->x: i/o timeout   (x3, first 10:00:00)",
+    "2026-11-18 10:03:00  INFO port :8->y kept"
+   ]
+  },
+  {
+   "args": [
+    []
+   ],
+   "out": []
+  }
+ ]
+}

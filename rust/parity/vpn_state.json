@@ -1,0 +1,105 @@
+{
+ "fn": "vpn_state",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    null
+   ],
+   "out": [
+    [
+     false,
+     []
+    ],
+    "VPN app: PIA not found. Point your VPN app at SOCKS5 127.0.0.1:2080 and use OpenVPN over TCP port 443 (see the VPN step in the setup)"
+   ]
+  },
+  {
+   "args": [
+    {
+     "method": "openvpn",
+     "protocol": "tcp",
+     "remotePortTCP": 443,
+     "proxyType": "custom",
+     "proxyCustom": {
+      "host": "127.0.0.1",
+      "port": 2080
+     }
+    }
+   ],
+   "out": [
+    [
+     true,
+     []
+    ],
+    "VPN app: PIA uses OpenVPN over TCP 443 through SOCKS5 127.0.0.1:2080, correct"
+   ]
+  },
+  {
+   "args": [
+    {
+     "method": "wireguard",
+     "protocol": "udp",
+     "remotePortTCP": 8443,
+     "proxyType": "shadowsocks",
+     "proxyEnabled": false
+    }
+   ],
+   "out": [
+    [
+     true,
+     [
+      "protocol is not OpenVPN",
+      "transport is not TCP",
+      "remote port is not 443",
+      "the SOCKS5 proxy is not 127.0.0.1:2080"
+     ]
+    ],
+    "VPN app: SET THIS IN PIA BY HAND (protocol is not OpenVPN, transport is not TCP, remote port is not 443, the SOCKS5 proxy is not 127.0.0.1:2080): PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Then Settings > Multi-Hop: tick \"Multi-hop and Obfuscation\", choose SOCKS5 Proxy, EDIT: host 127.0.0.1, port 2080, no username or password"
+   ]
+  },
+  {
+   "args": [
+    {
+     "method": "openvpn",
+     "protocol": "tcp",
+     "remotePortTCP": 443,
+     "proxyType": "custom",
+     "proxyEnabled": false,
+     "proxyCustom": {
+      "host": "127.0.0.1",
+      "port": 2080
+     }
+    }
+   ],
+   "out": [
+    [
+     true,
+     [
+      "the SOCKS5 proxy is not 127.0.0.1:2080"
+     ]
+    ],
+    "VPN app: SET THIS IN PIA BY HAND (the SOCKS5 proxy is not 127.0.0.1:2080): PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Then Settings > Multi-Hop: tick \"Multi-hop and Obfuscation\", choose SOCKS5 Proxy, EDIT: host 127.0.0.1, port 2080, no username or password"
+   ]
+  },
+  {
+   "args": [
+    {
+     "proxyCustom": null
+    }
+   ],
+   "out": [
+    [
+     true,
+     [
+      "protocol is not OpenVPN",
+      "transport is not TCP",
+      "remote port is not 443",
+      "the SOCKS5 proxy is not 127.0.0.1:2080"
+     ]
+    ],
+    "VPN app: SET THIS IN PIA BY HAND (protocol is not OpenVPN, transport is not TCP, remote port is not 443, the SOCKS5 proxy is not 127.0.0.1:2080): PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Then Settings > Multi-Hop: tick \"Multi-hop and Obfuscation\", choose SOCKS5 Proxy, EDIT: host 127.0.0.1, port 2080, no username or password"
+   ]
+  }
+ ]
+}

@@ -102,7 +102,8 @@ impl Settings {
         let int =
             |k: &str, def: i64, lo: i64, hi: i64| raw.get(k).map_or(Some(def), py_int).unwrap_or(def).clamp(lo, hi);
         let flag = |k: &str, def: i64| raw.get(k).map_or(Some(def), py_int).unwrap_or(def);
-        let text = |k: &str, def: &str| raw.get(k).map_or(def.to_string(), py_str);
+        // a null text setting keeps its default (1.7.x read it as the text "None")
+        let text = |k: &str, def: &str| raw.get(k).filter(|v| !v.is_null()).map_or(def.to_string(), py_str);
         let mut s = Settings {
             check_min: int("check_min", d.check_min, 15, 1440),
             slow_ms: int("slow_ms", d.slow_ms, 50, 5000),
@@ -137,4 +138,107 @@ impl Settings {
         }
         (s, migrated)
     }
+}
+
+// this-pc.json: what only this PC knows (engine.this_pc)
+pub fn this_pc(paths: &crate::paths::Paths) -> Map<String, Value> {
+    crate::data_files::jload(&paths.this_pc)
+}
+
+// Merge fields into this-pc.json (engine.set_this_pc)
+pub fn set_this_pc(paths: &crate::paths::Paths, kw: Map<String, Value>) -> std::io::Result<()> {
+    let mut d = this_pc(paths);
+    d.extend(kw);
+    crate::data_files::jsave(&paths.this_pc, &Value::Object(d), None)
+}
+
+impl Settings {
+    // settings.json from the data folder, with the one-time move of top from 40 to 50 saved (engine.settings_load)
+    pub fn read(paths: &crate::paths::Paths) -> std::io::Result<Settings> {
+        let raw = crate::data_files::jload(&paths.settings);
+        let top50 = this_pc(paths).get("top50").is_some_and(|v| v.as_bool().unwrap_or(!v.is_null()));
+        let (s, migrated) = Settings::load(&raw, top50);
+        if let Some(m) = migrated {
+            crate::data_files::jsave(&paths.settings, &Value::Object(m), Some(1))?;
+            set_this_pc(paths, Map::from_iter([("top50".to_string(), Value::Bool(true))]))?;
+        }
+        Ok(s)
+    }
+
+    // Save some or all settings (unknown names ignored); the switching margin also goes into both configs. Returns the
+    // settings read back, numbers out of range clamped (engine.settings_save)
+    pub fn save(paths: &crate::paths::Paths, changes: &Map<String, Value>) -> std::io::Result<Settings> {
+        let cur = Settings::read(paths)?;
+        let Value::Object(mut file) = serde_json::to_value(&cur).map_err(std::io::Error::other)? else {
+            unreachable!()
+        };
+        for (k, v) in changes {
+            let typed = match file.get(k) {
+                Some(Value::Number(_)) => py_int(v).map(Value::from),
+                Some(Value::String(_)) => Some(Value::from(py_str(v))),
+                _ => None,
+            };
+            if let Some(t) = typed {
+                file.insert(k.clone(), t);
+            }
+        }
+        crate::data_files::jsave(&paths.settings, &Value::Object(file), Some(1))?;
+        let d = Settings::read(paths)?;
+        for f in [&paths.pc_cfg, &paths.router_cfg] {
+            if !f.exists() {
+                continue;
+            }
+            let mut c = crate::data_files::read_json(f)?;
+            let mut changed = false;
+            for o in c["outbounds"].as_array_mut().into_iter().flatten() {
+                if o["type"] == "urltest" && o.get("tolerance") != Some(&Value::from(d.tolerance_ms)) {
+                    o["tolerance"] = Value::from(d.tolerance_ms);
+                    changed = true;
+                }
+            }
+            if changed {
+                crate::data_files::jsave(f, &c, Some(2))?;
+            }
+        }
+        Ok(d)
+    }
+}
+
+// Python's bool() of a JSON value
+pub fn py_truthy(v: &Value) -> bool {
+    match v {
+        Value::Null => false,
+        Value::Bool(b) => *b,
+        Value::Number(n) => n.as_f64() != Some(0.0),
+        Value::String(s) => !s.is_empty(),
+        Value::Array(a) => !a.is_empty(),
+        Value::Object(o) => !o.is_empty(),
+    }
+}
+
+// The settings, or the defaults when settings.json cannot be saved back (the read itself never fails)
+fn current(paths: &crate::paths::Paths) -> Settings {
+    Settings::read(paths).unwrap_or_else(|_| Settings::load(&crate::data_files::jload(&paths.settings), true).0)
+}
+
+// Only the router tunnels: no tunnel on this PC. Node tests then run on the router, since this PC's own traffic may
+// go through the router tunnel and would skew them (engine.router_only)
+pub fn router_only(paths: &crate::paths::Paths) -> bool {
+    let s = current(paths);
+    s.router != 0 && s.pc_tunnel == 0
+}
+
+// Router features off: only the PC tunnel, no SSH, no router section (engine.pc_only)
+pub fn pc_only(paths: &crate::paths::Paths) -> bool {
+    current(paths).router == 0
+}
+
+// After Stop: nothing starts the PC tunnel or the watcher until Start (engine.stopped)
+pub fn stopped(paths: &crate::paths::Paths) -> bool {
+    this_pc(paths).get("stopped").is_some_and(py_truthy)
+}
+
+// Stop or Start (engine.set_stopped)
+pub fn set_stopped(paths: &crate::paths::Paths, on: bool) -> std::io::Result<()> {
+    set_this_pc(paths, Map::from_iter([("stopped".to_string(), Value::Bool(on))]))
 }

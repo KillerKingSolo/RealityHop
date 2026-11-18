@@ -1,0 +1,76 @@
+{
+ "fn": "router_core_state",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "router_core_state",
+    [
+     "sing-box version 1.14.4\n|\nstable 1.14.4 abababababababababababababababababababababababababababababababab\n|\naarch64\n"
+    ]
+   ],
+   "out": [
+    {
+     "ver": "1.14.4",
+     "mark": [
+      "stable",
+      "1.14.4",
+      "abababababababababababababababababababababababababababababababab"
+     ],
+     "arch": "arm64"
+    },
+    [
+     {
+      "cmd": "sing-box version 2>/dev/null | head -1; echo \"|\"; cat /etc/sing-box/rh-core 2>/dev/null; echo \"|\"; uname -m",
+      "stdin": null,
+      "timeout": 30
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    "router_core_state",
+    [
+     "sing-box version 1.9.7\n|\n|\nmips\n"
+    ]
+   ],
+   "out": [
+    {
+     "ver": "1.9.7",
+     "mark": null,
+     "arch": null
+    },
+    [
+     {
+      "cmd": "sing-box version 2>/dev/null | head -1; echo \"|\"; cat /etc/sing-box/rh-core 2>/dev/null; echo \"|\"; uname -m",
+      "stdin": null,
+      "timeout": 30
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    "router_core_state",
+    [
+     ""
+    ]
+   ],
+   "out": [
+    {
+     "ver": null,
+     "mark": null,
+     "arch": null
+    },
+    [
+     {
+      "cmd": "sing-box version 2>/dev/null | head -1; echo \"|\"; cat /etc/sing-box/rh-core 2>/dev/null; echo \"|\"; uname -m",
+      "stdin": null,
+      "timeout": 30
+     }
+    ]
+   ]
+  }
+ ]
+}

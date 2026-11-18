@@ -1,0 +1,30 @@
+{
+ "fn": "elevated_params",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "$d = 'C:\\Program Files\\RealityHop'; icacls $d"
+   ],
+   "out": "-NoProfile -NonInteractive -WindowStyle Hidden -Command \"$d = 'C:\\Program Files\\RealityHop'; icacls $d\""
+  },
+  {
+   "args": [
+    "say \"hi\" \\\"there\\\" \\\\"
+   ],
+   "out": "-NoProfile -NonInteractive -WindowStyle Hidden -Command \"say \\\"hi\\\" \\\\\\\"there\\\\\\\" \\\\\\\\\""
+  },
+  {
+   "args": [
+    "tab\there"
+   ],
+   "out": "-NoProfile -NonInteractive -WindowStyle Hidden -Command \"tab\there\""
+  },
+  {
+   "args": [
+    ""
+   ],
+   "out": "-NoProfile -NonInteractive -WindowStyle Hidden -Command \"\""
+  }
+ ]
+}

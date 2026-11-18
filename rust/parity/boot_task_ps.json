@@ -1,0 +1,24 @@
+{
+ "fn": "boot_task_ps",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "C:\\Program Files\\RealityHop\\PC\\rh-core.exe",
+    "C:\\Program Files\\RealityHop\\PC\\pc-config.json",
+    "DESKTOP-1",
+    "pat"
+   ],
+   "out": "$was = (Get-ScheduledTask -TaskName 'RealityHop tunnel' -ErrorAction SilentlyContinue).State; $a = New-ScheduledTaskAction -Execute 'C:\\Program Files\\RealityHop\\PC\\rh-core.exe' -Argument 'run -c \"C:\\Program Files\\RealityHop\\PC\\pc-config.json\"' -WorkingDirectory 'C:\\Program Files\\RealityHop\\PC'; $t = New-ScheduledTaskTrigger -AtStartup; $p = New-ScheduledTaskPrincipal -UserId 'DESKTOP-1\\pat' -LogonType S4U -RunLevel Limited; $s = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -Priority 5 -RestartCount 5 -RestartInterval (New-TimeSpan -Minutes 1) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable; Register-ScheduledTask -TaskName 'RealityHop tunnel' -Action $a -Trigger $t -Principal $p -Settings $s -Force | Out-Null; if ($was -eq 'Disabled') { Disable-ScheduledTask -TaskName 'RealityHop tunnel' | Out-Null }"
+  },
+  {
+   "args": [
+    "D:\\O'Brien's Apps\\RealityHop\\PC\\rh-core.exe",
+    "D:\\O'Brien's Apps\\RealityHop\\PC\\pc-config.json",
+    "",
+    "O’Brien"
+   ],
+   "out": "$was = (Get-ScheduledTask -TaskName 'RealityHop tunnel' -ErrorAction SilentlyContinue).State; $a = New-ScheduledTaskAction -Execute 'D:\\O''Brien''s Apps\\RealityHop\\PC\\rh-core.exe' -Argument 'run -c \"D:\\O''Brien''s Apps\\RealityHop\\PC\\pc-config.json\"' -WorkingDirectory 'D:\\O''Brien''s Apps\\RealityHop\\PC'; $t = New-ScheduledTaskTrigger -AtStartup; $p = New-ScheduledTaskPrincipal -UserId 'O’’Brien' -LogonType S4U -RunLevel Limited; $s = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -Priority 5 -RestartCount 5 -RestartInterval (New-TimeSpan -Minutes 1) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable; Register-ScheduledTask -TaskName 'RealityHop tunnel' -Action $a -Trigger $t -Principal $p -Settings $s -Force | Out-Null; if ($was -eq 'Disabled') { Disable-ScheduledTask -TaskName 'RealityHop tunnel' | Out-Null }"
+  }
+ ]
+}

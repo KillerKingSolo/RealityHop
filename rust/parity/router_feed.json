@@ -1,0 +1,45 @@
+{
+ "fn": "router_feed",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "router_feed",
+    [
+     "vless://a\nvless://b\n"
+    ]
+   ],
+   "out": [
+    "vless://a\nvless://b\n",
+    [
+     {
+      "cmd": "curl -s -m 40 'https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt' | grep '^vless://' | grep reality | grep vision",
+      "stdin": null,
+      "timeout": 240
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    "router_feed",
+    [
+     ""
+    ]
+   ],
+   "out": [
+    {
+     "error": "RuntimeError",
+     "message": "the router could not download the node lists either"
+    },
+    [
+     {
+      "cmd": "curl -s -m 40 'https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt' | grep '^vless://' | grep reality | grep vision",
+      "stdin": null,
+      "timeout": 240
+     }
+    ]
+   ]
+  }
+ ]
+}

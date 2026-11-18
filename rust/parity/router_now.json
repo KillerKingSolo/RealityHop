@@ -1,0 +1,58 @@
+{
+ "fn": "router_now",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "router_now",
+    [
+     "{\"now\": \"vless-2\"}"
+    ]
+   ],
+   "out": [
+    "vless-2",
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "curl -s -m 5 -H \"Authorization: Bearer 0123456789abcdef0123456789abcdef\" http://127.0.0.1:9090/proxies/auto\n",
+      "timeout": 20
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    "router_now",
+    [
+     "nope"
+    ]
+   ],
+   "out": [
+    null,
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "curl -s -m 5 -H \"Authorization: Bearer 0123456789abcdef0123456789abcdef\" http://127.0.0.1:9090/proxies/auto\n",
+      "timeout": 20
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    "router_now",
+    []
+   ],
+   "out": [
+    null,
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "curl -s -m 5 -H \"Authorization: Bearer 0123456789abcdef0123456789abcdef\" http://127.0.0.1:9090/proxies/auto\n",
+      "timeout": 20
+     }
+    ]
+   ]
+  }
+ ]
+}

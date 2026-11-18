@@ -1,0 +1,2040 @@
+{
+ "fn": "push",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "192.168.8.10, 192.168.8.11; 8.8.8.8",
+    [
+     "sing-box service: running\ntproxy: listening\npushed-md5 cccccccccccccccccccccccccccccccc\n",
+     "self-repair: installed, 3 vault nodes on the router\n"
+    ],
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.1": {
+      "server": "2.2.0.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 0,
+      "last_ok": "2026-11-10",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.2": {
+      "server": "2.2.0.2",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 1,
+      "last_ok": "2026-11-11",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.3": {
+      "server": "2.2.0.3",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 2,
+      "last_ok": "2026-11-12",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.4": {
+      "server": "2.2.0.4",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 3,
+      "last_ok": "2026-11-13",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.5": {
+      "server": "2.2.0.5",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 4,
+      "last_ok": "2026-11-14",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.6": {
+      "server": "2.2.0.6",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 5,
+      "last_ok": "2026-11-15",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.7": {
+      "server": "2.2.0.7",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 6,
+      "last_ok": "2026-11-16",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.8": {
+      "server": "2.2.0.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 7,
+      "last_ok": "2026-11-17",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.9": {
+      "server": "2.2.0.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 8,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.10": {
+      "server": "2.2.0.10",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 9,
+      "last_ok": "2026-11-10",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.11": {
+      "server": "2.2.0.11",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 10,
+      "last_ok": "2026-11-11",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.12": {
+      "server": "2.2.0.12",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 11,
+      "last_ok": "2026-11-12",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.13": {
+      "server": "2.2.0.13",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 12,
+      "last_ok": "2026-11-13",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.14": {
+      "server": "2.2.0.14",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 13,
+      "last_ok": "2026-11-14",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.15": {
+      "server": "2.2.0.15",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 14,
+      "last_ok": "2026-11-15",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.16": {
+      "server": "2.2.0.16",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 15,
+      "last_ok": "2026-11-16",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.17": {
+      "server": "2.2.0.17",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 16,
+      "last_ok": "2026-11-17",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.18": {
+      "server": "2.2.0.18",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 17,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.19": {
+      "server": "2.2.0.19",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 18,
+      "last_ok": "2026-11-10",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.20": {
+      "server": "2.2.0.20",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 19,
+      "last_ok": "2026-11-11",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.21": {
+      "server": "2.2.0.21",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 20,
+      "last_ok": "2026-11-12",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.22": {
+      "server": "2.2.0.22",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 21,
+      "last_ok": "2026-11-13",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.23": {
+      "server": "2.2.0.23",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 22,
+      "last_ok": "2026-11-14",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.24": {
+      "server": "2.2.0.24",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 23,
+      "last_ok": "2026-11-15",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.25": {
+      "server": "2.2.0.25",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 24,
+      "last_ok": "2026-11-16",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.26": {
+      "server": "2.2.0.26",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 25,
+      "last_ok": "2026-11-17",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.27": {
+      "server": "2.2.0.27",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 26,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.28": {
+      "server": "2.2.0.28",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 27,
+      "last_ok": "2026-11-10",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.29": {
+      "server": "2.2.0.29",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 28,
+      "last_ok": "2026-11-11",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.30": {
+      "server": "2.2.0.30",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 29,
+      "last_ok": "2026-11-12",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.31": {
+      "server": "2.2.0.31",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 30,
+      "last_ok": "2026-11-13",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.32": {
+      "server": "2.2.0.32",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 31,
+      "last_ok": "2026-11-14",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.33": {
+      "server": "2.2.0.33",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 32,
+      "last_ok": "2026-11-15",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.34": {
+      "server": "2.2.0.34",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 33,
+      "last_ok": "2026-11-16",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.35": {
+      "server": "2.2.0.35",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 34,
+      "last_ok": "2026-11-17",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.36": {
+      "server": "2.2.0.36",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 35,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.37": {
+      "server": "2.2.0.37",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 36,
+      "last_ok": "2026-11-10",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.38": {
+      "server": "2.2.0.38",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 37,
+      "last_ok": "2026-11-11",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.39": {
+      "server": "2.2.0.39",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 38,
+      "last_ok": "2026-11-12",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.40": {
+      "server": "2.2.0.40",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 39,
+      "last_ok": "2026-11-13",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.41": {
+      "server": "2.2.0.41",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 40,
+      "last_ok": "2026-11-14",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.42": {
+      "server": "2.2.0.42",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 41,
+      "last_ok": "2026-11-15",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.43": {
+      "server": "2.2.0.43",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 42,
+      "last_ok": "2026-11-16",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.44": {
+      "server": "2.2.0.44",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 43,
+      "last_ok": "2026-11-17",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.45": {
+      "server": "2.2.0.45",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 44,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.46": {
+      "server": "2.2.0.46",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 45,
+      "last_ok": "2026-11-10",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.47": {
+      "server": "2.2.0.47",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 46,
+      "last_ok": "2026-11-11",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.48": {
+      "server": "2.2.0.48",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 47,
+      "last_ok": "2026-11-12",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.49": {
+      "server": "2.2.0.49",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 48,
+      "last_ok": "2026-11-13",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.50": {
+      "server": "2.2.0.50",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 49,
+      "last_ok": "2026-11-14",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.51": {
+      "server": "2.2.0.51",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 50,
+      "last_ok": "2026-11-15",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.52": {
+      "server": "2.2.0.52",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 51,
+      "last_ok": "2026-11-16",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.53": {
+      "server": "2.2.0.53",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 52,
+      "last_ok": "2026-11-17",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.54": {
+      "server": "2.2.0.54",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 53,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.55": {
+      "server": "2.2.0.55",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 54,
+      "last_ok": "2026-11-10",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.56": {
+      "server": "2.2.0.56",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 55,
+      "last_ok": "2026-11-11",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.57": {
+      "server": "2.2.0.57",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 56,
+      "last_ok": "2026-11-12",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.58": {
+      "server": "2.2.0.58",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 57,
+      "last_ok": "2026-11-13",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.59": {
+      "server": "2.2.0.59",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 58,
+      "last_ok": "2026-11-14",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.60": {
+      "server": "2.2.0.60",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 59,
+      "last_ok": "2026-11-15",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.61": {
+      "server": "2.2.0.61",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 60,
+      "last_ok": "2026-11-16",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.62": {
+      "server": "2.2.0.62",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 61,
+      "last_ok": "2026-11-17",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.63": {
+      "server": "2.2.0.63",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 62,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.64": {
+      "server": "2.2.0.64",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 63,
+      "last_ok": "2026-11-10",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.65": {
+      "server": "2.2.0.65",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 64,
+      "last_ok": "2026-11-11",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.66": {
+      "server": "2.2.0.66",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 65,
+      "last_ok": "2026-11-12",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.67": {
+      "server": "2.2.0.67",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 66,
+      "last_ok": "2026-11-13",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.68": {
+      "server": "2.2.0.68",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 67,
+      "last_ok": "2026-11-14",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.69": {
+      "server": "2.2.0.69",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 68,
+      "last_ok": "2026-11-15",
+      "passes": 1,
+      "fail_streak": 0
+     },
+     "2.2.0.70": {
+      "server": "2.2.0.70",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "X",
+      "isp": "Y",
+      "ms": 69,
+      "last_ok": "2026-11-16",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    }
+   ],
+   "out": [
+    "sing-box service: running\ntproxy: listening\nself-repair: installed, 3 vault nodes on the router",
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "cat > /tmp/sb-new.json <<'SBEOF'\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}\nSBEOF\ncat > /tmp/sb-new12.json <<'SBEOF'\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"server\": \"9.9.9.9\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"tproxy-in\"\n        ],\n        \"action\": \"sniff\"\n      },\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"action\": \"hijack-dns\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}\nSBEOF\nif sing-box version 2>/dev/null | head -1 | grep -qE 'version 1\\.([0-9]|1[01])\\.'; then rm -f /tmp/sb-new12.json; else mv /tmp/sb-new12.json /tmp/sb-new.json; fi\nsing-box check -c /tmp/sb-new.json || { echo 'CONFIG REJECTED, nothing deployed'; exit 1; }\ncat > /tmp/nft-devices.sh <<'NFTEOF'\n#!/bin/sh\n# fw4 include, re-run on every firewall reload and at boot.\n# Diverts the chosen LAN devices, or every device on the main network (Reality Hop fills this in), into sing-box tproxy\n# (7895). DNS (53) is left to the router.\n# If the sing-box service is disabled, removes the diversion instead, so no device is ever cut off.\nif [ \"$(uci -q get sing-box.main.enabled)\" != \"1\" ]; then\n  nft list tables 2>/dev/null | grep -q 'inet singbox' && nft delete table inet singbox\n  ip rule del fwmark 1 table 100 2>/dev/null; exit 0\nfi\nmodprobe nft_tproxy 2>/dev/null; modprobe nft_socket 2>/dev/null\nnft list tables 2>/dev/null | grep -q 'inet singbox' && nft delete table inet singbox\nnft -f - <<'NFT'\ntable inet singbox {\n  set tunneled { type ipv4_addr; elements = { 192.168.8.10, 192.168.8.11 } }\n  chain prerouting {\n    type filter hook prerouting priority mangle; policy accept;\n    meta mark 0xff counter return\n    meta l4proto { tcp, udp } socket transparent 1 meta mark set 1 counter accept\n    ip saddr @tunneled meta l4proto { tcp, udp } th dport 53 counter return\n    ip daddr { 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 224.0.0.0/4, 240.0.0.0/4 } counter return\n    ip saddr @tunneled meta l4proto { tcp, udp } tproxy ip to 127.0.0.1:7895 meta mark set 1 counter accept\n  }\n  # sing-box listens for the diverted traffic on every address, so any device could connect to the router's port 7895\n  # and make sing-box dial itself. Diverted packets keep their real port (443, ...), so nothing may reach 7895 directly.\n  chain input {\n    type filter hook input priority filter - 1; policy accept;\n    meta l4proto { tcp, udp } th dport 7895 counter drop\n  }\n  # with every device tunnelled, their IPv6 would go around the tunnel: refused, so they use the tunnelled IPv4\n  chain forward {\n    type filter hook forward priority filter - 1; policy accept;\n\n  }\n}\nNFT\nip rule list | grep -q 'fwmark 0x1 lookup 100' || ip rule add fwmark 1 table 100\nip route show table 100 | grep -q 'local default' || ip route add local default dev lo table 100\nNFTEOF\nfor pid in $(pgrep -f 'sb-test[.]json'); do kill $pid; done; sleep 1\nmkdir -p /etc/sing-box; mv /tmp/sb-new.json /etc/sing-box/config.json\ntr -d '\\r' < /tmp/nft-devices.sh > /etc/sing-box/nft-devices.sh; chmod +x /etc/sing-box/nft-devices.sh\nuci set sing-box.main.enabled='1'; uci set sing-box.main.user='root'; uci set sing-box.main.conffile='/etc/sing-box/config.json'; uci commit sing-box\nuci -q delete firewall.sbphone; uci -q get firewall.realityhop >/dev/null || uci set firewall.realityhop=include\nuci set firewall.realityhop.type='script'; uci set firewall.realityhop.path='/etc/sing-box/nft-devices.sh'; uci set firewall.realityhop.reload='1'\nuci set firewall.realityhop.enabled='1'; uci set firewall.realityhop.fw4_compatible='1'; uci commit firewall\n/etc/init.d/sing-box enable; /etc/init.d/sing-box restart; sleep 7; fw4 reload >/dev/null 2>&1; sleep 2\npgrep -af 'sing-box run' | grep -q '/etc/sing-box/config.json' && echo 'sing-box service: running' || { echo 'sing-box service: NOT RUNNING'; logread | grep -iE 'sing-box' | tail -5; }\nnetstat -ln 2>/dev/null | grep -q ':7895' && echo 'tproxy: listening' || echo 'tproxy: NOT listening'\nnft list tables 2>/dev/null | grep -q singbox && echo 'nft: loaded' || echo 'nft: absent'\nip rule list | grep -q 'fwmark 0x1' && echo 'policy route: ok' || echo 'policy route: MISSING'\necho '192.168.8.10 192.168.8.11' > /etc/sing-box/rh-devices\necho \"pushed-md5 $(md5sum /etc/sing-box/config.json | cut -c1-32)\"\n",
+      "timeout": 240
+     },
+     {
+      "cmd": "sh -s",
+      "stdin": "cat > /etc/sing-box/vault.json <<'VEOF'\n[{\"type\": \"vless\", \"server\": \"2.2.0.9\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.18\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.27\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.36\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.45\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.54\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.63\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.8\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.17\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.26\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.35\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.44\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.53\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.62\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.7\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.16\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.25\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.34\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.43\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.52\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.61\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.70\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.6\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.15\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.24\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.33\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.42\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.51\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.60\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.69\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.5\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.14\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.23\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.32\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.41\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.50\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.59\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.68\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.4\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.13\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.22\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.31\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.40\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.49\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.58\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.67\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.3\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.12\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.21\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.30\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.39\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.48\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.57\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.66\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.2\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.11\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.20\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.29\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.38\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"server\": \"2.2.0.47\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}]\nVEOF\ncat > /etc/sing-box/heal.sh <<'HEOF'\n#!/bin/sh\n# Router self-repair, run by cron every 30 minutes (installed by Reality Hop on every push to the router).\n# If no vless node in the running config can fetch a page, now and again a minute later, swap in the next 6 nodes from\n# vault.json (verified nodes pushed from the PC), restart sing-box, and keep going until a set works.\n# Log: /etc/sing-box/heal.log (last 200 lines).  Off: remove the heal.sh line from /etc/crontabs/root.\nC=/etc/sing-box/config.json; V=/etc/sing-box/vault.json; L=/etc/sing-box/heal.log\nAPI=http://127.0.0.1:9090; URL=https://www.gstatic.com/generate_204\nlog() { echo \"$(date '+%F %T') $*\" >> $L; tail -n 200 $L > $L.t && mv $L.t $L; }\n\npgrep -f '/etc/sing-box/config[.]json' >/dev/null || exit 0     # service off on purpose: leave it alone\n[ $(( $(date +%s) - $(cat /tmp/pc-alive 2>/dev/null || echo 0) )) -lt 7200 ] && exit 0   # the PC watcher checked within 2 h: it decides\n# a lock older than an hour was left by a run that was killed: it would stop this script and the PC's checks until a reboot\nmkdir /tmp/heal.lock 2>/dev/null || [ $(( $(date +%s) - $(cat /tmp/heal.started 2>/dev/null || echo 0) )) -ge 3600 ] || exit 0\ndate +%s > /tmp/heal.started; trap 'rmdir /tmp/heal.lock' EXIT; trap 'exit 1' INT TERM\nping -c 1 -W 3 9.9.9.9 >/dev/null 2>&1 || ping -c 1 -W 3 1.1.1.1 >/dev/null 2>&1 || exit 0   # router offline: nodes are not the problem\n\nalive() {\n    H=\"Authorization: Bearer $(jq -r '.experimental.clash_api.secret' $C)\"\n    for t in $(jq -r '.outbounds[] | select(.type == \"vless\") | .tag' $C); do\n        curl -s -m 12 -H \"$H\" \"$API/proxies/$t/delay?url=$URL&timeout=8000\" | grep -q delay && return 0\n    done\n    return 1\n}\n\nalive && { rm -f /tmp/heal.giveup; exit 0; }\n[ $(( $(date +%s) - $(cat /tmp/heal.giveup 2>/dev/null || echo 0) )) -lt 1800 ] && exit 0   # last full try failed: wait\nsleep 60; alive && { log \"every node failed once, fine again a minute later\"; exit 0; }\n[ -s $V ] || { log \"every node is dead and the vault is empty; push from the PC\"; exit 0; }\n\nlog \"every node failed twice, a minute apart; trying vault nodes\"\ncp $C /tmp/heal-orig.json; n=$(jq length $V); i=0\nwhile [ $i -lt $n ]; do\n    jq --slurpfile v $V --argjson i $i '\n        ($v[0][$i:$i + 6] | to_entries | map(.value + {tag: \"vless-\\(.key + 1)\"})) as $new\n        | .outbounds = $new + [.outbounds[] | select(.type != \"vless\")\n                               | if .type == \"urltest\" then .outbounds = [$new[].tag] else . end]' /tmp/heal-orig.json > /tmp/heal-new.json\n    if sing-box check -c /tmp/heal-new.json >/dev/null 2>&1; then\n        cp /tmp/heal-new.json $C; /etc/init.d/sing-box restart; sleep 8\n        if alive; then\n            log \"HEALED with vault $((i + 1))-$((i + 6)): $(jq -r '[.outbounds[] | select(.type == \"vless\") | .server] | join(\" \")' $C)\"\n            date +%s > /etc/sing-box/heal.state; exit 0\n        fi\n        log \"vault $((i + 1))-$((i + 6)) dead too\"\n    fi\n    i=$((i + 6))\ndone\ncp /tmp/heal-orig.json $C; /etc/init.d/sing-box restart; date +%s > /tmp/heal.giveup\nlog \"no vault set works; previous config restored; next try in 30 minutes\"\nHEOF\nchmod +x /etc/sing-box/heal.sh\nsed -i '/heal.sh/d' /etc/crontabs/root; { echo '*/30 * * * * /etc/sing-box/heal.sh' >> /etc/crontabs/root; /etc/init.d/cron restart; }\necho \"self-repair: installed, 60 vault nodes on the router\"\n",
+      "timeout": 240
+     }
+    ],
+    "cccccccccccccccccccccccccccccccc"
+   ]
+  },
+  {
+   "args": [
+    "all",
+    [
+     "CONFIG REJECTED, nothing deployed\npushed-md5 dddddddddddddddddddddddddddddddd\n"
+    ],
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    }
+   ],
+   "out": [
+    "CONFIG REJECTED, nothing deployed",
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "cat > /tmp/sb-new.json <<'SBEOF'\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}\nSBEOF\ncat > /tmp/sb-new12.json <<'SBEOF'\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"server\": \"9.9.9.9\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"tproxy-in\"\n        ],\n        \"action\": \"sniff\"\n      },\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"action\": \"hijack-dns\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}\nSBEOF\nif sing-box version 2>/dev/null | head -1 | grep -qE 'version 1\\.([0-9]|1[01])\\.'; then rm -f /tmp/sb-new12.json; else mv /tmp/sb-new12.json /tmp/sb-new.json; fi\nsing-box check -c /tmp/sb-new.json || { echo 'CONFIG REJECTED, nothing deployed'; exit 1; }\ncat > /tmp/nft-devices.sh <<'NFTEOF'\n#!/bin/sh\n# fw4 include, re-run on every firewall reload and at boot.\n# Diverts the chosen LAN devices, or every device on the main network (Reality Hop fills this in), into sing-box tproxy\n# (7895). DNS (53) is left to the router.\n# If the sing-box service is disabled, removes the diversion instead, so no device is ever cut off.\nif [ \"$(uci -q get sing-box.main.enabled)\" != \"1\" ]; then\n  nft list tables 2>/dev/null | grep -q 'inet singbox' && nft delete table inet singbox\n  ip rule del fwmark 1 table 100 2>/dev/null; exit 0\nfi\nmodprobe nft_tproxy 2>/dev/null; modprobe nft_socket 2>/dev/null\nnft list tables 2>/dev/null | grep -q 'inet singbox' && nft delete table inet singbox\nnft -f - <<'NFT'\ntable inet singbox {\n  set tunneled { type ipv4_addr;  }\n  chain prerouting {\n    type filter hook prerouting priority mangle; policy accept;\n    meta mark 0xff counter return\n    meta l4proto { tcp, udp } socket transparent 1 meta mark set 1 counter accept\n    iifname \"br-lan\" meta nfproto ipv4 meta l4proto { tcp, udp } th dport 53 counter return\n    ip daddr { 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 224.0.0.0/4, 240.0.0.0/4 } counter return\n    iifname \"br-lan\" meta nfproto ipv4 meta l4proto { tcp, udp } tproxy ip to 127.0.0.1:7895 meta mark set 1 counter accept\n  }\n  # sing-box listens for the diverted traffic on every address, so any device could connect to the router's port 7895\n  # and make sing-box dial itself. Diverted packets keep their real port (443, ...), so nothing may reach 7895 directly.\n  chain input {\n    type filter hook input priority filter - 1; policy accept;\n    meta l4proto { tcp, udp } th dport 7895 counter drop\n  }\n  # with every device tunnelled, their IPv6 would go around the tunnel: refused, so they use the tunnelled IPv4\n  chain forward {\n    type filter hook forward priority filter - 1; policy accept;\n    iifname \"br-lan\" oifname != \"br-lan\" meta nfproto ipv6 counter reject\n  }\n}\nNFT\nip rule list | grep -q 'fwmark 0x1 lookup 100' || ip rule add fwmark 1 table 100\nip route show table 100 | grep -q 'local default' || ip route add local default dev lo table 100\nNFTEOF\nfor pid in $(pgrep -f 'sb-test[.]json'); do kill $pid; done; sleep 1\nmkdir -p /etc/sing-box; mv /tmp/sb-new.json /etc/sing-box/config.json\ntr -d '\\r' < /tmp/nft-devices.sh > /etc/sing-box/nft-devices.sh; chmod +x /etc/sing-box/nft-devices.sh\nuci set sing-box.main.enabled='1'; uci set sing-box.main.user='root'; uci set sing-box.main.conffile='/etc/sing-box/config.json'; uci commit sing-box\nuci -q delete firewall.sbphone; uci -q get firewall.realityhop >/dev/null || uci set firewall.realityhop=include\nuci set firewall.realityhop.type='script'; uci set firewall.realityhop.path='/etc/sing-box/nft-devices.sh'; uci set firewall.realityhop.reload='1'\nuci set firewall.realityhop.enabled='1'; uci set firewall.realityhop.fw4_compatible='1'; uci commit firewall\n/etc/init.d/sing-box enable; /etc/init.d/sing-box restart; sleep 7; fw4 reload >/dev/null 2>&1; sleep 2\npgrep -af 'sing-box run' | grep -q '/etc/sing-box/config.json' && echo 'sing-box service: running' || { echo 'sing-box service: NOT RUNNING'; logread | grep -iE 'sing-box' | tail -5; }\nnetstat -ln 2>/dev/null | grep -q ':7895' && echo 'tproxy: listening' || echo 'tproxy: NOT listening'\nnft list tables 2>/dev/null | grep -q singbox && echo 'nft: loaded' || echo 'nft: absent'\nip rule list | grep -q 'fwmark 0x1' && echo 'policy route: ok' || echo 'policy route: MISSING'\necho 'all' > /etc/sing-box/rh-devices\necho \"pushed-md5 $(md5sum /etc/sing-box/config.json | cut -c1-32)\"\n",
+      "timeout": 240
+     }
+    ],
+    null
+   ]
+  },
+  {
+   "args": [
+    "",
+    [
+     "sing-box service: running\n",
+     {
+      "error": "router unreachable over ssh"
+     }
+    ],
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    }
+   ],
+   "out": [
+    "sing-box service: running\nself-repair: not installed (router unreachable over ssh)",
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "cat > /tmp/sb-new.json <<'SBEOF'\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}\nSBEOF\ncat > /tmp/sb-new12.json <<'SBEOF'\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"server\": \"9.9.9.9\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"tproxy-in\"\n        ],\n        \"action\": \"sniff\"\n      },\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"action\": \"hijack-dns\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}\nSBEOF\nif sing-box version 2>/dev/null | head -1 | grep -qE 'version 1\\.([0-9]|1[01])\\.'; then rm -f /tmp/sb-new12.json; else mv /tmp/sb-new12.json /tmp/sb-new.json; fi\nsing-box check -c /tmp/sb-new.json || { echo 'CONFIG REJECTED, nothing deployed'; exit 1; }\ncat > /tmp/nft-devices.sh <<'NFTEOF'\n#!/bin/sh\n# fw4 include, re-run on every firewall reload and at boot.\n# Diverts the chosen LAN devices, or every device on the main network (Reality Hop fills this in), into sing-box tproxy\n# (7895). DNS (53) is left to the router.\n# If the sing-box service is disabled, removes the diversion instead, so no device is ever cut off.\nif [ \"$(uci -q get sing-box.main.enabled)\" != \"1\" ]; then\n  nft list tables 2>/dev/null | grep -q 'inet singbox' && nft delete table inet singbox\n  ip rule del fwmark 1 table 100 2>/dev/null; exit 0\nfi\nmodprobe nft_tproxy 2>/dev/null; modprobe nft_socket 2>/dev/null\nnft list tables 2>/dev/null | grep -q 'inet singbox' && nft delete table inet singbox\nnft -f - <<'NFT'\ntable inet singbox {\n  set tunneled { type ipv4_addr;  }\n  chain prerouting {\n    type filter hook prerouting priority mangle; policy accept;\n    meta mark 0xff counter return\n    meta l4proto { tcp, udp } socket transparent 1 meta mark set 1 counter accept\n    ip saddr @tunneled meta l4proto { tcp, udp } th dport 53 counter return\n    ip daddr { 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 224.0.0.0/4, 240.0.0.0/4 } counter return\n    ip saddr @tunneled meta l4proto { tcp, udp } tproxy ip to 127.0.0.1:7895 meta mark set 1 counter accept\n  }\n  # sing-box listens for the diverted traffic on every address, so any device could connect to the router's port 7895\n  # and make sing-box dial itself. Diverted packets keep their real port (443, ...), so nothing may reach 7895 directly.\n  chain input {\n    type filter hook input priority filter - 1; policy accept;\n    meta l4proto { tcp, udp } th dport 7895 counter drop\n  }\n  # with every device tunnelled, their IPv6 would go around the tunnel: refused, so they use the tunnelled IPv4\n  chain forward {\n    type filter hook forward priority filter - 1; policy accept;\n\n  }\n}\nNFT\nip rule list | grep -q 'fwmark 0x1 lookup 100' || ip rule add fwmark 1 table 100\nip route show table 100 | grep -q 'local default' || ip route add local default dev lo table 100\nNFTEOF\nfor pid in $(pgrep -f 'sb-test[.]json'); do kill $pid; done; sleep 1\nmkdir -p /etc/sing-box; mv /tmp/sb-new.json /etc/sing-box/config.json\ntr -d '\\r' < /tmp/nft-devices.sh > /etc/sing-box/nft-devices.sh; chmod +x /etc/sing-box/nft-devices.sh\nuci set sing-box.main.enabled='1'; uci set sing-box.main.user='root'; uci set sing-box.main.conffile='/etc/sing-box/config.json'; uci commit sing-box\nuci -q delete firewall.sbphone; uci -q get firewall.realityhop >/dev/null || uci set firewall.realityhop=include\nuci set firewall.realityhop.type='script'; uci set firewall.realityhop.path='/etc/sing-box/nft-devices.sh'; uci set firewall.realityhop.reload='1'\nuci set firewall.realityhop.enabled='1'; uci set firewall.realityhop.fw4_compatible='1'; uci commit firewall\n/etc/init.d/sing-box enable; /etc/init.d/sing-box restart; sleep 7; fw4 reload >/dev/null 2>&1; sleep 2\npgrep -af 'sing-box run' | grep -q '/etc/sing-box/config.json' && echo 'sing-box service: running' || { echo 'sing-box service: NOT RUNNING'; logread | grep -iE 'sing-box' | tail -5; }\nnetstat -ln 2>/dev/null | grep -q ':7895' && echo 'tproxy: listening' || echo 'tproxy: NOT listening'\nnft list tables 2>/dev/null | grep -q singbox && echo 'nft: loaded' || echo 'nft: absent'\nip rule list | grep -q 'fwmark 0x1' && echo 'policy route: ok' || echo 'policy route: MISSING'\necho '' > /etc/sing-box/rh-devices\necho \"pushed-md5 $(md5sum /etc/sing-box/config.json | cut -c1-32)\"\n",
+      "timeout": 240
+     },
+     {
+      "cmd": "sh -s",
+      "stdin": "cat > /etc/sing-box/vault.json <<'VEOF'\n[]\nVEOF\ncat > /etc/sing-box/heal.sh <<'HEOF'\n#!/bin/sh\n# Router self-repair, run by cron every 30 minutes (installed by Reality Hop on every push to the router).\n# If no vless node in the running config can fetch a page, now and again a minute later, swap in the next 6 nodes from\n# vault.json (verified nodes pushed from the PC), restart sing-box, and keep going until a set works.\n# Log: /etc/sing-box/heal.log (last 200 lines).  Off: remove the heal.sh line from /etc/crontabs/root.\nC=/etc/sing-box/config.json; V=/etc/sing-box/vault.json; L=/etc/sing-box/heal.log\nAPI=http://127.0.0.1:9090; URL=https://www.gstatic.com/generate_204\nlog() { echo \"$(date '+%F %T') $*\" >> $L; tail -n 200 $L > $L.t && mv $L.t $L; }\n\npgrep -f '/etc/sing-box/config[.]json' >/dev/null || exit 0     # service off on purpose: leave it alone\n[ $(( $(date +%s) - $(cat /tmp/pc-alive 2>/dev/null || echo 0) )) -lt 7200 ] && exit 0   # the PC watcher checked within 2 h: it decides\n# a lock older than an hour was left by a run that was killed: it would stop this script and the PC's checks until a reboot\nmkdir /tmp/heal.lock 2>/dev/null || [ $(( $(date +%s) - $(cat /tmp/heal.started 2>/dev/null || echo 0) )) -ge 3600 ] || exit 0\ndate +%s > /tmp/heal.started; trap 'rmdir /tmp/heal.lock' EXIT; trap 'exit 1' INT TERM\nping -c 1 -W 3 9.9.9.9 >/dev/null 2>&1 || ping -c 1 -W 3 1.1.1.1 >/dev/null 2>&1 || exit 0   # router offline: nodes are not the problem\n\nalive() {\n    H=\"Authorization: Bearer $(jq -r '.experimental.clash_api.secret' $C)\"\n    for t in $(jq -r '.outbounds[] | select(.type == \"vless\") | .tag' $C); do\n        curl -s -m 12 -H \"$H\" \"$API/proxies/$t/delay?url=$URL&timeout=8000\" | grep -q delay && return 0\n    done\n    return 1\n}\n\nalive && { rm -f /tmp/heal.giveup; exit 0; }\n[ $(( $(date +%s) - $(cat /tmp/heal.giveup 2>/dev/null || echo 0) )) -lt 1800 ] && exit 0   # last full try failed: wait\nsleep 60; alive && { log \"every node failed once, fine again a minute later\"; exit 0; }\n[ -s $V ] || { log \"every node is dead and the vault is empty; push from the PC\"; exit 0; }\n\nlog \"every node failed twice, a minute apart; trying vault nodes\"\ncp $C /tmp/heal-orig.json; n=$(jq length $V); i=0\nwhile [ $i -lt $n ]; do\n    jq --slurpfile v $V --argjson i $i '\n        ($v[0][$i:$i + 6] | to_entries | map(.value + {tag: \"vless-\\(.key + 1)\"})) as $new\n        | .outbounds = $new + [.outbounds[] | select(.type != \"vless\")\n                               | if .type == \"urltest\" then .outbounds = [$new[].tag] else . end]' /tmp/heal-orig.json > /tmp/heal-new.json\n    if sing-box check -c /tmp/heal-new.json >/dev/null 2>&1; then\n        cp /tmp/heal-new.json $C; /etc/init.d/sing-box restart; sleep 8\n        if alive; then\n            log \"HEALED with vault $((i + 1))-$((i + 6)): $(jq -r '[.outbounds[] | select(.type == \"vless\") | .server] | join(\" \")' $C)\"\n            date +%s > /etc/sing-box/heal.state; exit 0\n        fi\n        log \"vault $((i + 1))-$((i + 6)) dead too\"\n    fi\n    i=$((i + 6))\ndone\ncp /tmp/heal-orig.json $C; /etc/init.d/sing-box restart; date +%s > /tmp/heal.giveup\nlog \"no vault set works; previous config restored; next try in 30 minutes\"\nHEOF\nchmod +x /etc/sing-box/heal.sh\nsed -i '/heal.sh/d' /etc/crontabs/root; { echo '*/30 * * * * /etc/sing-box/heal.sh' >> /etc/crontabs/root; /etc/init.d/cron restart; }\necho \"self-repair: installed, 0 vault nodes on the router\"\n",
+      "timeout": 240
+     }
+    ],
+    null
+   ]
+  },
+  {
+   "args": [
+    "",
+    [
+     ""
+    ],
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    }
+   ],
+   "out": [
+    "no answer from the router",
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "cat > /tmp/sb-new.json <<'SBEOF'\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}\nSBEOF\ncat > /tmp/sb-new12.json <<'SBEOF'\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"server\": \"9.9.9.9\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"tproxy-in\"\n        ],\n        \"action\": \"sniff\"\n      },\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"action\": \"hijack-dns\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}\nSBEOF\nif sing-box version 2>/dev/null | head -1 | grep -qE 'version 1\\.([0-9]|1[01])\\.'; then rm -f /tmp/sb-new12.json; else mv /tmp/sb-new12.json /tmp/sb-new.json; fi\nsing-box check -c /tmp/sb-new.json || { echo 'CONFIG REJECTED, nothing deployed'; exit 1; }\ncat > /tmp/nft-devices.sh <<'NFTEOF'\n#!/bin/sh\n# fw4 include, re-run on every firewall reload and at boot.\n# Diverts the chosen LAN devices, or every device on the main network (Reality Hop fills this in), into sing-box tproxy\n# (7895). DNS (53) is left to the router.\n# If the sing-box service is disabled, removes the diversion instead, so no device is ever cut off.\nif [ \"$(uci -q get sing-box.main.enabled)\" != \"1\" ]; then\n  nft list tables 2>/dev/null | grep -q 'inet singbox' && nft delete table inet singbox\n  ip rule del fwmark 1 table 100 2>/dev/null; exit 0\nfi\nmodprobe nft_tproxy 2>/dev/null; modprobe nft_socket 2>/dev/null\nnft list tables 2>/dev/null | grep -q 'inet singbox' && nft delete table inet singbox\nnft -f - <<'NFT'\ntable inet singbox {\n  set tunneled { type ipv4_addr;  }\n  chain prerouting {\n    type filter hook prerouting priority mangle; policy accept;\n    meta mark 0xff counter return\n    meta l4proto { tcp, udp } socket transparent 1 meta mark set 1 counter accept\n    ip saddr @tunneled meta l4proto { tcp, udp } th dport 53 counter return\n    ip daddr { 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 224.0.0.0/4, 240.0.0.0/4 } counter return\n    ip saddr @tunneled meta l4proto { tcp, udp } tproxy ip to 127.0.0.1:7895 meta mark set 1 counter accept\n  }\n  # sing-box listens for the diverted traffic on every address, so any device could connect to the router's port 7895\n  # and make sing-box dial itself. Diverted packets keep their real port (443, ...), so nothing may reach 7895 directly.\n  chain input {\n    type filter hook input priority filter - 1; policy accept;\n    meta l4proto { tcp, udp } th dport 7895 counter drop\n  }\n  # with every device tunnelled, their IPv6 would go around the tunnel: refused, so they use the tunnelled IPv4\n  chain forward {\n    type filter hook forward priority filter - 1; policy accept;\n\n  }\n}\nNFT\nip rule list | grep -q 'fwmark 0x1 lookup 100' || ip rule add fwmark 1 table 100\nip route show table 100 | grep -q 'local default' || ip route add local default dev lo table 100\nNFTEOF\nfor pid in $(pgrep -f 'sb-test[.]json'); do kill $pid; done; sleep 1\nmkdir -p /etc/sing-box; mv /tmp/sb-new.json /etc/sing-box/config.json\ntr -d '\\r' < /tmp/nft-devices.sh > /etc/sing-box/nft-devices.sh; chmod +x /etc/sing-box/nft-devices.sh\nuci set sing-box.main.enabled='1'; uci set sing-box.main.user='root'; uci set sing-box.main.conffile='/etc/sing-box/config.json'; uci commit sing-box\nuci -q delete firewall.sbphone; uci -q get firewall.realityhop >/dev/null || uci set firewall.realityhop=include\nuci set firewall.realityhop.type='script'; uci set firewall.realityhop.path='/etc/sing-box/nft-devices.sh'; uci set firewall.realityhop.reload='1'\nuci set firewall.realityhop.enabled='1'; uci set firewall.realityhop.fw4_compatible='1'; uci commit firewall\n/etc/init.d/sing-box enable; /etc/init.d/sing-box restart; sleep 7; fw4 reload >/dev/null 2>&1; sleep 2\npgrep -af 'sing-box run' | grep -q '/etc/sing-box/config.json' && echo 'sing-box service: running' || { echo 'sing-box service: NOT RUNNING'; logread | grep -iE 'sing-box' | tail -5; }\nnetstat -ln 2>/dev/null | grep -q ':7895' && echo 'tproxy: listening' || echo 'tproxy: NOT listening'\nnft list tables 2>/dev/null | grep -q singbox && echo 'nft: loaded' || echo 'nft: absent'\nip rule list | grep -q 'fwmark 0x1' && echo 'policy route: ok' || echo 'policy route: MISSING'\necho '' > /etc/sing-box/rh-devices\necho \"pushed-md5 $(md5sum /etc/sing-box/config.json | cut -c1-32)\"\n",
+      "timeout": 240
+     }
+    ],
+    null
+   ]
+  },
+  {
+   "args": [
+    "",
+    [
+     {
+      "error": "router unreachable over ssh"
+     }
+    ],
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    },
+    {
+     "8.8.8.8": {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "where": "US",
+      "isp": "G",
+      "ms": 50,
+      "last_ok": "2026-11-17 10:00:00",
+      "passes": 3,
+      "fail_streak": 0
+     },
+     "1.1.1.1": {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "where": null,
+      "isp": null,
+      "ms": null,
+      "last_ok": "2026-11-18",
+      "passes": 1,
+      "fail_streak": 2
+     },
+     "9.9.9.9": {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "",
+      "ms": 20,
+      "last_ok": "2026-11-17 09:00:00",
+      "passes": 1,
+      "fail_streak": 0
+     }
+    }
+   ],
+   "out": [
+    {
+     "error": "RuntimeError",
+     "message": "router unreachable over ssh"
+    },
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "cat > /tmp/sb-new.json <<'SBEOF'\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}\nSBEOF\ncat > /tmp/sb-new12.json <<'SBEOF'\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"server\": \"9.9.9.9\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"tproxy-in\"\n        ],\n        \"action\": \"sniff\"\n      },\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"action\": \"hijack-dns\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}\nSBEOF\nif sing-box version 2>/dev/null | head -1 | grep -qE 'version 1\\.([0-9]|1[01])\\.'; then rm -f /tmp/sb-new12.json; else mv /tmp/sb-new12.json /tmp/sb-new.json; fi\nsing-box check -c /tmp/sb-new.json || { echo 'CONFIG REJECTED, nothing deployed'; exit 1; }\ncat > /tmp/nft-devices.sh <<'NFTEOF'\n#!/bin/sh\n# fw4 include, re-run on every firewall reload and at boot.\n# Diverts the chosen LAN devices, or every device on the main network (Reality Hop fills this in), into sing-box tproxy\n# (7895). DNS (53) is left to the router.\n# If the sing-box service is disabled, removes the diversion instead, so no device is ever cut off.\nif [ \"$(uci -q get sing-box.main.enabled)\" != \"1\" ]; then\n  nft list tables 2>/dev/null | grep -q 'inet singbox' && nft delete table inet singbox\n  ip rule del fwmark 1 table 100 2>/dev/null; exit 0\nfi\nmodprobe nft_tproxy 2>/dev/null; modprobe nft_socket 2>/dev/null\nnft list tables 2>/dev/null | grep -q 'inet singbox' && nft delete table inet singbox\nnft -f - <<'NFT'\ntable inet singbox {\n  set tunneled { type ipv4_addr;  }\n  chain prerouting {\n    type filter hook prerouting priority mangle; policy accept;\n    meta mark 0xff counter return\n    meta l4proto { tcp, udp } socket transparent 1 meta mark set 1 counter accept\n    ip saddr @tunneled meta l4proto { tcp, udp } th dport 53 counter return\n    ip daddr { 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 224.0.0.0/4, 240.0.0.0/4 } counter return\n    ip saddr @tunneled meta l4proto { tcp, udp } tproxy ip to 127.0.0.1:7895 meta mark set 1 counter accept\n  }\n  # sing-box listens for the diverted traffic on every address, so any device could connect to the router's port 7895\n  # and make sing-box dial itself. Diverted packets keep their real port (443, ...), so nothing may reach 7895 directly.\n  chain input {\n    type filter hook input priority filter - 1; policy accept;\n    meta l4proto { tcp, udp } th dport 7895 counter drop\n  }\n  # with every device tunnelled, their IPv6 would go around the tunnel: refused, so they use the tunnelled IPv4\n  chain forward {\n    type filter hook forward priority filter - 1; policy accept;\n\n  }\n}\nNFT\nip rule list | grep -q 'fwmark 0x1 lookup 100' || ip rule add fwmark 1 table 100\nip route show table 100 | grep -q 'local default' || ip route add local default dev lo table 100\nNFTEOF\nfor pid in $(pgrep -f 'sb-test[.]json'); do kill $pid; done; sleep 1\nmkdir -p /etc/sing-box; mv /tmp/sb-new.json /etc/sing-box/config.json\ntr -d '\\r' < /tmp/nft-devices.sh > /etc/sing-box/nft-devices.sh; chmod +x /etc/sing-box/nft-devices.sh\nuci set sing-box.main.enabled='1'; uci set sing-box.main.user='root'; uci set sing-box.main.conffile='/etc/sing-box/config.json'; uci commit sing-box\nuci -q delete firewall.sbphone; uci -q get firewall.realityhop >/dev/null || uci set firewall.realityhop=include\nuci set firewall.realityhop.type='script'; uci set firewall.realityhop.path='/etc/sing-box/nft-devices.sh'; uci set firewall.realityhop.reload='1'\nuci set firewall.realityhop.enabled='1'; uci set firewall.realityhop.fw4_compatible='1'; uci commit firewall\n/etc/init.d/sing-box enable; /etc/init.d/sing-box restart; sleep 7; fw4 reload >/dev/null 2>&1; sleep 2\npgrep -af 'sing-box run' | grep -q '/etc/sing-box/config.json' && echo 'sing-box service: running' || { echo 'sing-box service: NOT RUNNING'; logread | grep -iE 'sing-box' | tail -5; }\nnetstat -ln 2>/dev/null | grep -q ':7895' && echo 'tproxy: listening' || echo 'tproxy: NOT listening'\nnft list tables 2>/dev/null | grep -q singbox && echo 'nft: loaded' || echo 'nft: absent'\nip rule list | grep -q 'fwmark 0x1' && echo 'policy route: ok' || echo 'policy route: MISSING'\necho '' > /etc/sing-box/rh-devices\necho \"pushed-md5 $(md5sum /etc/sing-box/config.json | cut -c1-32)\"\n",
+      "timeout": 240
+     }
+    ],
+    null
+   ]
+  }
+ ]
+}

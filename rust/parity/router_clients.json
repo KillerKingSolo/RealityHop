@@ -1,0 +1,55 @@
+{
+ "fn": "router_clients",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "router_clients",
+    [
+     "1700000000 aa:bb 192.168.8.20 phone 01:aa\n1700000000 cc:dd 192.168.8.3 * *\nbad line\n1 2 fe80::1 x\n1 2 192.168.8.100 laptop extra\n"
+    ]
+   ],
+   "out": [
+    [
+     [
+      "192.168.8.3",
+      "(no name)"
+     ],
+     [
+      "192.168.8.20",
+      "phone"
+     ],
+     [
+      "192.168.8.100",
+      "laptop"
+     ]
+    ],
+    [
+     {
+      "cmd": "cat /tmp/dhcp.leases 2>/dev/null",
+      "stdin": null,
+      "timeout": 30
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    "router_clients",
+    [
+     ""
+    ]
+   ],
+   "out": [
+    [],
+    [
+     {
+      "cmd": "cat /tmp/dhcp.leases 2>/dev/null",
+      "stdin": null,
+      "timeout": 30
+     }
+    ]
+   ]
+  }
+ ]
+}

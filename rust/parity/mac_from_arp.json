@@ -1,0 +1,30 @@
+{
+ "fn": "mac_from_arp",
+ "source": "src/macos.py",
+ "cases": [
+  {
+   "args": [
+    "? (192.168.8.1) at 94:83:c4:1a:2b:3c on en0 ifscope [ethernet]"
+   ],
+   "out": "94-83-c4-1a-2b-3c"
+  },
+  {
+   "args": [
+    "? (192.168.8.1) at 0:1A:2b:3:4c:5d on en0"
+   ],
+   "out": "00-1a-2b-03-4c-5d"
+  },
+  {
+   "args": [
+    "? (192.168.8.1) at (incomplete) on en0"
+   ],
+   "out": ""
+  },
+  {
+   "args": [
+    ""
+   ],
+   "out": ""
+  }
+ ]
+}

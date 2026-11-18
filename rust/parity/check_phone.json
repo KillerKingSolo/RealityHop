@@ -1,0 +1,172 @@
+{
+ "fn": "check_phone",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "tag": "vless-1"
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "tag": "vless-2"
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox",
+      "tag": "vless-3"
+     }
+    ],
+    [
+     "svc 1234\nvless-1 {\"delay\":45}\nvless-2 {\"message\":\"timeout\"}\nvless-3 \nnow {\"now\":\"vless-1\",\"type\":\"URLTest\"}\ncfg aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
+    ]
+   ],
+   "out": [
+    {
+     "service": true,
+     "now": "vless-1",
+     "cfg": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    [
+     [
+      45,
+      ""
+     ],
+     [
+      null,
+      "timeout"
+     ],
+     [
+      null,
+      "no response"
+     ]
+    ],
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "H=\"Authorization: Bearer 0123456789abcdef0123456789abcdef\"\necho \"svc $(pgrep -f \"/etc/sing-box/config[.]json\" | head -1)\"\nfor t in vless-1 vless-2 vless-3; do ( r=$(curl -s -m 12 -H \"$H\" \"http://127.0.0.1:9090/proxies/$t/delay?url=https://www.gstatic.com/generate_204&timeout=8000\"); case \"$r\" in *delay*) ;; *) r=$(curl -s -m 12 -H \"$H\" \"http://127.0.0.1:9090/proxies/$t/delay?url=https://www.gstatic.com/generate_204&timeout=8000\");; esac; echo \"$t $r\" ) & done; wait\necho \"now $(curl -s -m 5 -H \"$H\" http://127.0.0.1:9090/proxies/auto)\"\necho \"cfg $(md5sum /etc/sing-box/config.json 2>/dev/null | cut -c1-32)\"\n",
+      "timeout": 240
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "tag": "vless-1"
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "tag": "vless-2"
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox",
+      "tag": "vless-3"
+     }
+    ],
+    [
+     "svc \nnow garbage\n"
+    ]
+   ],
+   "out": [
+    {
+     "service": false,
+     "now": null,
+     "cfg": ""
+    },
+    [
+     [
+      null,
+      "no response"
+     ],
+     [
+      null,
+      "no response"
+     ],
+     [
+      null,
+      "no response"
+     ]
+    ],
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "H=\"Authorization: Bearer 0123456789abcdef0123456789abcdef\"\necho \"svc $(pgrep -f \"/etc/sing-box/config[.]json\" | head -1)\"\nfor t in vless-1 vless-2 vless-3; do ( r=$(curl -s -m 12 -H \"$H\" \"http://127.0.0.1:9090/proxies/$t/delay?url=https://www.gstatic.com/generate_204&timeout=8000\"); case \"$r\" in *delay*) ;; *) r=$(curl -s -m 12 -H \"$H\" \"http://127.0.0.1:9090/proxies/$t/delay?url=https://www.gstatic.com/generate_204&timeout=8000\");; esac; echo \"$t $r\" ) & done; wait\necho \"now $(curl -s -m 5 -H \"$H\" http://127.0.0.1:9090/proxies/auto)\"\necho \"cfg $(md5sum /etc/sing-box/config.json 2>/dev/null | cut -c1-32)\"\n",
+      "timeout": 240
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "tag": "vless-1"
+     }
+    ],
+    [
+     ""
+    ]
+   ],
+   "out": [
+    {
+     "service": false,
+     "now": null,
+     "cfg": ""
+    },
+    [
+     [
+      null,
+      "no response"
+     ]
+    ],
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "H=\"Authorization: Bearer 0123456789abcdef0123456789abcdef\"\necho \"svc $(pgrep -f \"/etc/sing-box/config[.]json\" | head -1)\"\nfor t in vless-1; do ( r=$(curl -s -m 12 -H \"$H\" \"http://127.0.0.1:9090/proxies/$t/delay?url=https://www.gstatic.com/generate_204&timeout=8000\"); case \"$r\" in *delay*) ;; *) r=$(curl -s -m 12 -H \"$H\" \"http://127.0.0.1:9090/proxies/$t/delay?url=https://www.gstatic.com/generate_204&timeout=8000\");; esac; echo \"$t $r\" ) & done; wait\necho \"now $(curl -s -m 5 -H \"$H\" http://127.0.0.1:9090/proxies/auto)\"\necho \"cfg $(md5sum /etc/sing-box/config.json 2>/dev/null | cut -c1-32)\"\n",
+      "timeout": 240
+     }
+    ]
+   ]
+  }
+ ]
+}

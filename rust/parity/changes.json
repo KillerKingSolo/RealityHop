@@ -1,0 +1,63 @@
+{
+ "fn": "changes",
+ "source": "src/install.py",
+ "cases": [
+  {
+   "args": [
+    [
+     {
+      "tag_name": "v1.7.4",
+      "published_at": "2026-11-20T10:00:00Z",
+      "body": " notes 4 \n---\nsha"
+     },
+     {
+      "tag_name": "v1.7.3",
+      "published_at": null,
+      "body": null
+     },
+     {
+      "tag_name": "v1.8.0",
+      "published_at": "2026-12-01T00:00:00Z",
+      "body": "big",
+      "prerelease": true
+     },
+     {
+      "tag_name": "router-core-stable",
+      "body": "x"
+     },
+     {
+      "tag_name": "v1.7.2",
+      "body": "old"
+     },
+     {
+      "tag_name": "v1.10.0",
+      "body": "ten",
+      "draft": false
+     },
+     {
+      "tag_name": "v2.0.0-beta.1",
+      "body": "beta"
+     }
+    ],
+    "1.7.2"
+   ],
+   "out": [
+    [
+     "1.10.0",
+     "",
+     "ten"
+    ],
+    [
+     "1.7.4",
+     "2026-11-20",
+     "notes 4"
+    ],
+    [
+     "1.7.3",
+     "",
+     ""
+    ]
+   ]
+  }
+ ]
+}

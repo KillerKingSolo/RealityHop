@@ -10,3 +10,4 @@ publish.workspace = true
 
 [dependencies]
 realityhop-engine = { path = "../engine" }
+serde_json.workspace = true

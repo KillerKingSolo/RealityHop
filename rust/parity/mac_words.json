@@ -1,0 +1,69 @@
+{
+ "fn": "mac_words",
+ "source": "src/i18n.py",
+ "cases": [
+  {
+   "args": [
+    "PC tunnel on this PC, PC, Router and logs",
+    "en"
+   ],
+   "out": "Mac tunnel on this Mac, PC, Router and logs"
+  },
+  {
+   "args": [
+    "another PC and PCs and PC.",
+    "en"
+   ],
+   "out": "another computer and PCs and Mac."
+  },
+  {
+   "args": [
+    "Başka bir PC'den PC'ye PC'nin",
+    "tr"
+   ],
+   "out": "Başka bir bilgisayar'den Mac'e Mac'in"
+  },
+  {
+   "args": [
+    "başka bir PC PC'deki PC'de PC'yi",
+    "tr"
+   ],
+   "out": "başka bir bilgisayar Mac'teki Mac'te Mac'i"
+  },
+  {
+   "args": [
+    "otro PC y PC ، Router",
+    "es"
+   ],
+   "out": "otro equipo y PC ، Router"
+  },
+  {
+   "args": [
+    "другой ПК и ПК",
+    "ru"
+   ],
+   "out": "другой компьютер и Mac"
+  },
+  {
+   "args": [
+    "máy PC khác PC",
+    "vi"
+   ],
+   "out": "máy tính khác Mac"
+  },
+  {
+   "args": [
+    "PC",
+    "zh"
+   ],
+   "out": "PC"
+  },
+  {
+   "args": [
+    "PC 、 Router",
+    "en"
+   ],
+   "out": "PC 、 Router"
+  }
+ ]
+}

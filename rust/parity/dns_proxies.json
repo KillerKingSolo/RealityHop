@@ -1,0 +1,22 @@
+{
+ "fn": "dns_proxies",
+ "source": "src/macos.py",
+ "cases": [
+  {
+   "args": [
+    "resolver #1\n  nameserver[0] : 127.0.0.1\n  nameserver[1] : 192.0.2.42\nresolver #2\n  nameserver[0] : 9.9.9.9\n  nameserver[0]: ::1\n  nameserver[3] :127.0.0.1\n"
+   ],
+   "out": [
+    "127.0.0.1",
+    "192.0.2.42",
+    "::1"
+   ]
+  },
+  {
+   "args": [
+    ""
+   ],
+   "out": []
+  }
+ ]
+}

@@ -1,0 +1,24 @@
+{
+ "fn": "router_off",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "router_off",
+    [
+     "router tunnel: off\n"
+    ]
+   ],
+   "out": [
+    "router tunnel: off",
+    [
+     {
+      "cmd": "uci set sing-box.main.enabled=0; uci commit sing-box; /etc/init.d/sing-box stop; sed -i '/heal.sh/d' /etc/crontabs/root; /etc/init.d/cron restart; fw4 reload >/dev/null 2>&1; echo 'router tunnel: off'",
+      "stdin": null,
+      "timeout": 60
+     }
+    ]
+   ]
+  }
+ ]
+}

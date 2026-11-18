@@ -28,3 +28,4 @@ router-core/out/
 
 # Rust build output
 rust/target/
+rust/app/gen/

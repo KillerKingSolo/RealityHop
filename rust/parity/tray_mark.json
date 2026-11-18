@@ -1,0 +1,104 @@
+{
+ "fn": "tray_mark",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    {
+     "vless-1": 50,
+     "vless-2": 250,
+     "vless-3": null
+    },
+    null
+   ],
+   "out": {
+    "last": [
+     "warn",
+     "2 of 3 nodes working",
+     "12:34"
+    ],
+    "segs": [
+     "ok",
+     "warn",
+     "bad"
+    ]
+   }
+  },
+  {
+   "args": [
+    {
+     "vless-1": 50,
+     "vless-2": 120
+    },
+    null
+   ],
+   "out": {
+    "last": [
+     "ok",
+     "2 of 2 nodes working",
+     "12:34"
+    ],
+    "segs": [
+     "ok",
+     "ok"
+    ]
+   }
+  },
+  {
+   "args": [
+    {
+     "vless-1": null,
+     "vless-2": null
+    },
+    null
+   ],
+   "out": {
+    "last": [
+     "bad",
+     "0 of 2 nodes working",
+     "12:34"
+    ],
+    "segs": [
+     "bad",
+     "bad"
+    ]
+   }
+  },
+  {
+   "args": [
+    {
+     "vless-1": 0,
+     "vless-2": 300
+    },
+    [
+     "vless-2"
+    ]
+   ],
+   "out": {
+    "last": [
+     "warn",
+     "1 of 2 nodes working",
+     "12:34"
+    ],
+    "segs": [
+     "ok",
+     "bad"
+    ]
+   }
+  },
+  {
+   "args": [
+    {},
+    null
+   ],
+   "out": {
+    "last": [
+     "bad",
+     "0 of 0 nodes working",
+     "12:34"
+    ],
+    "segs": []
+   }
+  }
+ ]
+}

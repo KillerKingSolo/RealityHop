@@ -190,6 +190,21 @@ fn within(a: Ipv4Addr, net: [u8; 4], len: u32) -> bool {
 
 // IPv4Address.is_global (Python 3.13+ table: not 100.64.0.0/10 and not is_private)
 pub fn is_global(a: Ipv4Addr) -> bool {
+    !within(a, [100, 64, 0, 0], 10) && !is_private(a)
+}
+
+// IPv4Address.is_loopback: 127.0.0.0/8
+pub fn is_loopback(a: Ipv4Addr) -> bool {
+    within(a, [127, 0, 0, 0], 8)
+}
+
+// IPv4Address.is_link_local: 169.254.0.0/16
+pub fn is_link_local(a: Ipv4Addr) -> bool {
+    within(a, [169, 254, 0, 0], 16)
+}
+
+// IPv4Address.is_private (Python 3.13+ table)
+pub fn is_private(a: Ipv4Addr) -> bool {
     const PRIVATE: [([u8; 4], u32); 14] = [
         ([0, 0, 0, 0], 8),
         ([10, 0, 0, 0], 8),
@@ -207,8 +222,7 @@ pub fn is_global(a: Ipv4Addr) -> bool {
         ([255, 255, 255, 255], 32),
     ];
     const EXCEPT: [([u8; 4], u32); 2] = [([192, 0, 0, 9], 32), ([192, 0, 0, 10], 32)];
-    let private = PRIVATE.iter().any(|&(n, l)| within(a, n, l)) && !EXCEPT.iter().any(|&(n, l)| within(a, n, l));
-    !within(a, [100, 64, 0, 0], 10) && !private
+    PRIVATE.iter().any(|&(n, l)| within(a, n, l)) && !EXCEPT.iter().any(|&(n, l)| within(a, n, l))
 }
 
 // Whether a is in 10/8, 172.16/12 or 192.168/16 (engine.LAN_NETS)

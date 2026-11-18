@@ -1,0 +1,38 @@
+{
+ "fn": "entry",
+ "source": "src/install.py",
+ "cases": [
+  {
+   "args": [
+    "C:\\Program Files\\RealityHop",
+    "C:\\Program Files\\RealityHop\\RealityHop.exe",
+    null
+   ],
+   "out": {
+    "DisplayName": "Reality Hop",
+    "DisplayVersion": "1.7.2",
+    "Publisher": "Reality Hop",
+    "DisplayIcon": "C:\\Program Files\\RealityHop\\RealityHop.exe",
+    "InstallLocation": "C:\\Program Files\\RealityHop",
+    "UninstallString": "\"C:\\Program Files\\RealityHop\\RealityHop.exe\" --uninstall",
+    "URLInfoAbout": "https://github.com/KillerKingSolo/RealityHop"
+   }
+  },
+  {
+   "args": [
+    "D:\\Apps\\RealityHop",
+    "D:\\Apps\\RealityHop\\RealityHop.exe",
+    "1.7.3"
+   ],
+   "out": {
+    "DisplayName": "Reality Hop",
+    "DisplayVersion": "1.7.3",
+    "Publisher": "Reality Hop",
+    "DisplayIcon": "D:\\Apps\\RealityHop\\RealityHop.exe",
+    "InstallLocation": "D:\\Apps\\RealityHop",
+    "UninstallString": "\"D:\\Apps\\RealityHop\\RealityHop.exe\" --uninstall",
+    "URLInfoAbout": "https://github.com/KillerKingSolo/RealityHop"
+   }
+  }
+ ]
+}

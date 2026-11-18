@@ -1,0 +1,24 @@
+{
+ "fn": "router_install",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "router_install",
+    [
+     "  installed\nsing-box version 1.9.7\n"
+    ]
+   ],
+   "out": [
+    "installed\nsing-box version 1.9.7",
+    [
+     {
+      "cmd": "opkg update >/dev/null 2>&1; opkg install sing-box jq curl 2>&1 | tail -4; sing-box version 2>/dev/null | head -1",
+      "stdin": null,
+      "timeout": 600
+     }
+    ]
+   ]
+  }
+ ]
+}

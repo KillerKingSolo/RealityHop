@@ -1,0 +1,30 @@
+{
+ "fn": "key_console",
+ "source": "src/macos.py",
+ "cases": [
+  {
+   "args": [
+    "/usr/bin/ssh",
+    "192.168.8.1",
+    "mkdir -p /etc/dropbear; echo ssh-ed25519 AAAA realityhop >> x"
+   ],
+   "out": "#!/bin/sh\ncd \"$(dirname \"$0\")\" || exit 1\nprintf \"\\033]0;Reality Hop: add key to router\\007\"\necho \"Type the router admin password (the one for the GL.iNet web panel) and press Enter.\"\necho \"Nothing shows while you type. Reality Hop never sees it.\"\necho\n/usr/bin/ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=known_hosts root@192.168.8.1 'mkdir -p /etc/dropbear; echo ssh-ed25519 AAAA realityhop >> x'\necho\nprintf \"Press Enter to close. \"\nread _\n"
+  },
+  {
+   "args": [
+    "/Users/O'Brien/my ssh",
+    "router.lan",
+    "it's"
+   ],
+   "out": "#!/bin/sh\ncd \"$(dirname \"$0\")\" || exit 1\nprintf \"\\033]0;Reality Hop: add key to router\\007\"\necho \"Type the router admin password (the one for the GL.iNet web panel) and press Enter.\"\necho \"Nothing shows while you type. Reality Hop never sees it.\"\necho\n'/Users/O'\"'\"'Brien/my ssh' -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=known_hosts root@router.lan 'it'\"'\"'s'\necho\nprintf \"Press Enter to close. \"\nread _\n"
+  },
+  {
+   "args": [
+    "/usr/bin/ssh",
+    "gl-mt6000",
+    ""
+   ],
+   "out": "#!/bin/sh\ncd \"$(dirname \"$0\")\" || exit 1\nprintf \"\\033]0;Reality Hop: add key to router\\007\"\necho \"Type the router admin password (the one for the GL.iNet web panel) and press Enter.\"\necho \"Nothing shows while you type. Reality Hop never sees it.\"\necho\n/usr/bin/ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=known_hosts root@gl-mt6000 ''\necho\nprintf \"Press Enter to close. \"\nread _\n"
+  }
+ ]
+}

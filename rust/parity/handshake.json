@@ -1,0 +1,548 @@
+{
+ "fn": "handshake",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome"
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox"
+     }
+    ],
+    [
+     "nt-0 PASS 8.8.8.8 0.5123\nnt-1 FAIL\nnt-2 FAIL\njunk\n---LOG---\nERROR [n-1] outbound/vless[n-1]: REALITY verification failed\nERROR [in-2] inbound/mixed[in-2]: dial tcp 9.9.9.9:443: i/o timeout\n"
+    ]
+   ],
+   "out": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": true,
+      "exit": "8.8.8.8",
+      "ms": 512,
+      "why": "no result"
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "ok": false,
+      "exit": "-",
+      "ms": null,
+      "why": "reality verification failed"
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox",
+      "ok": false,
+      "exit": "-",
+      "ms": null,
+      "why": "i/o timeout"
+     }
+    ],
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "rm -rf /tmp/nt; mkdir -p /tmp/nt; cd /tmp/nt\ncat > all.json <<'SBEOF'\n{\"log\": {\"level\": \"error\"}, \"inbounds\": [{\"type\": \"mixed\", \"tag\": \"in-0\", \"listen\": \"127.0.0.1\", \"listen_port\": 21000}, {\"type\": \"mixed\", \"tag\": \"in-1\", \"listen\": \"127.0.0.1\", \"listen_port\": 21001}, {\"type\": \"mixed\", \"tag\": \"in-2\", \"listen\": \"127.0.0.1\", \"listen_port\": 21002}], \"outbounds\": [{\"type\": \"vless\", \"tag\": \"n-0\", \"server\": \"8.8.8.8\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"tag\": \"n-1\", \"server\": \"1.1.1.1\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"chrome\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"\"}}}, {\"type\": \"vless\", \"tag\": \"n-2\", \"server\": \"9.9.9.9\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"cdnjs.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"direct\", \"tag\": \"direct\"}], \"route\": {\"rules\": [{\"ip_is_private\": true, \"outbound\": \"direct\"}, {\"inbound\": [\"in-0\"], \"outbound\": \"n-0\"}, {\"inbound\": [\"in-1\"], \"outbound\": \"n-1\"}, {\"inbound\": [\"in-2\"], \"outbound\": \"n-2\"}], \"final\": \"direct\", \"auto_detect_interface\": true}}\nSBEOF\nsing-box run -c all.json > log 2>&1 &\nP=$!\nsleep 2\nif ! kill -0 $P 2>/dev/null; then echo DEAD; sed \"s/\\x1b\\[[0-9;]*m//g\" log | head -5; exit; fi\n( T=$(curl -s --socks5-hostname 127.0.0.1:21000 --max-time 10 -o out-0 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-0 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-0 PASS $IP $T\"; else echo \"nt-0 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21001 --max-time 10 -o out-1 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-1 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-1 PASS $IP $T\"; else echo \"nt-1 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21002 --max-time 10 -o out-2 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-2 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-2 PASS $IP $T\"; else echo \"nt-2 FAIL\"; fi ) &\nW=\"$W $!\"\n[ -n \"$W\" ] && wait $W\nkill $P 2>/dev/null\necho ---LOG---\nsed \"s/\\x1b\\[[0-9;]*m//g\" log | tail -300\nrm -rf /tmp/nt\n",
+      "timeout": 240
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome"
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox"
+     }
+    ],
+    [
+     "nt-2 PASS 9.9.9.9 1,5\nnt-0 PASS 1.2.3.4\n---LOG---\n"
+    ]
+   ],
+   "out": {
+    "error": "ValueError"
+   }
+  },
+  {
+   "args": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome"
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox"
+     }
+    ],
+    [
+     "DEAD\nFATAL outbound[1]: bad key",
+     "nt-0 PASS 8.8.8.8 0.2\nnt-2 FAIL\n---LOG---\nx [n-2] EOF\n"
+    ]
+   ],
+   "out": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": true,
+      "exit": "8.8.8.8",
+      "ms": 200,
+      "why": "no result"
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "ok": false,
+      "exit": "-",
+      "ms": null,
+      "why": "rejected by sing-box: bad node parameters"
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox",
+      "ok": false,
+      "exit": "-",
+      "ms": null,
+      "why": "eof"
+     }
+    ],
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "rm -rf /tmp/nt; mkdir -p /tmp/nt; cd /tmp/nt\ncat > all.json <<'SBEOF'\n{\"log\": {\"level\": \"error\"}, \"inbounds\": [{\"type\": \"mixed\", \"tag\": \"in-0\", \"listen\": \"127.0.0.1\", \"listen_port\": 21000}, {\"type\": \"mixed\", \"tag\": \"in-1\", \"listen\": \"127.0.0.1\", \"listen_port\": 21001}, {\"type\": \"mixed\", \"tag\": \"in-2\", \"listen\": \"127.0.0.1\", \"listen_port\": 21002}], \"outbounds\": [{\"type\": \"vless\", \"tag\": \"n-0\", \"server\": \"8.8.8.8\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"tag\": \"n-1\", \"server\": \"1.1.1.1\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"chrome\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"\"}}}, {\"type\": \"vless\", \"tag\": \"n-2\", \"server\": \"9.9.9.9\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"cdnjs.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"direct\", \"tag\": \"direct\"}], \"route\": {\"rules\": [{\"ip_is_private\": true, \"outbound\": \"direct\"}, {\"inbound\": [\"in-0\"], \"outbound\": \"n-0\"}, {\"inbound\": [\"in-1\"], \"outbound\": \"n-1\"}, {\"inbound\": [\"in-2\"], \"outbound\": \"n-2\"}], \"final\": \"direct\", \"auto_detect_interface\": true}}\nSBEOF\nsing-box run -c all.json > log 2>&1 &\nP=$!\nsleep 2\nif ! kill -0 $P 2>/dev/null; then echo DEAD; sed \"s/\\x1b\\[[0-9;]*m//g\" log | head -5; exit; fi\n( T=$(curl -s --socks5-hostname 127.0.0.1:21000 --max-time 10 -o out-0 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-0 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-0 PASS $IP $T\"; else echo \"nt-0 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21001 --max-time 10 -o out-1 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-1 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-1 PASS $IP $T\"; else echo \"nt-1 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21002 --max-time 10 -o out-2 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-2 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-2 PASS $IP $T\"; else echo \"nt-2 FAIL\"; fi ) &\nW=\"$W $!\"\n[ -n \"$W\" ] && wait $W\nkill $P 2>/dev/null\necho ---LOG---\nsed \"s/\\x1b\\[[0-9;]*m//g\" log | tail -300\nrm -rf /tmp/nt\n",
+      "timeout": 240
+     },
+     {
+      "cmd": "sh -s",
+      "stdin": "rm -rf /tmp/nt; mkdir -p /tmp/nt; cd /tmp/nt\ncat > all.json <<'SBEOF'\n{\"log\": {\"level\": \"error\"}, \"inbounds\": [{\"type\": \"mixed\", \"tag\": \"in-0\", \"listen\": \"127.0.0.1\", \"listen_port\": 21000}, {\"type\": \"mixed\", \"tag\": \"in-2\", \"listen\": \"127.0.0.1\", \"listen_port\": 21002}], \"outbounds\": [{\"type\": \"vless\", \"tag\": \"n-0\", \"server\": \"8.8.8.8\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"tag\": \"n-2\", \"server\": \"9.9.9.9\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"cdnjs.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"direct\", \"tag\": \"direct\"}], \"route\": {\"rules\": [{\"ip_is_private\": true, \"outbound\": \"direct\"}, {\"inbound\": [\"in-0\"], \"outbound\": \"n-0\"}, {\"inbound\": [\"in-2\"], \"outbound\": \"n-2\"}], \"final\": \"direct\", \"auto_detect_interface\": true}}\nSBEOF\nsing-box run -c all.json > log 2>&1 &\nP=$!\nsleep 2\nif ! kill -0 $P 2>/dev/null; then echo DEAD; sed \"s/\\x1b\\[[0-9;]*m//g\" log | head -5; exit; fi\n( T=$(curl -s --socks5-hostname 127.0.0.1:21000 --max-time 10 -o out-0 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-0 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-0 PASS $IP $T\"; else echo \"nt-0 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21002 --max-time 10 -o out-2 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-2 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-2 PASS $IP $T\"; else echo \"nt-2 FAIL\"; fi ) &\nW=\"$W $!\"\n[ -n \"$W\" ] && wait $W\nkill $P 2>/dev/null\necho ---LOG---\nsed \"s/\\x1b\\[[0-9;]*m//g\" log | tail -300\nrm -rf /tmp/nt\n",
+      "timeout": 240
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome"
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox"
+     }
+    ],
+    [
+     "DEAD\nstart n-2 failed",
+     "nt-0 FAIL\nnt-1 PASS 1.1.1.1 0.3\n---LOG---\n"
+    ]
+   ],
+   "out": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": false,
+      "exit": "-",
+      "ms": null,
+      "why": "no-response"
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome",
+      "ok": true,
+      "exit": "1.1.1.1",
+      "ms": 300,
+      "why": "no result"
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox",
+      "ok": false,
+      "exit": "-",
+      "ms": null,
+      "why": "rejected by sing-box: bad node parameters"
+     }
+    ],
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "rm -rf /tmp/nt; mkdir -p /tmp/nt; cd /tmp/nt\ncat > all.json <<'SBEOF'\n{\"log\": {\"level\": \"error\"}, \"inbounds\": [{\"type\": \"mixed\", \"tag\": \"in-0\", \"listen\": \"127.0.0.1\", \"listen_port\": 21000}, {\"type\": \"mixed\", \"tag\": \"in-1\", \"listen\": \"127.0.0.1\", \"listen_port\": 21001}, {\"type\": \"mixed\", \"tag\": \"in-2\", \"listen\": \"127.0.0.1\", \"listen_port\": 21002}], \"outbounds\": [{\"type\": \"vless\", \"tag\": \"n-0\", \"server\": \"8.8.8.8\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"tag\": \"n-1\", \"server\": \"1.1.1.1\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"chrome\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"\"}}}, {\"type\": \"vless\", \"tag\": \"n-2\", \"server\": \"9.9.9.9\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"cdnjs.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"direct\", \"tag\": \"direct\"}], \"route\": {\"rules\": [{\"ip_is_private\": true, \"outbound\": \"direct\"}, {\"inbound\": [\"in-0\"], \"outbound\": \"n-0\"}, {\"inbound\": [\"in-1\"], \"outbound\": \"n-1\"}, {\"inbound\": [\"in-2\"], \"outbound\": \"n-2\"}], \"final\": \"direct\", \"auto_detect_interface\": true}}\nSBEOF\nsing-box run -c all.json > log 2>&1 &\nP=$!\nsleep 2\nif ! kill -0 $P 2>/dev/null; then echo DEAD; sed \"s/\\x1b\\[[0-9;]*m//g\" log | head -5; exit; fi\n( T=$(curl -s --socks5-hostname 127.0.0.1:21000 --max-time 10 -o out-0 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-0 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-0 PASS $IP $T\"; else echo \"nt-0 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21001 --max-time 10 -o out-1 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-1 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-1 PASS $IP $T\"; else echo \"nt-1 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21002 --max-time 10 -o out-2 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-2 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-2 PASS $IP $T\"; else echo \"nt-2 FAIL\"; fi ) &\nW=\"$W $!\"\n[ -n \"$W\" ] && wait $W\nkill $P 2>/dev/null\necho ---LOG---\nsed \"s/\\x1b\\[[0-9;]*m//g\" log | tail -300\nrm -rf /tmp/nt\n",
+      "timeout": 240
+     },
+     {
+      "cmd": "sh -s",
+      "stdin": "rm -rf /tmp/nt; mkdir -p /tmp/nt; cd /tmp/nt\ncat > all.json <<'SBEOF'\n{\"log\": {\"level\": \"error\"}, \"inbounds\": [{\"type\": \"mixed\", \"tag\": \"in-0\", \"listen\": \"127.0.0.1\", \"listen_port\": 21000}, {\"type\": \"mixed\", \"tag\": \"in-1\", \"listen\": \"127.0.0.1\", \"listen_port\": 21001}], \"outbounds\": [{\"type\": \"vless\", \"tag\": \"n-0\", \"server\": \"8.8.8.8\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"tag\": \"n-1\", \"server\": \"1.1.1.1\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"chrome\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"\"}}}, {\"type\": \"direct\", \"tag\": \"direct\"}], \"route\": {\"rules\": [{\"ip_is_private\": true, \"outbound\": \"direct\"}, {\"inbound\": [\"in-0\"], \"outbound\": \"n-0\"}, {\"inbound\": [\"in-1\"], \"outbound\": \"n-1\"}], \"final\": \"direct\", \"auto_detect_interface\": true}}\nSBEOF\nsing-box run -c all.json > log 2>&1 &\nP=$!\nsleep 2\nif ! kill -0 $P 2>/dev/null; then echo DEAD; sed \"s/\\x1b\\[[0-9;]*m//g\" log | head -5; exit; fi\n( T=$(curl -s --socks5-hostname 127.0.0.1:21000 --max-time 10 -o out-0 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-0 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-0 PASS $IP $T\"; else echo \"nt-0 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21001 --max-time 10 -o out-1 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-1 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-1 PASS $IP $T\"; else echo \"nt-1 FAIL\"; fi ) &\nW=\"$W $!\"\n[ -n \"$W\" ] && wait $W\nkill $P 2>/dev/null\necho ---LOG---\nsed \"s/\\x1b\\[[0-9;]*m//g\" log | tail -300\nrm -rf /tmp/nt\n",
+      "timeout": 240
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome"
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox"
+     }
+    ],
+    [
+     "DEAD\nsomething else broke"
+    ]
+   ],
+   "out": [
+    {
+     "error": "RuntimeError",
+     "message": "router test instance did not start: something else broke"
+    },
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "rm -rf /tmp/nt; mkdir -p /tmp/nt; cd /tmp/nt\ncat > all.json <<'SBEOF'\n{\"log\": {\"level\": \"error\"}, \"inbounds\": [{\"type\": \"mixed\", \"tag\": \"in-0\", \"listen\": \"127.0.0.1\", \"listen_port\": 21000}, {\"type\": \"mixed\", \"tag\": \"in-1\", \"listen\": \"127.0.0.1\", \"listen_port\": 21001}, {\"type\": \"mixed\", \"tag\": \"in-2\", \"listen\": \"127.0.0.1\", \"listen_port\": 21002}], \"outbounds\": [{\"type\": \"vless\", \"tag\": \"n-0\", \"server\": \"8.8.8.8\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"tag\": \"n-1\", \"server\": \"1.1.1.1\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"chrome\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"\"}}}, {\"type\": \"vless\", \"tag\": \"n-2\", \"server\": \"9.9.9.9\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"cdnjs.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"direct\", \"tag\": \"direct\"}], \"route\": {\"rules\": [{\"ip_is_private\": true, \"outbound\": \"direct\"}, {\"inbound\": [\"in-0\"], \"outbound\": \"n-0\"}, {\"inbound\": [\"in-1\"], \"outbound\": \"n-1\"}, {\"inbound\": [\"in-2\"], \"outbound\": \"n-2\"}], \"final\": \"direct\", \"auto_detect_interface\": true}}\nSBEOF\nsing-box run -c all.json > log 2>&1 &\nP=$!\nsleep 2\nif ! kill -0 $P 2>/dev/null; then echo DEAD; sed \"s/\\x1b\\[[0-9;]*m//g\" log | head -5; exit; fi\n( T=$(curl -s --socks5-hostname 127.0.0.1:21000 --max-time 10 -o out-0 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-0 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-0 PASS $IP $T\"; else echo \"nt-0 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21001 --max-time 10 -o out-1 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-1 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-1 PASS $IP $T\"; else echo \"nt-1 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21002 --max-time 10 -o out-2 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-2 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-2 PASS $IP $T\"; else echo \"nt-2 FAIL\"; fi ) &\nW=\"$W $!\"\n[ -n \"$W\" ] && wait $W\nkill $P 2>/dev/null\necho ---LOG---\nsed \"s/\\x1b\\[[0-9;]*m//g\" log | tail -300\nrm -rf /tmp/nt\n",
+      "timeout": 240
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    [
+     {
+      "server": "8.8.8.8",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "",
+      "sni": "www.apple.com",
+      "fp": "chrome"
+     },
+     {
+      "server": "9.9.9.9",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "cdnjs.com",
+      "fp": "firefox"
+     }
+    ],
+    [
+     {
+      "error": "router unreachable over ssh"
+     }
+    ]
+   ],
+   "out": [
+    {
+     "error": "RuntimeError",
+     "message": "router unreachable over ssh"
+    },
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "rm -rf /tmp/nt; mkdir -p /tmp/nt; cd /tmp/nt\ncat > all.json <<'SBEOF'\n{\"log\": {\"level\": \"error\"}, \"inbounds\": [{\"type\": \"mixed\", \"tag\": \"in-0\", \"listen\": \"127.0.0.1\", \"listen_port\": 21000}, {\"type\": \"mixed\", \"tag\": \"in-1\", \"listen\": \"127.0.0.1\", \"listen_port\": 21001}, {\"type\": \"mixed\", \"tag\": \"in-2\", \"listen\": \"127.0.0.1\", \"listen_port\": 21002}], \"outbounds\": [{\"type\": \"vless\", \"tag\": \"n-0\", \"server\": \"8.8.8.8\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"tag\": \"n-1\", \"server\": \"1.1.1.1\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"chrome\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"\"}}}, {\"type\": \"vless\", \"tag\": \"n-2\", \"server\": \"9.9.9.9\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"cdnjs.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"direct\", \"tag\": \"direct\"}], \"route\": {\"rules\": [{\"ip_is_private\": true, \"outbound\": \"direct\"}, {\"inbound\": [\"in-0\"], \"outbound\": \"n-0\"}, {\"inbound\": [\"in-1\"], \"outbound\": \"n-1\"}, {\"inbound\": [\"in-2\"], \"outbound\": \"n-2\"}], \"final\": \"direct\", \"auto_detect_interface\": true}}\nSBEOF\nsing-box run -c all.json > log 2>&1 &\nP=$!\nsleep 2\nif ! kill -0 $P 2>/dev/null; then echo DEAD; sed \"s/\\x1b\\[[0-9;]*m//g\" log | head -5; exit; fi\n( T=$(curl -s --socks5-hostname 127.0.0.1:21000 --max-time 10 -o out-0 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-0 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-0 PASS $IP $T\"; else echo \"nt-0 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21001 --max-time 10 -o out-1 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-1 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-1 PASS $IP $T\"; else echo \"nt-1 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21002 --max-time 10 -o out-2 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-2 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-2 PASS $IP $T\"; else echo \"nt-2 FAIL\"; fi ) &\nW=\"$W $!\"\n[ -n \"$W\" ] && wait $W\nkill $P 2>/dev/null\necho ---LOG---\nsed \"s/\\x1b\\[[0-9;]*m//g\" log | tail -300\nrm -rf /tmp/nt\n",
+      "timeout": 240
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    [
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "2.2.2.2",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "3.3.3.3",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "4.4.4.4",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "5.5.5.5",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "6.6.6.6",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     },
+     {
+      "server": "7.7.7.7",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox"
+     }
+    ],
+    [
+     "---LOG---\n"
+    ]
+   ],
+   "out": [
+    [
+     {
+      "server": "1.1.1.1",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": false,
+      "exit": "-",
+      "ms": null,
+      "why": "no result"
+     },
+     {
+      "server": "2.2.2.2",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": false,
+      "exit": "-",
+      "ms": null,
+      "why": "no result"
+     },
+     {
+      "server": "3.3.3.3",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": false,
+      "exit": "-",
+      "ms": null,
+      "why": "no result"
+     },
+     {
+      "server": "4.4.4.4",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": false,
+      "exit": "-",
+      "ms": null,
+      "why": "no result"
+     },
+     {
+      "server": "5.5.5.5",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": false,
+      "exit": "-",
+      "ms": null,
+      "why": "no result"
+     },
+     {
+      "server": "6.6.6.6",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": false,
+      "exit": "-",
+      "ms": null,
+      "why": "no result"
+     },
+     {
+      "server": "7.7.7.7",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "pbk": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+      "sid": "0a1b",
+      "sni": "www.apple.com",
+      "fp": "firefox",
+      "ok": false,
+      "exit": "-",
+      "ms": null,
+      "why": "no result"
+     }
+    ],
+    [
+     {
+      "cmd": "sh -s",
+      "stdin": "rm -rf /tmp/nt; mkdir -p /tmp/nt; cd /tmp/nt\ncat > all.json <<'SBEOF'\n{\"log\": {\"level\": \"error\"}, \"inbounds\": [{\"type\": \"mixed\", \"tag\": \"in-0\", \"listen\": \"127.0.0.1\", \"listen_port\": 21000}, {\"type\": \"mixed\", \"tag\": \"in-1\", \"listen\": \"127.0.0.1\", \"listen_port\": 21001}, {\"type\": \"mixed\", \"tag\": \"in-2\", \"listen\": \"127.0.0.1\", \"listen_port\": 21002}, {\"type\": \"mixed\", \"tag\": \"in-3\", \"listen\": \"127.0.0.1\", \"listen_port\": 21003}, {\"type\": \"mixed\", \"tag\": \"in-4\", \"listen\": \"127.0.0.1\", \"listen_port\": 21004}, {\"type\": \"mixed\", \"tag\": \"in-5\", \"listen\": \"127.0.0.1\", \"listen_port\": 21005}, {\"type\": \"mixed\", \"tag\": \"in-6\", \"listen\": \"127.0.0.1\", \"listen_port\": 21006}], \"outbounds\": [{\"type\": \"vless\", \"tag\": \"n-0\", \"server\": \"1.1.1.1\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"tag\": \"n-1\", \"server\": \"2.2.2.2\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"tag\": \"n-2\", \"server\": \"3.3.3.3\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"tag\": \"n-3\", \"server\": \"4.4.4.4\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"tag\": \"n-4\", \"server\": \"5.5.5.5\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"tag\": \"n-5\", \"server\": \"6.6.6.6\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"vless\", \"tag\": \"n-6\", \"server\": \"7.7.7.7\", \"server_port\": 443, \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"flow\": \"xtls-rprx-vision\", \"packet_encoding\": \"xudp\", \"tls\": {\"enabled\": true, \"server_name\": \"www.apple.com\", \"utls\": {\"enabled\": true, \"fingerprint\": \"firefox\"}, \"reality\": {\"enabled\": true, \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\", \"short_id\": \"0a1b\"}}}, {\"type\": \"direct\", \"tag\": \"direct\"}], \"route\": {\"rules\": [{\"ip_is_private\": true, \"outbound\": \"direct\"}, {\"inbound\": [\"in-0\"], \"outbound\": \"n-0\"}, {\"inbound\": [\"in-1\"], \"outbound\": \"n-1\"}, {\"inbound\": [\"in-2\"], \"outbound\": \"n-2\"}, {\"inbound\": [\"in-3\"], \"outbound\": \"n-3\"}, {\"inbound\": [\"in-4\"], \"outbound\": \"n-4\"}, {\"inbound\": [\"in-5\"], \"outbound\": \"n-5\"}, {\"inbound\": [\"in-6\"], \"outbound\": \"n-6\"}], \"final\": \"direct\", \"auto_detect_interface\": true}}\nSBEOF\nsing-box run -c all.json > log 2>&1 &\nP=$!\nsleep 2\nif ! kill -0 $P 2>/dev/null; then echo DEAD; sed \"s/\\x1b\\[[0-9;]*m//g\" log | head -5; exit; fi\n( T=$(curl -s --socks5-hostname 127.0.0.1:21000 --max-time 10 -o out-0 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-0 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-0 PASS $IP $T\"; else echo \"nt-0 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21001 --max-time 10 -o out-1 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-1 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-1 PASS $IP $T\"; else echo \"nt-1 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21002 --max-time 10 -o out-2 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-2 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-2 PASS $IP $T\"; else echo \"nt-2 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21003 --max-time 10 -o out-3 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-3 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-3 PASS $IP $T\"; else echo \"nt-3 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21004 --max-time 10 -o out-4 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-4 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-4 PASS $IP $T\"; else echo \"nt-4 FAIL\"; fi ) &\nW=\"$W $!\"\nwait $W\nW=\n( T=$(curl -s --socks5-hostname 127.0.0.1:21005 --max-time 10 -o out-5 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-5 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-5 PASS $IP $T\"; else echo \"nt-5 FAIL\"; fi ) &\nW=\"$W $!\"\n( T=$(curl -s --socks5-hostname 127.0.0.1:21006 --max-time 10 -o out-6 -w '%{time_total}' https://api.ipify.org 2>/dev/null); IP=$(cat out-6 2>/dev/null); if [ -n \"$IP\" ]; then echo \"nt-6 PASS $IP $T\"; else echo \"nt-6 FAIL\"; fi ) &\nW=\"$W $!\"\n[ -n \"$W\" ] && wait $W\nkill $P 2>/dev/null\necho ---LOG---\nsed \"s/\\x1b\\[[0-9;]*m//g\" log | tail -300\nrm -rf /tmp/nt\n",
+      "timeout": 240
+     }
+    ]
+   ]
+  }
+ ]
+}

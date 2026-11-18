@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reality Hop</title>
+<link rel="stylesheet" href="app.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<header>
+  <h1>Reality Hop</h1>
+  <span id="state" class="pill unk" data-t="not checked yet">not checked yet</span>
+  <span id="version" class="muted"></span>
+</header>
+<main>
+  <section class="card">
+    <div id="ring" class="ring" aria-label="nodes"></div>
+    <p id="tip" class="muted"></p>
+    <div class="actions">
+      <button data-ask="check" data-t="Check now">Check now</button>
+      <button data-ask="restart" data-t="Restart PC tunnel">Restart PC tunnel</button>
+      <button data-ask="rescue" data-t="Rescue from verified vault">Rescue from verified vault</button>
+    </div>
+  </section>
+  <section class="card">
+    <table>
+      <thead><tr><th>slot</th><th>server</th><th>front</th><th>fingerprint</th></tr></thead>
+      <tbody id="nodes"></tbody>
+    </table>
+    <p id="error" class="bad-text" hidden></p>
+  </section>
+</main>
+</body>
+</html>

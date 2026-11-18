@@ -1,0 +1,32 @@
+{
+ "fn": "router_key_remove",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHk realityhop",
+    ""
+   ],
+   "out": [
+    "router: the key of this PC is removed",
+    [
+     {
+      "cmd": "sed -i '\\|AAAAC3NzaC1lZDI1NTE5AAAAIHk|d' /etc/dropbear/authorized_keys; echo 'router: the key of this PC is removed'",
+      "stdin": null,
+      "timeout": 30
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    "ssh-ed25519 AAAA realityhop",
+    "C:\\keys\\mine"
+   ],
+   "out": [
+    "router: your own key file was used, so it stays on the router",
+    []
+   ]
+  }
+ ]
+}

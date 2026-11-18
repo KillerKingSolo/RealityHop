@@ -1,0 +1,190 @@
+{
+ "fn": "t",
+ "source": "src/i18n.py",
+ "cases": [
+  {
+   "args": [
+    "en",
+    false,
+    "Restart PC tunnel",
+    {}
+   ],
+   "out": "Restart PC tunnel"
+  },
+  {
+   "args": [
+    "es",
+    false,
+    "Restart PC tunnel",
+    {}
+   ],
+   "out": "Reiniciar túnel del PC"
+  },
+  {
+   "args": [
+    "fa",
+    false,
+    "Restart PC tunnel",
+    {}
+   ],
+   "out": "‫راه‌اندازی دوباره تونل رایانه‬"
+  },
+  {
+   "args": [
+    "ar",
+    false,
+    "For when every node is dead and nothing else works.\n\nThis PC tests the nodes in the vault (every node that ever passed a test), puts the best 6 into the configs, and updates the tunnel(s). If too few work, it scans the node list for more.",
+    {}
+   ],
+   "out": "‫عندما تتعطل كل العقد ولا ينفع شيء آخر.‬\n\n‫يختبر هذا الحاسوب العقد في المخزن (كل عقدة اجتازت اختبارًا يومًا ما)، ويضع أفضل 6 في الإعدادات ويحدّث الأنفاق. إذا عمل عدد قليل، يبحث عن المزيد في قائمة العقد.‬"
+  },
+  {
+   "args": [
+    "es",
+    false,
+    "{ok} of {n} candidates answer on 443 from this PC. None is tunnel-tested yet.",
+    {
+     "ok": 3,
+     "n": 50
+    }
+   ],
+   "out": "3 de 50 candidatos responden en el 443 desde este PC. Ninguno está probado por túnel todavía."
+  },
+  {
+   "args": [
+    "ru",
+    false,
+    "next auto-check {at}",
+    {
+     "at": "12:30"
+    }
+   ],
+   "out": "следующая автопроверка 12:30"
+  },
+  {
+   "args": [
+    "zh",
+    false,
+    "answers on 443 in {ms} ms; not tunnel-tested yet",
+    {
+     "ms": 42
+    }
+   ],
+   "out": "443 端口在 42 毫秒内响应；尚未进行隧道测试"
+  },
+  {
+   "args": [
+    "en",
+    false,
+    "not in any catalog {x} {{literal}}",
+    {
+     "x": "PC"
+    }
+   ],
+   "out": "not in any catalog PC {literal}"
+  },
+  {
+   "args": [
+    "en",
+    false,
+    "missing {y}",
+    {
+     "y": null
+    }
+   ],
+   "out": "missing None"
+  },
+  {
+   "args": [
+    "en",
+    true,
+    "Restart PC tunnel",
+    {}
+   ],
+   "out": "Restart Mac tunnel"
+  },
+  {
+   "args": [
+    "tr",
+    true,
+    "Restart PC tunnel",
+    {}
+   ],
+   "out": "Mac tünelini yeniden başlat"
+  },
+  {
+   "args": [
+    "tr",
+    true,
+    "The router's tunnel tests every node. If another PC changed the router, its nodes are taken first.",
+    {}
+   ],
+   "out": "Router'ın tüneli her düğümü test eder. Başka bir bilgisayar router'ı değiştirdiyse önce onun düğümleri alınır."
+  },
+  {
+   "args": [
+    "es",
+    true,
+    "Opens the install folder with the PC, Router and logs folders.",
+    {}
+   ],
+   "out": "Abre la carpeta de instalación con las carpetas PC, Router y logs."
+  },
+  {
+   "args": [
+    "vi",
+    true,
+    "Restart PC tunnel",
+    {}
+   ],
+   "out": "Khởi động lại đường hầm Mac"
+  },
+  {
+   "args": [
+    "uk",
+    true,
+    "Restart PC tunnel",
+    {}
+   ],
+   "out": "Перезапустити тунель Mac"
+  },
+  {
+   "args": [
+    "fa",
+    true,
+    "Restart PC tunnel",
+    {}
+   ],
+   "out": "‫راه‌اندازی دوباره تونل رایانه‬"
+  },
+  {
+   "args": [
+    "en",
+    true,
+    "another PC {n}",
+    {
+     "n": "PC"
+    }
+   ],
+   "out": "another computer PC"
+  },
+  {
+   "args": [
+    "es",
+    false,
+    "",
+    {}
+   ],
+   "out": ""
+  },
+  {
+   "args": [
+    "fa",
+    false,
+    "line one\n\n  \nline two",
+    {}
+   ],
+   "out": "‫line one‬\n\n  \n‫line two‬"
+  }
+ ]
+}

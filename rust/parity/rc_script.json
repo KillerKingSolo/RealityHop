@@ -1,0 +1,250 @@
+{
+ "fn": "rc_script",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    {
+     "channel": "stable",
+     "singbox": "1.14.4",
+     "sha256": "abababababababababababababababababababababababababababababababab",
+     "asset": "rh-router-core-linux-arm64"
+    },
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "vless",
+       "tag": "vless-1",
+       "server": "8.8.8.8",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-2",
+       "server": "1.1.1.1",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "chrome"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": ""
+        }
+       }
+      },
+      {
+       "type": "vless",
+       "tag": "vless-3",
+       "server": "9.9.9.9",
+       "server_port": 443,
+       "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+       "flow": "xtls-rprx-vision",
+       "packet_encoding": "xudp",
+       "tls": {
+        "enabled": true,
+        "server_name": "cdnjs.com",
+        "utls": {
+         "enabled": true,
+         "fingerprint": "firefox"
+        },
+        "reality": {
+         "enabled": true,
+         "public_key": "AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-",
+         "short_id": "0a1b"
+        }
+       }
+      },
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [
+        "vless-1",
+        "vless-2",
+        "vless-3"
+       ],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    }
+   ],
+   "out": "trap '' HUP PIPE INT TERM   # a dropped ssh connection must not stop this halfway through the swap\nN=/tmp/rh-core.new; B=/usr/bin/sing-box; O=/tmp/rh-core.old\nfail() { echo \"ROUTER BUILD: $*\"; rm -f $N /tmp/sb-new.json; rmdir /tmp/heal.lock 2>/dev/null; exit 1; }\nmkdir /tmp/heal.lock 2>/dev/null || fail 'the self-repair is running; try again in a few minutes'\n[ \"$(sha256sum $N | cut -c1-64)\" = \"abababababababababababababababababababababababababababababababab\" ] || fail 'the upload is damaged; nothing changed'\nchmod +x $N; $N version 2>&1 | head -1 | grep -qF 'version 1.14.4' || fail 'the new build does not run on this router; nothing changed'\ncat > /tmp/sb-new.json <<'SBEOF'\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}\nSBEOF\ncat > /tmp/sb-new12.json <<'SBEOF'\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"server\": \"9.9.9.9\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-1\",\n      \"server\": \"8.8.8.8\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-2\",\n      \"server\": \"1.1.1.1\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"www.apple.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"chrome\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"\"\n        }\n      }\n    },\n    {\n      \"type\": \"vless\",\n      \"tag\": \"vless-3\",\n      \"server\": \"9.9.9.9\",\n      \"server_port\": 443,\n      \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"flow\": \"xtls-rprx-vision\",\n      \"packet_encoding\": \"xudp\",\n      \"tls\": {\n        \"enabled\": true,\n        \"server_name\": \"cdnjs.com\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"firefox\"\n        },\n        \"reality\": {\n          \"enabled\": true,\n          \"public_key\": \"AbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbAbc_-\",\n          \"short_id\": \"0a1b\"\n        }\n      }\n    },\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [\n        \"vless-1\",\n        \"vless-2\",\n        \"vless-3\"\n      ],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"tproxy-in\"\n        ],\n        \"action\": \"sniff\"\n      },\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"action\": \"hijack-dns\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}\nSBEOF\nif $N version 2>/dev/null | head -1 | grep -qE 'version 1\\.([0-9]|1[01])\\.'; then rm -f /tmp/sb-new12.json; else mv /tmp/sb-new12.json /tmp/sb-new.json; fi\n$N check -c /tmp/sb-new.json || fail 'the new build rejects the router config; nothing changed'\ncp $B $O 2>/dev/null || fail 'not enough free RAM to keep the old build; nothing changed'\ncp /etc/sing-box/config.json /tmp/rh-config.old\n/etc/init.d/sing-box stop; sleep 1; rm -f $B\nif cp $N $B 2>/dev/null && chmod +x $B; then\n  cp /tmp/sb-new.json /etc/sing-box/config.json; /etc/init.d/sing-box start; sleep 8\n  if pgrep -f '/etc/sing-box/config[.]json' >/dev/null && curl -s -m 5 -H 'Authorization: Bearer 0123456789abcdef0123456789abcdef' http://127.0.0.1:9090/version | grep -q version; then\n    echo 'stable 1.14.4 abababababababababababababababababababababababababababababababab' > /etc/sing-box/rh-core; opkg flag hold sing-box >/dev/null 2>&1\n    rm -f $O /tmp/rh-config.old $N /tmp/sb-new.json; rmdir /tmp/heal.lock\n    echo 'ROUTER BUILD: installed'; echo \"pushed-md5 $(md5sum /etc/sing-box/config.json | cut -c1-32)\"; exit 0\n  fi\n  echo 'ROUTER BUILD: the new build did not start:'; logread 2>/dev/null | grep -i sing-box | tail -5\nelse\n  echo 'ROUTER BUILD: not enough flash space for the new build'\nfi\n/etc/init.d/sing-box stop; rm -f $B; cp $O $B; chmod +x $B; cp /tmp/rh-config.old /etc/sing-box/config.json\n/etc/init.d/sing-box start; rm -f $O /tmp/rh-config.old $N /tmp/sb-new.json; rmdir /tmp/heal.lock\necho 'ROUTER BUILD: the previous sing-box and config are back'; exit 1\n"
+  },
+  {
+   "args": [
+    {
+     "channel": "preview",
+     "singbox": "1.15.0-beta.2",
+     "sha256": "abababababababababababababababababababababababababababababababab",
+     "asset": "rh-router-core-linux-arm64"
+    },
+    {
+     "log": {
+      "level": "warn",
+      "output": "/tmp/sb-run.log",
+      "timestamp": true
+     },
+     "dns": {
+      "servers": [
+       {
+        "tag": "quad9",
+        "address": "https://9.9.9.9/dns-query",
+        "detour": "auto"
+       }
+      ],
+      "final": "quad9",
+      "strategy": "prefer_ipv4"
+     },
+     "inbounds": [
+      {
+       "type": "tproxy",
+       "tag": "tproxy-in",
+       "listen": "::",
+       "listen_port": 7895,
+       "sniff": true
+      },
+      {
+       "type": "direct",
+       "tag": "dns-in",
+       "listen": "127.0.0.1",
+       "listen_port": 5354,
+       "override_address": "9.9.9.9",
+       "override_port": 53
+      }
+     ],
+     "outbounds": [
+      {
+       "type": "urltest",
+       "tag": "auto",
+       "outbounds": [],
+       "url": "https://www.gstatic.com/generate_204",
+       "interval": "10m",
+       "tolerance": 25
+      },
+      {
+       "type": "direct",
+       "tag": "direct"
+      },
+      {
+       "type": "dns",
+       "tag": "dns-out"
+      }
+     ],
+     "route": {
+      "rules": [
+       {
+        "inbound": [
+         "dns-in"
+        ],
+        "outbound": "dns-out"
+       },
+       {
+        "ip_is_private": true,
+        "outbound": "direct"
+       }
+      ],
+      "final": "auto",
+      "auto_detect_interface": true,
+      "default_mark": 255
+     },
+     "experimental": {
+      "clash_api": {
+       "external_controller": "127.0.0.1:9090",
+       "secret": "0123456789abcdef0123456789abcdef"
+      }
+     }
+    }
+   ],
+   "out": "trap '' HUP PIPE INT TERM   # a dropped ssh connection must not stop this halfway through the swap\nN=/tmp/rh-core.new; B=/usr/bin/sing-box; O=/tmp/rh-core.old\nfail() { echo \"ROUTER BUILD: $*\"; rm -f $N /tmp/sb-new.json; rmdir /tmp/heal.lock 2>/dev/null; exit 1; }\nmkdir /tmp/heal.lock 2>/dev/null || fail 'the self-repair is running; try again in a few minutes'\n[ \"$(sha256sum $N | cut -c1-64)\" = \"abababababababababababababababababababababababababababababababab\" ] || fail 'the upload is damaged; nothing changed'\nchmod +x $N; $N version 2>&1 | head -1 | grep -qF 'version 1.15.0-beta.2' || fail 'the new build does not run on this router; nothing changed'\ncat > /tmp/sb-new.json <<'SBEOF'\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"tag\": \"quad9\",\n        \"address\": \"https://9.9.9.9/dns-query\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895,\n      \"sniff\": true\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354,\n      \"override_address\": \"9.9.9.9\",\n      \"override_port\": 53\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    },\n    {\n      \"type\": \"dns\",\n      \"tag\": \"dns-out\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}\nSBEOF\ncat > /tmp/sb-new12.json <<'SBEOF'\n{\n  \"log\": {\n    \"level\": \"warn\",\n    \"output\": \"/tmp/sb-run.log\",\n    \"timestamp\": true\n  },\n  \"dns\": {\n    \"servers\": [\n      {\n        \"type\": \"https\",\n        \"tag\": \"quad9\",\n        \"server\": \"9.9.9.9\",\n        \"detour\": \"auto\"\n      }\n    ],\n    \"final\": \"quad9\",\n    \"strategy\": \"prefer_ipv4\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"tproxy\",\n      \"tag\": \"tproxy-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 7895\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"dns-in\",\n      \"listen\": \"127.0.0.1\",\n      \"listen_port\": 5354\n    }\n  ],\n  \"outbounds\": [\n    {\n      \"type\": \"urltest\",\n      \"tag\": \"auto\",\n      \"outbounds\": [],\n      \"url\": \"https://www.gstatic.com/generate_204\",\n      \"interval\": \"10m\",\n      \"tolerance\": 25\n    },\n    {\n      \"type\": \"direct\",\n      \"tag\": \"direct\"\n    }\n  ],\n  \"route\": {\n    \"rules\": [\n      {\n        \"inbound\": [\n          \"tproxy-in\"\n        ],\n        \"action\": \"sniff\"\n      },\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"action\": \"hijack-dns\"\n      },\n      {\n        \"ip_is_private\": true,\n        \"outbound\": \"direct\"\n      }\n    ],\n    \"final\": \"auto\",\n    \"auto_detect_interface\": true,\n    \"default_mark\": 255,\n    \"default_domain_resolver\": \"quad9\"\n  },\n  \"experimental\": {\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"secret\": \"0123456789abcdef0123456789abcdef\"\n    }\n  }\n}\nSBEOF\nif $N version 2>/dev/null | head -1 | grep -qE 'version 1\\.([0-9]|1[01])\\.'; then rm -f /tmp/sb-new12.json; else mv /tmp/sb-new12.json /tmp/sb-new.json; fi\n$N check -c /tmp/sb-new.json || fail 'the new build rejects the router config; nothing changed'\ncp $B $O 2>/dev/null || fail 'not enough free RAM to keep the old build; nothing changed'\ncp /etc/sing-box/config.json /tmp/rh-config.old\n/etc/init.d/sing-box stop; sleep 1; rm -f $B\nif cp $N $B 2>/dev/null && chmod +x $B; then\n  cp /tmp/sb-new.json /etc/sing-box/config.json; /etc/init.d/sing-box start; sleep 8\n  if pgrep -f '/etc/sing-box/config[.]json' >/dev/null && curl -s -m 5 -H 'Authorization: Bearer 0123456789abcdef0123456789abcdef' http://127.0.0.1:9090/version | grep -q version; then\n    echo 'preview 1.15.0-beta.2 abababababababababababababababababababababababababababababababab' > /etc/sing-box/rh-core; opkg flag hold sing-box >/dev/null 2>&1\n    rm -f $O /tmp/rh-config.old $N /tmp/sb-new.json; rmdir /tmp/heal.lock\n    echo 'ROUTER BUILD: installed'; echo \"pushed-md5 $(md5sum /etc/sing-box/config.json | cut -c1-32)\"; exit 0\n  fi\n  echo 'ROUTER BUILD: the new build did not start:'; logread 2>/dev/null | grep -i sing-box | tail -5\nelse\n  echo 'ROUTER BUILD: not enough flash space for the new build'\nfi\n/etc/init.d/sing-box stop; rm -f $B; cp $O $B; chmod +x $B; cp /tmp/rh-config.old /etc/sing-box/config.json\n/etc/init.d/sing-box start; rm -f $O /tmp/rh-config.old $N /tmp/sb-new.json; rmdir /tmp/heal.lock\necho 'ROUTER BUILD: the previous sing-box and config are back'; exit 1\n"
+  }
+ ]
+}

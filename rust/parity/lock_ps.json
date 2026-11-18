@@ -1,0 +1,12 @@
+{
+ "fn": "lock_ps",
+ "source": "src/install.py",
+ "cases": [
+  {
+   "args": [
+    "S-1-5-21-1111111111-2222222222-3333333333-1001"
+   ],
+   "out": "icacls $d /grant:r '*S-1-5-21-1111111111-2222222222-3333333333-1001:(OI)(CI)F' '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' /Q | Out-Null; icacls $d /inheritance:r /Q | Out-Null; icacls (Join-Path $d '*') /reset /T /C /Q | Out-Null"
+  }
+ ]
+}

@@ -14,3 +14,14 @@ pub fn psq(s: &str) -> String {
     out.push('\'');
     out
 }
+
+// s as one word for a POSIX shell (shlex.quote): as it is when it holds only safe characters, else in single quotes
+pub fn shq(s: &str) -> String {
+    if s.is_empty() {
+        return "''".into();
+    }
+    if s.chars().all(|c| c.is_ascii_alphanumeric() || "_@%+=:,./-".contains(c)) {
+        return s.into();
+    }
+    format!("'{}'", s.replace('\'', "'\"'\"'"))
+}

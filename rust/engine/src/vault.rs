@@ -3,6 +3,7 @@
 
 use crate::node::Node;
 use crate::node_tables::{known_where, text_lines};
+use crate::paths::Paths;
 use regex::Regex;
 use serde_json::{Map, Value, json};
 use std::sync::LazyLock;
@@ -123,4 +124,33 @@ pub fn nodes(v: &Map<String, Value>, exclude: &[&str]) -> Vec<Value> {
     };
     out.sort_by(|a, b| key(b).partial_cmp(&key(a)).unwrap());
     out
+}
+
+// vault.json, or on the first run the vault built from nodes.txt and the nodes in use, saved (engine.vault_load)
+pub fn load(paths: &Paths) -> Map<String, Value> {
+    let v = crate::data_files::jload(&paths.vault);
+    if !v.is_empty() {
+        return v;
+    }
+    let txt = crate::data_files::read_text(&paths.nodes_txt).unwrap_or_default();
+    let cfg = if crate::settings::pc_only(paths) { &paths.pc_cfg } else { &paths.router_cfg };
+    let inuse: Vec<Node> =
+        crate::singbox_config::nodes_of(cfg).unwrap_or_default().into_iter().map(|(_, n)| n).collect();
+    let v = seed(&txt, &inuse, &chrono::Local::now().format("%Y-%m-%d").to_string());
+    if !v.is_empty() {
+        let _ = crate::data_files::jsave(&paths.vault, &Value::Object(v.clone()), Some(1));
+    }
+    v
+}
+
+// Test results into vault.json (engine.vault_record)
+pub fn record_file(paths: &Paths, nodes: &[Value]) -> std::io::Result<()> {
+    let mut v = load(paths);
+    record(&mut v, nodes, &chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string());
+    crate::data_files::jsave(&paths.vault, &Value::Object(v), Some(1))
+}
+
+// vault.json's nodes, most recently verified first, then fastest (engine.vault_nodes)
+pub fn vault_nodes(paths: &Paths, exclude: &[&str]) -> Vec<Value> {
+    nodes(&load(paths), exclude)
 }

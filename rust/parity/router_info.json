@@ -1,0 +1,107 @@
+{
+ "fn": "router_info",
+ "source": "src/engine.py",
+ "cases": [
+  {
+   "args": [
+    "router_info",
+    [
+     "GL.iNet GL-MT6000\n|\n4.6.8\n|\nsing-box version 1.14.4\n|\njq\ncurl\n|\n"
+    ]
+   ],
+   "out": [
+    {
+     "model": "GL.iNet GL-MT6000",
+     "firmware": "4.6.8",
+     "singbox": "1.14.4",
+     "too_new": false,
+     "tools": [
+      "curl",
+      "jq"
+     ]
+    },
+    [
+     {
+      "cmd": "cat /tmp/sysinfo/model 2>/dev/null; echo \"|\"; cat /etc/glversion 2>/dev/null; echo \"|\"; sing-box version 2>/dev/null | head -1; echo \"|\"; for t in jq curl; do command -v $t >/dev/null && echo $t; done; echo \"|\"; cat /etc/sing-box/rh-core 2>/dev/null",
+      "stdin": null,
+      "timeout": 30
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    "router_info",
+    [
+     "GL.iNet GL-MT6000\n|\n4.6.8\n|\nsing-box version 1.15.0-beta.1\n|\ncurl\n|\nstable 1.15.0 ab\n"
+    ]
+   ],
+   "out": [
+    {
+     "model": "GL.iNet GL-MT6000",
+     "firmware": "4.6.8",
+     "singbox": "1.15.0",
+     "too_new": false,
+     "tools": [
+      "curl"
+     ]
+    },
+    [
+     {
+      "cmd": "cat /tmp/sysinfo/model 2>/dev/null; echo \"|\"; cat /etc/glversion 2>/dev/null; echo \"|\"; sing-box version 2>/dev/null | head -1; echo \"|\"; for t in jq curl; do command -v $t >/dev/null && echo $t; done; echo \"|\"; cat /etc/sing-box/rh-core 2>/dev/null",
+      "stdin": null,
+      "timeout": 30
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    "router_info",
+    [
+     "GL.iNet GL-MT6000\n|\n4.6.8\n|\nsing-box version 1.15.0\n|\n|\n"
+    ]
+   ],
+   "out": [
+    {
+     "model": "GL.iNet GL-MT6000",
+     "firmware": "4.6.8",
+     "singbox": "1.15.0",
+     "too_new": true,
+     "tools": []
+    },
+    [
+     {
+      "cmd": "cat /tmp/sysinfo/model 2>/dev/null; echo \"|\"; cat /etc/glversion 2>/dev/null; echo \"|\"; sing-box version 2>/dev/null | head -1; echo \"|\"; for t in jq curl; do command -v $t >/dev/null && echo $t; done; echo \"|\"; cat /etc/sing-box/rh-core 2>/dev/null",
+      "stdin": null,
+      "timeout": 30
+     }
+    ]
+   ]
+  },
+  {
+   "args": [
+    "router_info",
+    [
+     ""
+    ]
+   ],
+   "out": [
+    {
+     "model": "?",
+     "firmware": "?",
+     "singbox": null,
+     "too_new": false,
+     "tools": []
+    },
+    [
+     {
+      "cmd": "cat /tmp/sysinfo/model 2>/dev/null; echo \"|\"; cat /etc/glversion 2>/dev/null; echo \"|\"; sing-box version 2>/dev/null | head -1; echo \"|\"; for t in jq curl; do command -v $t >/dev/null && echo $t; done; echo \"|\"; cat /etc/sing-box/rh-core 2>/dev/null",
+      "stdin": null,
+      "timeout": 30
+     }
+    ]
+   ]
+  }
+ ]
+}
