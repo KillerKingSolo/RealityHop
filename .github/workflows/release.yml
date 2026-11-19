@@ -109,6 +109,7 @@ jobs:
           - runner: xcode-27           # macOS 27 (GitHub preview image)
             chip: apple-silicon
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30   # a hung app start fails the job instead of holding the runner
     steps: &mac-test
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -152,6 +153,7 @@ jobs:
             chip: intel
             rosetta: true
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     steps: *mac-test
 
   publish:

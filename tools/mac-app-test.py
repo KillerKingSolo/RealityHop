@@ -38,13 +38,20 @@ def home(name, lang=None, dns='quad9'):
 
 def launch(exe, h, shot, *args, wait=10):   # a start-up crash shows within seconds
     """Start the app with HOME=h, take a screenshot after wait seconds; True when it is still running then."""
-    p = subprocess.Popen([exe, *args], env=dict(os.environ, HOME=h), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    # its own process group: what it starts (an osascript alert) holds the stderr pipe open and goes with it
+    p = subprocess.Popen([exe, *args], env=dict(os.environ, HOME=h), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                         start_new_session=True)
     time.sleep(wait)
     sh('/usr/sbin/screencapture', '-x', os.path.join(shots, f'{chip}-{shot}.png'))
     alive = p.poll() is None
-    if alive:
-        p.send_signal(signal.SIGKILL)
-    err = p.communicate()[1].decode(errors='replace')
+    try:
+        os.killpg(p.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    try:
+        err = p.communicate(timeout=30)[1].decode(errors='replace')
+    except subprocess.TimeoutExpired:
+        err = ''
     if 'panicked' in err:
         print(err[-2000:])
     return alive and 'panicked' not in err
@@ -78,7 +85,6 @@ print(f"macOS {sh('/usr/bin/sw_vers', '-productVersion').stdout.strip()}, {sh('/
 # run straight from the disk image: it must ask to be moved to Applications, and write nothing
 h = home('from-dmg')
 check('from the dmg: a message, still open', launch(exe, h, 'from-dmg', wait=8))
-sh('/usr/bin/pkill', '-x', 'osascript')   # the message outlives the killed app
 check('from the dmg: no login item, no data folder', not os.path.exists(os.path.join(h, 'Library')))
 
 apps = os.path.join(tmp, 'Applications'); os.makedirs(apps)
