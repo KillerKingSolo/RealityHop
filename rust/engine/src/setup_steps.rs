@@ -10,9 +10,9 @@ use serde_json::{Value, json};
 use std::time::Duration;
 
 /// The PC tunnel's config template (resources/pc-config.json).
-pub const PC_TEMPLATE: &str = include_str!("../../../src/resources/pc-config.json");
+pub const PC_TEMPLATE: &str = include_str!("../../resources/pc-config.json");
 /// The router's config template (resources/router-config.json).
-pub const ROUTER_TEMPLATE: &str = include_str!("../../../src/resources/router-config.json");
+pub const ROUTER_TEMPLATE: &str = include_str!("../../resources/router-config.json");
 
 /// PC/README.txt.
 pub const PC_README: &str = r"Reality Hop: PC tunnel files

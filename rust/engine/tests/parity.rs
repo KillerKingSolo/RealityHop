@@ -82,7 +82,7 @@ fn err(kind: &str) -> Value {
 #[test]
 fn fixtures_are_well_formed() {
     let all = fixtures();
-    assert!(!all.is_empty(), "no fixtures: run python tools/parity-dump.py");
+    assert!(!all.is_empty(), "no fixtures in rust/parity");
     for (stem, v) in all {
         assert_eq!(v["fn"].as_str(), Some(stem.as_str()), "{stem}: fn does not match the file name");
         assert!(v["source"].as_str().is_some_and(|s| s.starts_with("src/")), "{stem}: no source file");
@@ -400,9 +400,9 @@ fn router_err(e: router::Error) -> Value {
     }
 }
 
-// A file under src/resources
+// A file under rust/resources
 fn resource(path: &str) -> String {
-    std::fs::read_to_string(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../src/resources").join(path)).unwrap()
+    std::fs::read_to_string(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../resources").join(path)).unwrap()
 }
 
 #[test]
@@ -713,12 +713,10 @@ fn issue_url() {
     check("issue_url", |a| json!(problem_report::issue_url(s(a, 0), s(a, 1))));
 }
 
-// A language's catalog from src/resources/lang
+// A language's catalog from rust/resources/lang
 fn catalog(lang: &str) -> Option<String> {
-    std::fs::read_to_string(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(format!("../../src/resources/lang/{lang}.json")),
-    )
-    .ok()
+    std::fs::read_to_string(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(format!("../resources/lang/{lang}.json")))
+        .ok()
 }
 
 #[test]

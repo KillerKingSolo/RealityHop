@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  checks:   # format, lints, tests on every platform, parity with the Python code, and cargo-deny, on the tagged commit
+  checks:   # format, lints, tests on every platform, and cargo-deny, on the tagged commit
     permissions:
       contents: read
     uses: ./.github/workflows/rust.yml

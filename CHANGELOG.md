@@ -4,6 +4,20 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 2.0.0 (2026-11-19)
+
+**Why update:** Reality Hop is rebuilt in Rust: a tenth of the download size, with the same nodes, settings and router setup.
+
+- Changed: the whole app is rewritten in Rust with [Tauri](https://github.com/tauri-apps/tauri). The Windows download is 4.7 MB instead of 43 MB, and each Mac disk image is 4.2 to 4.6 MB instead of 15 to 16 MB.
+- Changed: on Windows, the install is one `RealityHop.exe`, with no `app-<version>` folder to unpack. An update swaps the exe in place.
+- Changed: the window and the background watcher run in one process. Opening Reality Hop while the watcher runs opens its window.
+- Changed: a new look with rounded corners and floating panels in the window, the dialogs and the setup wizard.
+- Kept: an update from 1.x keeps your settings, nodes, vault, history, logs, router setup, start at logon and start at boot. There is nothing to set up again.
+- New: on a Mac, starting Reality Hop from the disk image now asks you to drag it into Applications first. A login item that points at the disk image stops working after a restart.
+- New: on a Mac, if Reality Hop was moved to a different folder, its login item points at the new place at the next start.
+- Note: on Windows, the window uses Microsoft Edge WebView2. It is part of Windows 11 and of current Windows 10.
+- Docs: new screenshots in all 9 languages, and a build guide for the Rust source. The Python source and its build files are removed from the repo; 1.7.2 and older stay in the releases and the git history.
+
 ## 1.7.2 (2026-11-17)
 
 **Why update:** PIA's Split Tunnel sets itself up on Windows, France gets a working DNS choice, and updates arrive sooner.

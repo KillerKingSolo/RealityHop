@@ -18,7 +18,7 @@ it to you, and opens a GitHub issue to attach it to. **Do not paste `pc-config.j
 
 ## SmartScreen or antivirus blocks RealityHop.exe
 
-The exe is not code-signed. SmartScreen: **More info → Run anyway**. Some antivirus products flag PyInstaller apps by
+The exe is not code-signed. SmartScreen: **More info → Run anyway**. Some antivirus products flag unsigned apps by
 mistake. Check its SHA-256 against the one printed in the release notes, or build from source
 ([building.md](building.md)).
 

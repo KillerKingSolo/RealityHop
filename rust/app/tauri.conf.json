@@ -18,7 +18,7 @@
     "active": false,
     "icon": [
       "icons/icon.png",
-      "../../src/resources/app.ico"
+      "../resources/app.ico"
     ]
   }
 }

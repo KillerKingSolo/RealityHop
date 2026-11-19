@@ -159,14 +159,14 @@ impl Translations {
 // The catalog of a language other than English (resources/lang/<code>.json), built into the program
 pub fn catalog(code: &str) -> Option<&'static str> {
     Some(match code {
-        "es" => include_str!("../../../src/resources/lang/es.json"),
-        "zh" => include_str!("../../../src/resources/lang/zh.json"),
-        "ru" => include_str!("../../../src/resources/lang/ru.json"),
-        "uk" => include_str!("../../../src/resources/lang/uk.json"),
-        "fa" => include_str!("../../../src/resources/lang/fa.json"),
-        "ar" => include_str!("../../../src/resources/lang/ar.json"),
-        "tr" => include_str!("../../../src/resources/lang/tr.json"),
-        "vi" => include_str!("../../../src/resources/lang/vi.json"),
+        "es" => include_str!("../../resources/lang/es.json"),
+        "zh" => include_str!("../../resources/lang/zh.json"),
+        "ru" => include_str!("../../resources/lang/ru.json"),
+        "uk" => include_str!("../../resources/lang/uk.json"),
+        "fa" => include_str!("../../resources/lang/fa.json"),
+        "ar" => include_str!("../../resources/lang/ar.json"),
+        "tr" => include_str!("../../resources/lang/tr.json"),
+        "vi" => include_str!("../../resources/lang/vi.json"),
         _ => return None,
     })
 }

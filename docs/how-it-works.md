@@ -102,10 +102,13 @@ in, and you attach the file yourself.
 
 ## Command line (from source)
 
+The engine also runs without the window, for tests. It uses its own data folder (see [building.md](building.md)),
+never an installed Reality Hop's. In `rust/`:
+
 ```
-python src/engine.py               scan, rank and offer to apply
-python src/engine.py --apply 6     apply the 6 best
-python src/engine.py --check       live check of the nodes in use
-python src/engine.py --watch       the background watcher
-python src/realityhop.pyw --once   one local check, printed
+cargo run -p realityhop-cli -- scan              scan, rank and offer to apply
+cargo run -p realityhop-cli -- scan --apply 6    apply the 6 best
+cargo run -p realityhop-cli -- --check           live check of the nodes in use
+cargo run -p realityhop-cli -- --once            one watcher check, fixing what is broken
+cargo run -p realityhop-cli -- --watch           the background watcher, without a tray icon
 ```

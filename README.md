@@ -88,7 +88,7 @@ inside it the whole way.
 
 1. Download **`RealityHop.exe`** from [Releases](../../releases/latest).
 2. Run it. Windows SmartScreen may warn because the exe is not code-signed: click **More info → Run anyway**. Some
-   antivirus programs flag PyInstaller apps by mistake; the source is all here, and you can
+   antivirus programs flag unsigned apps by mistake; the source is all here, and you can
    [build it yourself](docs/building.md).
 3. Follow the setup wizard:
    - **Install** copies Reality Hop to `C:\Program Files\RealityHop` (one UAC prompt), downloads sing-box, finds the first nodes
@@ -98,7 +98,8 @@ inside it the whole way.
    - **VPN app** shows how to point your VPN at the tunnel ([details](docs/vpn-setup.md)).
    - **Finish** sets the background start at logon, the start at boot, and automatic updates.
 
-Requirements: Windows 10 or 11 (64-bit), and a VPN app that can use a SOCKS5 proxy.
+Requirements: Windows 10 or 11 (64-bit) with Microsoft Edge WebView2 (part of Windows 11 and of current Windows 10),
+and a VPN app that can use a SOCKS5 proxy.
 
 ### Mac
 
@@ -217,10 +218,15 @@ using it, help others find it, and keep me motivated to fix problems and add new
 
 ## Run from source
 
+Reality Hop is written in Rust with [Tauri](https://github.com/tauri-apps/tauri). With
+[Rust](https://rustup.rs) installed:
+
 ```
-pip install -r requirements.txt
-python src/realityhop.pyw
+cd rust
+cargo run -p realityhop-app
 ```
+
+Details, the Mac build and the release steps: [docs/building.md](docs/building.md).
 
 ## License
 

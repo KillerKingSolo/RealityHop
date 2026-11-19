@@ -2,10 +2,10 @@ name: rust
 
 on:
   push:
-    branches: [rust]
-    paths: ['rust/**', 'src/**', 'tools/parity-dump.py', '.github/workflows/rust.yml']
+    branches: [main]
+    paths: ['rust/**', '.github/workflows/rust.yml']
   pull_request:
-    paths: ['rust/**', 'src/**', 'tools/parity-dump.py', '.github/workflows/rust.yml']
+    paths: ['rust/**', '.github/workflows/rust.yml']
   workflow_dispatch:
   workflow_call:   # the release runs these checks on the tagged commit first
     inputs:
@@ -66,17 +66,6 @@ jobs:
           name: rust-${{ runner.os }}
           path: rust/dist/*
           retention-days: 7
-
-  parity:   # the fixtures still match what the Python code returns
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: '3.15'
-      - run: python -I tools/parity-dump.py --check
 
   deny:   # vulnerabilities, licenses and sources of every crate
     runs-on: ubuntu-latest

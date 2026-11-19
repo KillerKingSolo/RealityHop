@@ -40,9 +40,9 @@ impl std::fmt::Display for Error {
 impl std::error::Error for Error {}
 
 /// The router's self-repair script (resources/router/heal.sh), installed with every push.
-pub const HEAL_SH: &str = include_str!("../../../src/resources/router/heal.sh");
+pub const HEAL_SH: &str = include_str!("../../resources/router/heal.sh");
 /// The router's firewall include that diverts the chosen devices (resources/router/nft-devices.sh).
-pub const NFT_SH: &str = include_str!("../../../src/resources/router/nft-devices.sh");
+pub const NFT_SH: &str = include_str!("../../resources/router/nft-devices.sh");
 
 /// Runs one command on the router over SSH, with optional script text on stdin.
 pub trait Ssh {

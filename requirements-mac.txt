@@ -1,3 +1,0 @@
-# macOS only, on top of requirements.txt: the menu bar icon of the background watcher (AppKit through pyobjc)
-pyobjc-core==13.0
-pyobjc-framework-Cocoa==13.0
