@@ -6,9 +6,9 @@ from the release.
 
 ## 2.0.0 (2026-11-19)
 
-**Why update:** Reality Hop is rebuilt in Rust: a tenth of the download size, with the same nodes, settings and router setup.
+**Why update:** Reality Hop is rebuilt in Rust: a much smaller download, with the same nodes, settings and router setup.
 
-- Changed: the whole app is rewritten in Rust with [Tauri](https://github.com/tauri-apps/tauri). The Windows download is 4.7 MB instead of 43 MB, and each Mac disk image is 4.2 to 4.6 MB instead of 15 to 16 MB.
+- Changed: the whole app is rewritten in Rust with [Tauri](https://github.com/tauri-apps/tauri). The Windows download is 12 MB instead of 43 MB, and each Mac disk image is 4.2 to 4.6 MB instead of 15 to 16 MB.
 - Changed: on Windows, the install is one `RealityHop.exe`, with no `app-<version>` folder to unpack. An update swaps the exe in place.
 - Changed: the window and the background watcher run in one process. Opening Reality Hop while the watcher runs opens its window.
 - Changed: a new look with rounded corners and floating panels in the window, the dialogs and the setup wizard.
