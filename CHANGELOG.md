@@ -12,6 +12,7 @@ from the release.
 - Changed: on Windows, a PC without the boot task no longer asks Task Scheduler about it at every start. The answer is kept in `this-pc.json`.
 - Fixed: the main window shows "PC + Router" with a capital R.
 - Docs: the README badges have rounded corners in all 9 languages.
+- Changed: pin-project-lite 0.2.18, and the build checks dependencies with cargo-deny 0.22.0.
 
 ## 2.0.0 (2026-11-19)
 
