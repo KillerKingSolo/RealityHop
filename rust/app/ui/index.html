@@ -6,30 +6,60 @@
 <title>Reality Hop</title>
 <link rel="stylesheet" href="app.css">
 <script src="app.js" defer></script>
+<script src="dialogs.js" defer></script>
 </head>
 <body>
-<header>
-  <h1>Reality Hop</h1>
-  <span id="state" class="pill unk" data-t="not checked yet">not checked yet</span>
-  <span id="version" class="muted"></span>
-</header>
-<main>
-  <section class="card">
-    <div id="ring" class="ring" aria-label="nodes"></div>
-    <p id="tip" class="muted"></p>
-    <div class="actions">
-      <button data-ask="check" data-t="Check now">Check now</button>
-      <button data-ask="restart" data-t="Restart PC tunnel">Restart PC tunnel</button>
-      <button data-ask="rescue" data-t="Rescue from verified vault">Rescue from verified vault</button>
+<aside id="side">
+  <div class="brand"><span class="dot">●</span><span data-t=" Reality Hop"> Reality Hop</span></div>
+  <div id="modeLine" class="side-muted"></div>
+  <div id="coreLine" class="side-muted"></div>
+  <div id="rcoreLine" class="side-muted"></div>
+  <nav id="groups"></nav>
+  <div class="foot">
+    <div class="rule"></div>
+    <div class="foot-title" data-t="Automation">Automation</div>
+    <div class="row">
+      <label class="toggle"><input type="checkbox" id="autoOn"><span class="sw"></span><span data-t="Check every">Check every</span></label>
+      <input type="number" id="autoMin" min="15" max="1440" step="15">
+      <span class="side-muted" data-t="min">min</span>
     </div>
-  </section>
-  <section class="card">
-    <table>
-      <thead><tr><th>slot</th><th>server</th><th>front</th><th>fingerprint</th></tr></thead>
-      <tbody id="nodes"></tbody>
-    </table>
-    <p id="error" class="bad-text" hidden></p>
-  </section>
+    <label class="toggle"><input type="checkbox" id="autoFix"><span class="sw"></span><span data-t="Auto-repair dead nodes">Auto-repair dead nodes</span></label>
+    <label class="toggle"><input type="checkbox" id="bgOn"><span class="sw"></span><span data-t="Run in background at logon">Run in background at logon</span></label>
+    <label class="toggle" id="bootRow"><input type="checkbox" id="bootOn"><span class="sw"></span><span id="bootText" data-t="Start tunnel at boot">Start tunnel at boot</span></label>
+    <div id="nextAuto" class="side-muted"></div>
+    <button class="ghost" id="settingsBtn" data-t="Settings">Settings</button>
+  </div>
+</aside>
+<main id="main">
+  <div class="prog-slot"><div id="prog" class="prog" hidden></div></div>
+  <header id="head">
+    <h1 data-t="Overview">Overview</h1>
+    <span id="pill" class="pill unk" data-t="checking">checking</span>
+    <span class="grow"></span>
+    <button id="updateBtn" class="snake" hidden></button>
+    <button id="powerBtn"></button>
+    <button id="restartBtn"></button>
+    <button id="checkBtn" class="accent" data-t="Check now">Check now</button>
+    <button id="cancelBtn" data-t="Cancel" disabled>Cancel</button>
+  </header>
+  <section id="tiles"></section>
+  <div class="card strip"><div id="statusBar" class="bar"></div><div id="status"></div></div>
+  <div class="card hist">
+    <div class="hist-top">
+      <span class="label" data-t="LAST 24 HOURS">LAST 24 HOURS</span>
+      <span id="legend"></span>
+      <span class="grow"></span>
+      <span id="histInfo" class="small muted"></span>
+    </div>
+    <canvas id="hist" height="40"></canvas>
+  </div>
+  <div id="lists"></div>
+  <div class="log-head"><span class="label" data-t="ACTIVITY">ACTIVITY</span><span class="grow"></span><button class="ghost" id="logBtn" data-t="Hide">Hide</button></div>
+  <div class="card" id="logBox"><pre id="log"></pre></div>
 </main>
+<div id="menu" class="menu" hidden></div>
+<div id="tip" class="tip" hidden></div>
+<div id="panel" class="modal" hidden><div class="dialog wide" id="panelBox"></div></div>
+<div id="modal" class="modal" hidden><div class="dialog"><h2 id="modalTitle"></h2><p id="modalText"></p><div class="dialog-buttons" id="modalButtons"></div></div></div>
 </body>
 </html>

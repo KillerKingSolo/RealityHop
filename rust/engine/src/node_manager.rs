@@ -96,7 +96,7 @@ pub fn write_configs(paths: &Paths, best: &[Value]) -> Result<(), String> {
 
 // nodes.txt: the set in use, the spares and the failures, dated today (engine.write_txt)
 pub fn write_txt(paths: &Paths, nodes: &[Value], best: &[Value]) -> Result<(), String> {
-    let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+    let today = crate::local_time::now().format("%Y-%m-%d");
     let text = crate::node_tables::write_txt(nodes, best, &today);
     write_text(&paths.nodes_txt, &text, Newlines::Platform).map_err(|e| e.to_string())?;
     say("updated nodes.txt");

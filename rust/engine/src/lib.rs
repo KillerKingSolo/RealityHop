@@ -8,6 +8,7 @@ pub mod data_files;
 pub mod downloads;
 pub mod history;
 pub mod installer;
+pub mod local_time;
 pub mod macos;
 pub mod macos_system;
 pub mod node;

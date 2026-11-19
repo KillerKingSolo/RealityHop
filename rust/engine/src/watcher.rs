@@ -34,7 +34,7 @@ fn now() -> f64 {
 
 // The local time as HH:MM, for the tray
 fn clock() -> String {
-    chrono::Local::now().format("%H:%M").to_string()
+    crate::local_time::now().format("%H:%M")
 }
 
 // A node's field as text
@@ -584,7 +584,9 @@ pub fn watch_loop(paths: &Paths, watch: &Arc<Watch>, hooks: &impl WatchHooks, cm
     let started = crate::pc_tunnel::core_fast_start(paths); // first, so PIA finds the proxy when it connects
     kill_feeds();
     let log = FileLog::new(&paths.logs, "watch");
-    crate::activity_log::set_say(move |m| log.write(m));
+    if !crate::activity_log::has_say() {
+        crate::activity_log::set_say(move |m| log.write(m)); // the app sends it to its own log and window
+    }
     let started_at = now();
     say(if router_only(paths) {
         "router-only mode: no tunnel on this PC"

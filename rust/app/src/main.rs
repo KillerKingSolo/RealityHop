@@ -4,13 +4,17 @@
 //! the process. --unpack-to <folder> is 1.7.x's updater asking for the new version: answered without any window.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod dialogs;
+mod jobs;
 mod tray_icon;
+mod window_state;
 
 use engine::app_install;
 use engine::paths::Paths;
 use engine::translations::tr;
 use engine::watcher::{Watch, WatchHooks};
-use serde_json::{Value, json};
+use jobs::Ctx;
+use serde_json::{Map, Value, json};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use tauri::image::Image;
@@ -18,14 +22,10 @@ use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Emitter, Manager, RunEvent, State, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_notification::NotificationExt;
+use window_state::{Job, Win};
 
-/// What the window and the tray share.
-struct App {
-    paths: Paths,
-    watch: Arc<Watch>,
-    /// The tray as last shown: state, tooltip, ring segments.
-    tray: Mutex<(String, String, Vec<String>)>,
-}
+/// The tray as last shown: state, tooltip, ring segments.
+struct Tray(Mutex<(String, String, Vec<String>)>);
 
 /// The watcher's tray, notifications and update check, through the app.
 struct Hooks {
@@ -52,19 +52,21 @@ impl WatchHooks for Hooks {
     // Every 6 hours: a newer release is installed (auto-update on, window closed) or announced. True when this process
     // must end: the new version starts once it has
     fn app_update(&self) -> bool {
-        let app = self.app.state::<App>();
+        let ctx = self.app.state::<Ctx>();
         if cfg!(debug_assertions) || !app_install::installed_here(&self.exe) {
             return false; // a development build or a copy outside the install folder never updates itself
         }
-        let paths = &app.paths;
-        let rel = match app_install::check_update(paths) {
-            Ok(Some(u)) => u.latest,
+        let paths = &ctx.paths;
+        let up = match app_install::check_update(paths) {
+            Ok(Some(u)) => u,
             Ok(None) => return false,
             Err(e) => {
                 engine::activity_log::say(&format!("app update check failed: {e}"));
                 return false;
             }
         };
+        let rel = up.latest.clone();
+        ctx.win.lock().unwrap_or_else(|e| e.into_inner()).update = Some(up);
         let auto = engine::settings::Settings::read(paths).is_ok_and(|s| s.auto_update != 0);
         if !auto || self.window_open() {
             self.notify(&tr(
@@ -85,8 +87,8 @@ impl WatchHooks for Hooks {
 }
 
 // Show a state in the tray and tell an open window
-fn show_tray(app: &AppHandle, state: &str, tip: &str, segs: &[String]) {
-    *app.state::<App>().tray.lock().unwrap_or_else(|e| e.into_inner()) = (state.into(), tip.into(), segs.to_vec());
+pub(crate) fn show_tray(app: &AppHandle, state: &str, tip: &str, segs: &[String]) {
+    *app.state::<Tray>().0.lock().unwrap_or_else(|e| e.into_inner()) = (state.into(), tip.into(), segs.to_vec());
     let _ = app.emit("tray", json!({"state": state, "tip": tip, "segs": segs}));
     let (h, state, tip, segs) = (app.clone(), state.to_string(), tip.to_string(), segs.to_vec());
     let _ = app.run_on_main_thread(move || {
@@ -109,8 +111,9 @@ fn open_window(app: &AppHandle, page: &str) {
     let url = if page.is_empty() { "index.html".to_string() } else { format!("index.html#{page}") };
     let _ = WebviewWindowBuilder::new(app, "main", WebviewUrl::App(url.into()))
         .title(engine::NAME)
-        .inner_size(1080.0, 720.0)
-        .min_inner_size(820.0, 560.0)
+        .inner_size(1440.0, 1000.0)
+        .min_inner_size(1060.0, 560.0)
+        .theme(Some(tauri::Theme::Dark))
         .build();
 }
 
@@ -125,39 +128,78 @@ fn page_of(args: &[String]) -> &'static str {
     }
 }
 
-// The tray state as the window shows it
+// Everything the window draws
 #[tauri::command]
-fn tray_state(app: State<App>) -> Value {
-    let t = app.tray.lock().unwrap_or_else(|e| e.into_inner()).clone();
-    json!({"state": t.0, "tip": t.1, "segs": t.2})
+fn snapshot(ctx: State<Ctx>, tray: State<Tray>) -> Value {
+    let w = ctx.win.lock().unwrap_or_else(|e| e.into_inner());
+    let mut s = window_state::snapshot(&ctx.paths, &w);
+    let t = tray.0.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    s["tray"] = json!({"state": t.0, "tip": t.1, "segs": t.2});
+    s
 }
 
-// The nodes in use, as the configs hold them
+// Start an action from the window
 #[tauri::command]
-fn nodes(app: State<App>) -> Result<Vec<Value>, String> {
-    engine::node_manager::inuse(&app.paths)
+fn act(app: AppHandle, name: String, args: Option<Value>) {
+    jobs::work(&app, Job { name, args: args.unwrap_or(Value::Null) });
 }
 
-// Reality Hop's version
+// Cancel the action that runs
 #[tauri::command]
-fn version() -> &'static str {
-    engine::VERSION
+fn cancel(app: AppHandle) {
+    jobs::cancel(&app);
 }
 
-// A watcher action from the window: "check", "restart" or "rescue"
+// The automation switches: check every N minutes (kept in Settings), auto-repair
 #[tauri::command]
-fn ask(app: State<App>, what: String) -> Result<(), String> {
-    if !["check", "restart", "rescue"].contains(&what.as_str()) {
-        return Err(format!("unknown action: {what}"));
+fn set_auto(app: AppHandle, ctx: State<Ctx>, on: bool, fix: bool, minutes: Option<i64>) -> Result<(), String> {
+    {
+        let mut w = ctx.win.lock().unwrap_or_else(|e| e.into_inner());
+        w.auto_on = on;
+        w.auto_fix = fix;
     }
-    app.watch.ask(&what);
+    if let Some(m) = minutes {
+        let mut c = Map::new();
+        c.insert("check_min".into(), json!(m.clamp(15, 1440)));
+        engine::settings::Settings::save(&ctx.paths, &c).map_err(|e| e.to_string())?;
+    }
+    jobs::changed(&app);
     Ok(())
 }
 
-// A text in the person's language
+// Open the data folder or the logs folder in Explorer or Finder
 #[tauri::command]
-fn text(s: String) -> String {
-    tr(&s, &[])
+fn open_folder(ctx: State<Ctx>, which: String) {
+    let p = if which == "logs" { ctx.paths.logs.clone() } else { ctx.paths.data.clone() };
+    let tool =
+        if cfg!(windows) { engine::process::system_tool("explorer").into_os_string() } else { "/usr/bin/open".into() };
+    let _ = std::process::Command::new(tool).arg(p).spawn();
+}
+
+// Open a web page in the default browser: only GitHub pages (Reality Hop's own and the projects it names)
+#[tauri::command]
+fn open_url(url: String) -> Result<(), String> {
+    if !url.starts_with("https://github.com/") || url.contains(['"', ' ', '&', '^', '|', '%']) {
+        return Err("not a link Reality Hop opens".into());
+    }
+    let tool =
+        if cfg!(windows) { engine::process::system_tool("explorer").into_os_string() } else { "/usr/bin/open".into() };
+    std::process::Command::new(tool).arg(url).spawn().map(|_| ()).map_err(|e| e.to_string())
+}
+
+// A text in the person's language, {name} fields filled from kw
+#[tauri::command]
+fn text(s: String, kw: Option<Map<String, Value>>) -> String {
+    let kw: Vec<(String, String)> =
+        kw.unwrap_or_default().into_iter().map(|(k, v)| (k, engine::python_json::py_str(&v))).collect();
+    let kw: Vec<(&str, String)> = kw.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
+    tr(&s, &kw)
+}
+
+// Settings the window needs to lay itself out
+#[tauri::command]
+fn top(ctx: State<Ctx>) -> i64 {
+    engine::settings::Settings::read(&ctx.paths).map_or(50, |s| s.top)
 }
 
 // The tray icon with its menu (the same ids as 1.7.x: 1 open, 4 restart, 2 check, 3 rescue, 9 quit)
@@ -182,7 +224,7 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, ev| {
-            let watch = Arc::clone(&app.state::<App>().watch);
+            let watch = Arc::clone(&app.state::<Ctx>().watch);
             match ev.id().as_ref() {
                 "1" => open_window(app, ""),
                 "2" => watch.ask("check"),
@@ -241,21 +283,45 @@ fn main() -> std::process::ExitCode {
         app_install::entry_fix(&exe);
     }
     let watch = Watch::new();
-    let state = App {
-        paths: paths.clone(),
-        watch: Arc::clone(&watch),
-        tray: Mutex::new(("unk".into(), engine::NAME.into(), vec![])),
-    };
+    let mut win = Win::new();
+    window_state::load_last(&paths, &mut win);
+    let cmd = vec![exe.to_string_lossy().into_owned(), "--watch".into()];
+    let ctx = Ctx { paths: paths.clone(), win: Arc::new(Mutex::new(win)), watch: Arc::clone(&watch), cmd: cmd.clone() };
     let background = args.iter().any(|a| a == "--watch");
     let logon = args.iter().any(|a| a == "--logon");
     let first_page = page_of(&args);
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, argv, _| open_window(app, page_of(&argv[1..]))))
         .plugin(tauri_plugin_notification::init())
-        .manage(state)
-        .invoke_handler(tauri::generate_handler![tray_state, nodes, version, ask, text])
+        .manage(ctx)
+        .manage(Tray(Mutex::new(("unk".into(), engine::NAME.into(), vec![]))))
+        .invoke_handler(tauri::generate_handler![
+            snapshot,
+            act,
+            cancel,
+            set_auto,
+            open_folder,
+            open_url,
+            text,
+            top,
+            dialogs::node_details,
+            dialogs::settings_get,
+            dialogs::sb_versions,
+            dialogs::settings_save,
+            dialogs::check_updates,
+            dialogs::uninstall,
+            dialogs::quit
+        ])
         .setup(move |app| {
+            jobs::log_sink(app.handle(), &paths);
             build_tray(app)?;
+            jobs::ticker(app.handle().clone());
+            let h = app.handle().clone();
+            std::thread::spawn(move || {
+                let on = !matches!(engine::startup_tasks::task_state(), None | Some("Disabled"));
+                h.state::<Ctx>().win.lock().unwrap_or_else(|e| e.into_inner()).boot_on = on;
+                jobs::changed(&h);
+            });
             if !background {
                 open_window(app.handle(), first_page);
             }
@@ -266,7 +332,6 @@ fn main() -> std::process::ExitCode {
                         engine::activity_log::say("the watcher is already running");
                         return;
                     };
-                    let cmd = vec![watch_exe.to_string_lossy().into_owned(), "--watch".into()];
                     let hooks = Hooks { app: h, exe: watch_exe };
                     engine::watcher::watch_loop(&paths, &watch, &hooks, &cmd, logon);
                 });

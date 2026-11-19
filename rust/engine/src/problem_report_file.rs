@@ -185,7 +185,7 @@ pub fn make(paths: &Paths, ssh: &mut impl Ssh) -> Result<(PathBuf, String), Stri
         "Reality Hop problem report".to_string(),
         format!(
             "Made {}. Personal data is redacted (see Redaction key at the end).",
-            chrono::Local::now().format("%Y-%m-%d %H:%M")
+            crate::local_time::now().format("%Y-%m-%d %H:%M")
         ),
     ];
     out.extend(section("Setup", rows.iter().map(|(k, v)| format!("{k:<w$}  {v}")).collect()));
@@ -215,7 +215,7 @@ pub fn make(paths: &Paths, ssh: &mut impl Ssh) -> Result<(PathBuf, String), Stri
     out.extend(section("Redaction key", key.iter().map(|s| s.to_string()).collect()));
     let text = out.join("\n") + "\n";
     std::fs::create_dir_all(&paths.reports).map_err(|e| e.to_string())?;
-    let path = paths.reports.join(format!("report-{}.txt", chrono::Local::now().format("%Y%m%d-%H%M%S")));
+    let path = paths.reports.join(format!("report-{}.txt", crate::local_time::now().format("%Y%m%d-%H%M%S")));
     crate::data_files::write_text(&path, &text, crate::data_files::Newlines::Platform).map_err(|e| e.to_string())?;
     let mut old: Vec<PathBuf> = std::fs::read_dir(&paths.reports)
         .into_iter()

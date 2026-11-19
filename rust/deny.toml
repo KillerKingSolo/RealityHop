@@ -1,10 +1,14 @@
 # cargo deny check: known vulnerabilities, licenses, duplicate crates, and crates from crates.io only
 
+# only the platforms Reality Hop ships for: Linux's GTK and D-Bus crates (under Tauri) are never built
+[graph]
+targets = ["x86_64-pc-windows-msvc", "aarch64-apple-darwin", "x86_64-apple-darwin"]
+
 [advisories]
 yanked = "deny"
 
 [licenses]
-allow = ["MIT", "Apache-2.0", "Apache-2.0 WITH LLVM-exception", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Zlib", "Unicode-3.0", "CDLA-Permissive-2.0"]
+allow = ["MIT", "Apache-2.0", "Apache-2.0 WITH LLVM-exception", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Zlib", "Unicode-3.0", "CDLA-Permissive-2.0", "MPL-2.0"]   # MPL-2.0: cssparser, used by Tauri; used unmodified
 private = { ignore = true }
 unused-allowed-license = "allow"   # the list also covers crates added later
 

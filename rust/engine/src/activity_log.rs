@@ -19,6 +19,11 @@ pub fn set_say(sink: impl Fn(&str) + Send + Sync + 'static) {
     *SAY.write().unwrap_or_else(|e| e.into_inner()) = Some(Box::new(sink));
 }
 
+// Whether something takes say() already (the app's window and log)
+pub fn has_say() -> bool {
+    SAY.read().unwrap_or_else(|e| e.into_inner()).is_some()
+}
+
 // One line for the person; printed when nothing else takes it
 pub fn say(msg: &str) {
     match SAY.read().unwrap_or_else(|e| e.into_inner()).as_ref() {
@@ -62,7 +67,7 @@ impl FileLog {
     pub fn write(&self, msg: &str) {
         let _g = self.lock.lock().unwrap_or_else(|e| e.into_inner());
         let nl = if cfg!(windows) { "\r\n" } else { "\n" };
-        let line = format!("{}  {}{nl}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"), msg.replace('\n', nl));
+        let line = format!("{}  {}{nl}", crate::local_time::now().format("%Y-%m-%d %H:%M:%S"), msg.replace('\n', nl));
         let size = std::fs::metadata(&self.path).map_or(0, |m| m.len());
         if size > 0 && size + line.len() as u64 >= MAX_BYTES {
             let mut old = self.path.clone().into_os_string();

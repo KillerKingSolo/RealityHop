@@ -136,7 +136,7 @@ pub fn load(paths: &Paths) -> Map<String, Value> {
     let cfg = if crate::settings::pc_only(paths) { &paths.pc_cfg } else { &paths.router_cfg };
     let inuse: Vec<Node> =
         crate::singbox_config::nodes_of(cfg).unwrap_or_default().into_iter().map(|(_, n)| n).collect();
-    let v = seed(&txt, &inuse, &chrono::Local::now().format("%Y-%m-%d").to_string());
+    let v = seed(&txt, &inuse, &crate::local_time::now().format("%Y-%m-%d"));
     if !v.is_empty() {
         let _ = crate::data_files::jsave(&paths.vault, &Value::Object(v.clone()), Some(1));
     }
@@ -146,7 +146,7 @@ pub fn load(paths: &Paths) -> Map<String, Value> {
 // Test results into vault.json (engine.vault_record)
 pub fn record_file(paths: &Paths, nodes: &[Value]) -> std::io::Result<()> {
     let mut v = load(paths);
-    record(&mut v, nodes, &chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string());
+    record(&mut v, nodes, &crate::local_time::now().format("%Y-%m-%d %H:%M:%S"));
     crate::data_files::jsave(&paths.vault, &Value::Object(v), Some(1))
 }
 

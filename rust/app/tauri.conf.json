@@ -3,7 +3,9 @@
   "productName": "Reality Hop",
   "mainBinaryName": "RealityHop",
   "identifier": "com.realityhop.app",
-  "build": { "frontendDist": "ui" },
+  "build": {
+    "frontendDist": "ui"
+  },
   "app": {
     "withGlobalTauri": true,
     "windows": [],
@@ -12,5 +14,11 @@
       "freezePrototype": true
     }
   },
-  "bundle": { "active": false, "icon": ["../../src/resources/app.ico"] }
+  "bundle": {
+    "active": false,
+    "icon": [
+      "icons/icon.png",
+      "../../src/resources/app.ico"
+    ]
+  }
 }
