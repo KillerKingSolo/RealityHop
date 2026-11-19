@@ -26,7 +26,7 @@ body { display: flex; gap: var(--gap); padding: var(--gap); font: 10pt var(--ui)
 #side { width: 262px; min-width: 262px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); display: flex;
   flex-direction: column; overflow-y: auto; padding-bottom: 16px; }
 .brand { display: flex; align-items: center; padding: 8px 18px 4px; font: 15pt var(--uib); }
-.brand .dot { color: var(--acc); font-size: 14pt; }
+.brand .dot { color: var(--acc); font-size: 14pt; margin-right: 0.3em; }   /* flex drops the space before the name */
 .side-muted { color: var(--muted); font-size: 9pt; padding: 0 20px; }
 #coreLine, #rcoreLine { white-space: pre-line; }
 #rcoreLine.away { color: var(--warn); }

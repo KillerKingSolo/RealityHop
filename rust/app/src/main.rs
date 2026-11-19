@@ -217,7 +217,8 @@ fn open_folder(ctx: State<Ctx>, which: String) {
 // Open a web page in the default browser: only GitHub pages (Reality Hop's own and the projects it names)
 #[tauri::command]
 fn open_url(url: String) -> Result<(), String> {
-    if !url.starts_with("https://github.com/") || url.contains(['"', ' ', '&', '^', '|', '%']) {
+    // explorer.exe reads a comma as a switch separator (/root, /select)
+    if !url.starts_with("https://github.com/") || url.contains(['"', ' ', '&', '^', '|', '%', ',']) {
         return Err("not a link Reality Hop opens".into());
     }
     let tool =
