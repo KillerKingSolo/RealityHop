@@ -76,12 +76,37 @@ pub fn boot_task_exists() -> bool {
     run(&cmd, 15, None).is_ok_and(|r| r.code == Some(0))
 }
 
+// True once this PC has recorded that it has no boot task: a start then does not run schtasks at all (Windows)
+pub fn no_boot_task(paths: &Paths) -> bool {
+    cfg!(windows) && settings::this_pc(paths).get("boot_task") == Some(&Value::Bool(false))
+}
+
+// Record whether the boot task exists, in this-pc.json (Windows)
+pub fn note_boot_task(paths: &Paths, on: bool) {
+    if cfg!(windows) && settings::this_pc(paths).get("boot_task") != Some(&Value::Bool(on)) {
+        let mut m = Map::new();
+        m.insert("boot_task".into(), Value::Bool(on));
+        let _ = settings::set_this_pc(paths, m);
+    }
+}
+
+// boot_task_exists, without schtasks when this PC has recorded that it has none; records what it finds
+// (engine.boot_task_here)
+pub fn boot_task_here(paths: &Paths) -> bool {
+    if no_boot_task(paths) {
+        return false;
+    }
+    let on = boot_task_exists();
+    note_boot_task(paths, on);
+    on
+}
+
 // Stop every rh-core: the boot task's copy (only the task can stop it) and our own; wait until 2080 is free, 10 s at
 // most (engine.core_stop)
 pub fn core_stop(paths: &Paths) -> bool {
     let t = Instant::now();
     dbg(|| format!("stop: before {}", rh_procs()));
-    if cfg!(windows) && boot_task_exists() {
+    if cfg!(windows) && boot_task_here(paths) {
         let schtasks = crate::process::system_tool("schtasks");
         let _ = run(&[schtasks.as_os_str(), "/end".as_ref(), "/tn".as_ref(), BOOT_TASK.as_ref()], 20, None);
     }
@@ -136,7 +161,7 @@ pub fn core_fast_start(paths: &Paths) -> bool {
     {
         return false;
     }
-    if cfg!(windows) && boot_task_exists() {
+    if cfg!(windows) && boot_task_here(paths) {
         let tool = crate::process::system_tool("schtasks");
         let args = [tool.as_os_str(), "/run".as_ref(), "/tn".as_ref(), BOOT_TASK.as_ref()];
         if run(&args, 20, None).is_ok_and(|o| o.code == Some(0)) {
@@ -150,7 +175,7 @@ pub fn core_fast_start(paths: &Paths) -> bool {
 // otherwise directly. macOS: always directly; the login item only starts it at login. "task" or "direct"
 // (engine.core_start)
 pub fn core_start(paths: &Paths) -> &'static str {
-    if cfg!(windows) && boot_task_exists() {
+    if cfg!(windows) && boot_task_here(paths) {
         let schtasks = crate::process::system_tool("schtasks");
         let r = run(&[schtasks.as_os_str(), "/run".as_ref(), "/tn".as_ref(), BOOT_TASK.as_ref()], 20, None);
         if r.is_ok_and(|r| r.code == Some(0)) {

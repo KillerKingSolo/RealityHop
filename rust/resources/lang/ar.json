@@ -425,7 +425,7 @@
  "Put the best {k} tested nodes into your slots?": "وضع أفضل {k} عقد مُختبرة في خاناتك؟",
  "sing-box is not installed": "sing-box غير مثبت",
  "missing {tools}": "ينقص {tools}",
- "PC + router": "الحاسوب + الراوتر",
+ "PC + Router": "الحاسوب + الراوتر",
  "PC only": "الحاسوب فقط",
  "PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Then Settings > Multi-Hop: tick \"Multi-hop and Obfuscation\", choose SOCKS5 Proxy, EDIT: host 127.0.0.1, port 2080, no username or password": "PIA > Settings > Protocols: OpenVPN، Transport TCP، Remote Port 443. ثم Settings > Multi-Hop: فعّل «Multi-hop and Obfuscation»، واختر SOCKS5 Proxy، وEDIT: المضيف 127.0.0.1، المنفذ 2080، بلا اسم مستخدم أو كلمة مرور",
  "VPN app: PIA not found. Point your VPN app at SOCKS5 127.0.0.1:2080 and use OpenVPN over TCP port 443 (see the VPN step in the setup)": "تطبيق VPN: لم يُعثر على PIA. وجّه تطبيق VPN إلى SOCKS5 127.0.0.1:2080 واستخدم OpenVPN عبر TCP المنفذ 443 (راجع خطوة VPN في الإعداد)",

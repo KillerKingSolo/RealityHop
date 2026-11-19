@@ -425,7 +425,7 @@
  "Put the best {k} tested nodes into your slots?": "¿Poner los {k} mejores nodos probados en tus ranuras?",
  "sing-box is not installed": "sing-box no está instalado",
  "missing {tools}": "falta {tools}",
- "PC + router": "PC + router",
+ "PC + Router": "PC + Router",
  "PC only": "Solo PC",
  "PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Then Settings > Multi-Hop: tick \"Multi-hop and Obfuscation\", choose SOCKS5 Proxy, EDIT: host 127.0.0.1, port 2080, no username or password": "PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Luego Settings > Multi-Hop: marca «Multi-hop and Obfuscation», elige SOCKS5 Proxy, EDIT: host 127.0.0.1, puerto 2080, sin usuario ni contraseña",
  "VPN app: PIA not found. Point your VPN app at SOCKS5 127.0.0.1:2080 and use OpenVPN over TCP port 443 (see the VPN step in the setup)": "App VPN: PIA no encontrado. Apunta tu app VPN a SOCKS5 127.0.0.1:2080 y usa OpenVPN sobre TCP puerto 443 (mira el paso de la VPN en la configuración)",

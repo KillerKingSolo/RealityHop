@@ -425,7 +425,7 @@
  "Put the best {k} tested nodes into your slots?": "Test edilmiş en iyi {k} düğüm yuvalarınıza konsun mu?",
  "sing-box is not installed": "sing-box kurulu değil",
  "missing {tools}": "eksik: {tools}",
- "PC + router": "PC + router",
+ "PC + Router": "PC + Router",
  "PC only": "Yalnızca PC",
  "PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Then Settings > Multi-Hop: tick \"Multi-hop and Obfuscation\", choose SOCKS5 Proxy, EDIT: host 127.0.0.1, port 2080, no username or password": "PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Sonra Settings > Multi-Hop: \"Multi-hop and Obfuscation\" işaretleyin, SOCKS5 Proxy seçin, EDIT: host 127.0.0.1, port 2080, kullanıcı adı ve parola yok",
  "VPN app: PIA not found. Point your VPN app at SOCKS5 127.0.0.1:2080 and use OpenVPN over TCP port 443 (see the VPN step in the setup)": "VPN uygulaması: PIA bulunamadı. VPN uygulamanızı SOCKS5 127.0.0.1:2080'e yönlendirin ve TCP 443 portunda OpenVPN kullanın (kurulumdaki VPN adımına bakın)",

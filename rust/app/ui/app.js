@@ -205,7 +205,7 @@ async function render(s) {
   snap = s;
   const m = s.mode;
   await buildSide(m);
-  $('modeLine').textContent = (await T(m.ronly ? 'Router only' : m.router ? 'PC + router' : 'PC only')) + '  ·  ' +
+  $('modeLine').textContent = (await T(m.ronly ? 'Router only' : m.router ? 'PC + Router' : 'PC only')) + '  ·  ' +
     (s.core_mode || m.ronly ? s.version : await T('rh-core MISSING'));
   $('coreLine').textContent = s.core || '';
   $('rcoreLine').textContent = [s.rcore, s.router_away ? await T('Router not connected') : ''].filter(Boolean).join('\n');

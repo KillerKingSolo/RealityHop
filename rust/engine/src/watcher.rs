@@ -344,15 +344,14 @@ pub fn pia_feed_stop() {
     }
 }
 
-// Stop the PIA monitors a stopped watcher left behind. PowerShell takes a second to start, so only when a piactl runs
-// at all (engine.kill_feeds)
+// Stop the PIA monitors a stopped watcher left behind (engine.kill_feeds)
 pub fn kill_feeds() {
     if cfg!(windows) {
-        if !crate::processes_and_ports::pids("piactl.exe").is_empty() {
-            let ps = "Get-CimInstance Win32_Process -Filter \"Name='piactl.exe'\" | Where-Object { $_.CommandLine -like '*monitor connectionstate*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }";
-            let tool = crate::process::system_tool("powershell");
-            let args = [tool.as_os_str(), "-NoProfile".as_ref(), "-Command".as_ref(), ps.as_ref()];
-            let _ = crate::process::run(&args, None, Duration::from_secs(30), None);
+        use crate::processes_and_ports::{cmdline, pids, stop_pid};
+        for pid in pids("piactl.exe") {
+            if cmdline(pid).is_some_and(|c| c.to_lowercase().contains("monitor connectionstate")) {
+                stop_pid(pid);
+            }
         }
         return;
     }

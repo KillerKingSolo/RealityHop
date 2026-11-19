@@ -425,7 +425,7 @@
  "Put the best {k} tested nodes into your slots?": "Поставити {k} найкращих перевірених вузлів у ваші слоти?",
  "sing-box is not installed": "sing-box не встановлено",
  "missing {tools}": "бракує: {tools}",
- "PC + router": "ПК + роутер",
+ "PC + Router": "ПК + роутер",
  "PC only": "Лише ПК",
  "PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Then Settings > Multi-Hop: tick \"Multi-hop and Obfuscation\", choose SOCKS5 Proxy, EDIT: host 127.0.0.1, port 2080, no username or password": "PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Потім Settings > Multi-Hop: позначте «Multi-hop and Obfuscation», виберіть SOCKS5 Proxy, EDIT: хост 127.0.0.1, порт 2080, без імені користувача й пароля",
  "VPN app: PIA not found. Point your VPN app at SOCKS5 127.0.0.1:2080 and use OpenVPN over TCP port 443 (see the VPN step in the setup)": "VPN-застосунок: PIA не знайдено. Спрямуйте VPN-застосунок на SOCKS5 127.0.0.1:2080 і використовуйте OpenVPN через TCP, порт 443 (див. крок VPN у налаштуванні)",

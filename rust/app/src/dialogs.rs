@@ -131,7 +131,7 @@ pub fn settings_save(
     if settings::router_only(p) != was_ronly {
         if settings::router_only(p) {
             engine::pc_tunnel::core_stop(p);
-            if engine::pc_tunnel::boot_task_exists() {
+            if engine::pc_tunnel::boot_task_here(p) {
                 engine::startup_tasks::boot_task(p, false); // nothing to start at boot any more (one admin prompt)
             }
             msgs.push(tr("The tunnel on this PC is off now. If your VPN app uses the SOCKS5 proxy 127.0.0.1:2080, turn that off (PIA: Settings → Multi-Hop, untick \"Multi-hop and Obfuscation\"). To tunnel this PC through the router, tick it in Router > Devices, or choose every device.", &[]));

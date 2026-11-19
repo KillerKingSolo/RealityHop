@@ -75,3 +75,20 @@ fn port_2080_hints() {
     );
     assert!(pc_tunnel::blocker_hint("SB-CORE.EXE").contains("old Reality Hop test build"));
 }
+
+#[test]
+fn a_recorded_missing_boot_task_skips_schtasks() {
+    let d = temp_dir("bootflag");
+    let paths = engine::paths::Paths::new(&d);
+    assert!(!pc_tunnel::no_boot_task(&paths), "nothing recorded yet: ask Windows");
+    pc_tunnel::note_boot_task(&paths, false);
+    assert_eq!(pc_tunnel::no_boot_task(&paths), cfg!(windows));
+    if cfg!(windows) {
+        let t = std::time::Instant::now();
+        assert!(!pc_tunnel::boot_task_here(&paths) && engine::startup_tasks::task_state_here(&paths).is_none());
+        assert!(t.elapsed() < Duration::from_millis(200), "no schtasks run");
+        pc_tunnel::note_boot_task(&paths, true);
+        assert!(!pc_tunnel::no_boot_task(&paths));
+    }
+    let _ = std::fs::remove_dir_all(&d);
+}

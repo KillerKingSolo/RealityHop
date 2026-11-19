@@ -1,5 +1,5 @@
 //! Other programs on this PC: the process list, stopping a program by name, and the loopback ports (engine.procs,
-//! pids, kill_name, port_owner, port_open, port_taken). Windows asks the system directly; macOS asks ps and lsof.
+//! pids, kill_name, port_owner, port_open, port_taken, cmdline, exe_path, stop_pid). Windows asks the system directly; macOS asks ps and lsof.
 
 use std::net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream};
 use std::time::Duration;
@@ -19,6 +19,39 @@ pub fn procs() -> Vec<(u32, String)> {
 // Process ids of every process with this program name, any letter case
 pub fn pids(name: &str) -> Vec<u32> {
     procs().into_iter().filter(|(_, n)| n.eq_ignore_ascii_case(name)).map(|(p, _)| p).collect()
+}
+
+// A process's full command line, when this user may read it. Windows only: None elsewhere
+pub fn cmdline(pid: u32) -> Option<String> {
+    #[cfg(windows)]
+    return windows::cmdline(pid);
+    #[cfg(not(windows))]
+    {
+        let _ = pid;
+        None
+    }
+}
+
+// The program file a process runs, when this user may read it. Windows only: None elsewhere
+pub fn exe_path(pid: u32) -> Option<String> {
+    #[cfg(windows)]
+    return windows::exe_path(pid);
+    #[cfg(not(windows))]
+    {
+        let _ = pid;
+        None
+    }
+}
+
+// Stop one process, when this user may
+pub fn stop_pid(pid: u32) {
+    #[cfg(windows)]
+    windows::terminate(pid);
+    #[cfg(not(windows))]
+    {
+        let cmd = ["/bin/kill".to_string(), "-KILL".into(), pid.to_string()];
+        let _ = crate::process::run(&cmd, None, Duration::from_secs(15), None);
+    }
 }
 
 // Stop every process with this program name that this user may stop (what taskkill /F /IM did)
@@ -64,12 +97,58 @@ pub fn port_taken(port: u16) -> bool {
 
 #[cfg(windows)]
 mod windows {
+    use windows_sys::Wdk::System::Threading::{NtQueryInformationProcess, ProcessCommandLineInformation};
+    use windows_sys::Win32::Foundation::UNICODE_STRING;
     use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
     use windows_sys::Win32::NetworkManagement::IpHelper::{GetExtendedTcpTable, TCP_TABLE_OWNER_PID_LISTENER};
     use windows_sys::Win32::System::Diagnostics::ToolHelp::{
         CreateToolhelp32Snapshot, PROCESSENTRY32W, Process32FirstW, Process32NextW, TH32CS_SNAPPROCESS,
     };
-    use windows_sys::Win32::System::Threading::{OpenProcess, PROCESS_TERMINATE, TerminateProcess};
+    use windows_sys::Win32::System::Threading::{
+        OpenProcess, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
+        QueryFullProcessImageNameW, TerminateProcess,
+    };
+
+    // A process's command line, asked of Windows directly (no WMI, no PowerShell)
+    pub fn cmdline(pid: u32) -> Option<String> {
+        // SAFETY: the handle is checked and closed; the buffer is 8-byte aligned and sized from the first call; the
+        // string Windows writes lies inside the buffer and is read within its stated length
+        unsafe {
+            let h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
+            if h.is_null() {
+                return None;
+            }
+            let mut len = 0u32;
+            NtQueryInformationProcess(h, ProcessCommandLineInformation, std::ptr::null_mut(), 0, &mut len);
+            let mut buf = vec![0u64; (len as usize).div_ceil(8).max(2)];
+            let size = (buf.len() * 8) as u32;
+            let st =
+                NtQueryInformationProcess(h, ProcessCommandLineInformation, buf.as_mut_ptr().cast(), size, &mut len);
+            CloseHandle(h);
+            let us = &*buf.as_ptr().cast::<UNICODE_STRING>();
+            if st < 0 || us.Buffer.is_null() {
+                return None;
+            }
+            Some(String::from_utf16_lossy(std::slice::from_raw_parts(us.Buffer, us.Length as usize / 2)))
+        }
+    }
+
+    // The program file a process runs
+    pub fn exe_path(pid: u32) -> Option<String> {
+        let mut b = vec![0u16; 32768];
+        let mut n = b.len() as u32;
+        // SAFETY: the handle is checked and closed; Windows writes at most n characters into b
+        let ok = unsafe {
+            let h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
+            if h.is_null() {
+                return None;
+            }
+            let ok = QueryFullProcessImageNameW(h, PROCESS_NAME_WIN32, b.as_mut_ptr(), &mut n) != 0;
+            CloseHandle(h);
+            ok
+        };
+        ok.then(|| String::from_utf16_lossy(&b[..n as usize]))
+    }
 
     // A snapshot of the process list
     pub fn procs() -> Vec<(u32, String)> {

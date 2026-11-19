@@ -5,7 +5,9 @@ use crate::activity_log::say;
 use crate::macos;
 use crate::macos_system::{agent_enable, agent_enabled, agent_exists, agent_remove, agent_write};
 use crate::paths::Paths;
-use crate::pc_tunnel::{BOOT_TASK, boot_task_exists, core_restart, core_running, core_stop};
+use crate::pc_tunnel::{
+    BOOT_TASK, boot_task_exists, boot_task_here, core_restart, core_running, core_stop, no_boot_task, note_boot_task,
+};
 use crate::process::{run, system_tool};
 use crate::settings::{self, router_only};
 use crate::windows_system::{elevated, user};
@@ -68,7 +70,9 @@ pub fn boot_task(paths: &Paths, on: bool) -> bool {
         if on { "adding" } else { "removing" }
     ));
     elevated(&ps);
-    let ok = boot_task_exists() == on;
+    let now = boot_task_exists();
+    note_boot_task(paths, now);
+    let ok = now == on;
     say(match (ok, on) {
         (true, true) => "rh-core now starts at boot, before the VPN app",
         (true, false) => "boot-time start removed",
@@ -84,6 +88,19 @@ pub fn task_state() -> Option<&'static str> {
     }
     let (code, xml) = boot_task_xml();
     windows_tasks::task_state(code, &xml)
+}
+
+// task_state, without schtasks when this PC has recorded that it has no boot task; records what it finds
+// (engine.task_state_here)
+pub fn task_state_here(paths: &Paths) -> Option<&'static str> {
+    if no_boot_task(paths) {
+        return None;
+    }
+    let s = task_state();
+    if !MAC {
+        note_boot_task(paths, s.is_some());
+    }
+    s
 }
 
 // The boot task's priority (7, below normal, when the task sets none); None when there is no task or on macOS
@@ -206,7 +223,7 @@ pub fn startup_on(paths: &Paths) -> bool {
 pub fn manager_stop(paths: &Paths, cmd: &[String], watcher: impl FnOnce(bool)) -> Vec<String> {
     let _ = settings::set_stopped(paths, true);
     let mut out: Vec<String> = Vec::new();
-    if boot_task_exists() {
+    if boot_task_here(paths) {
         if MAC {
             agent_enable(macos::TUNNEL, false);
         } else {
@@ -236,7 +253,7 @@ pub fn manager_stop(paths: &Paths, cmd: &[String], watcher: impl FnOnce(bool)) -
 pub fn manager_start(paths: &Paths, cmd: &[String], watcher: impl FnOnce(bool)) -> Vec<String> {
     let _ = settings::set_stopped(paths, false);
     let mut out: Vec<String> = Vec::new();
-    if boot_task_exists() && task_state() == Some("Disabled") {
+    if boot_task_here(paths) && task_state() == Some("Disabled") {
         if MAC {
             agent_enable(macos::TUNNEL, true);
         } else {

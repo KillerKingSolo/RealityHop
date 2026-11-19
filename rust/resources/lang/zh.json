@@ -425,7 +425,7 @@
  "Put the best {k} tested nodes into your slots?": "把已测试的最佳 {k} 个节点放入你的槽位？",
  "sing-box is not installed": "未安装 sing-box",
  "missing {tools}": "缺少 {tools}",
- "PC + router": "电脑 + 路由器",
+ "PC + Router": "电脑 + 路由器",
  "PC only": "仅电脑",
  "PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Then Settings > Multi-Hop: tick \"Multi-hop and Obfuscation\", choose SOCKS5 Proxy, EDIT: host 127.0.0.1, port 2080, no username or password": "PIA > Settings > Protocols：OpenVPN，Transport TCP，Remote Port 443。然后 Settings > Multi-Hop：勾选“Multi-hop and Obfuscation”，选择 SOCKS5 Proxy，EDIT：主机 127.0.0.1，端口 2080，无用户名和密码",
  "VPN app: PIA not found. Point your VPN app at SOCKS5 127.0.0.1:2080 and use OpenVPN over TCP port 443 (see the VPN step in the setup)": "VPN 应用：未找到 PIA。把你的 VPN 应用指向 SOCKS5 127.0.0.1:2080，并使用基于 TCP 443 端口的 OpenVPN（见设置中的 VPN 步骤）",

@@ -4,6 +4,15 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 2.0.1 (2026-11-19)
+
+**Why update:** Reality Hop runs fewer background commands on Windows, so security scanners have less reason to flag it.
+
+- Changed: on Windows, Reality Hop finds and stops its old copies, watchers and PIA monitors through Windows itself, not through PowerShell and WMI.
+- Changed: on Windows, a PC without the boot task no longer asks Task Scheduler about it at every start. The answer is kept in `this-pc.json`.
+- Fixed: the main window shows "PC + Router" with a capital R.
+- Docs: the README badges have rounded corners in all 9 languages.
+
 ## 2.0.0 (2026-11-19)
 
 **Why update:** Reality Hop is rebuilt in Rust: a much smaller download, with the same nodes, settings and router setup.

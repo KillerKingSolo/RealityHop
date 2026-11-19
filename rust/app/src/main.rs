@@ -428,9 +428,9 @@ fn main() -> std::process::ExitCode {
             jobs::log_sink(app.handle(), &paths);
             build_tray(app)?;
             jobs::ticker(app.handle().clone());
-            let h = app.handle().clone();
+            let (h, p) = (app.handle().clone(), paths.clone());
             std::thread::spawn(move || {
-                let on = !matches!(engine::startup_tasks::task_state(), None | Some("Disabled"));
+                let on = !matches!(engine::startup_tasks::task_state_here(&p), None | Some("Disabled"));
                 h.state::<Ctx>().win.lock().unwrap_or_else(|e| e.into_inner()).boot_on = on;
                 jobs::changed(&h);
             });

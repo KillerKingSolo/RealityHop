@@ -10,6 +10,7 @@ use crate::activity_log::say;
 use crate::paths::Paths;
 use crate::powershell::psq;
 use crate::process::{run, system_tool};
+use crate::processes_and_ports::{cmdline, exe_path, procs, stop_pid};
 use crate::router::Ssh;
 use crate::settings::{self, Settings};
 use regex::Regex;
@@ -393,12 +394,15 @@ fn copy_tree(src: &Path, dst: &Path) -> std::io::Result<()> {
 pub fn watcher_kill() {
     let me = std::process::id();
     if cfg!(windows) {
-        powershell(
-            &format!(
-                "Get-CimInstance Win32_Process | Where-Object {{ $_.CommandLine -like '*--watch*' -and ($_.CommandLine -like '*engine.py*' -or $_.Name -eq 'RealityHop.exe') -and $_.ProcessId -ne {me} }} | ForEach-Object {{ Stop-Process -Id $_.ProcessId -Force }}"
-            ),
-            30,
-        );
+        for (pid, name) in procs() {
+            let c = cmdline(pid).unwrap_or_default().to_lowercase();
+            if pid != me
+                && c.contains("--watch")
+                && (c.contains("engine.py") || name.eq_ignore_ascii_case("RealityHop.exe"))
+            {
+                stop_pid(pid);
+            }
+        }
     } else {
         let rows = mac_cmdlines();
         let pids: Vec<u32> = rows
@@ -435,13 +439,15 @@ fn mac_kill(pids: &[u32]) {
 pub fn others_kill(exe: &Path) {
     watcher_kill();
     if cfg!(windows) {
-        powershell(
-            &format!(
-                "Get-CimInstance Win32_Process -Filter \"Name='RealityHop.exe'\" | Where-Object {{ $_.ExecutablePath -ne {} }} | ForEach-Object {{ Stop-Process -Id $_.ProcessId -Force }}",
-                psq(&text(exe))
-            ),
-            30,
-        );
+        let (me, exe) = (std::process::id(), text(exe));
+        for (pid, name) in procs() {
+            if pid != me
+                && name.eq_ignore_ascii_case("RealityHop.exe")
+                && exe_path(pid).is_none_or(|p| !p.eq_ignore_ascii_case(&exe))
+            {
+                stop_pid(pid);
+            }
+        }
     }
 }
 
@@ -465,11 +471,17 @@ pub fn others_stop(exe: &Path) -> Vec<String> {
         mac_kill(&rows.iter().map(|(p, _)| *p).collect::<Vec<_>>());
         return rows.into_iter().filter(|(_, c)| !c.contains("rh-test")).map(|(_, c)| c).collect();
     }
-    let ps = format!(
-        "Get-CimInstance Win32_Process | Where-Object {{ ($_.Name -in @('RealityHop.exe', 'rh-test.exe')) -and ($_.ProcessId -notin @({me})) }} | ForEach-Object {{ Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; if ($_.Name -eq 'RealityHop.exe') {{ $_.CommandLine }} }}"
-    );
-    let out = powershell(&ps, 30).map(|o| o.stdout).unwrap_or_default();
-    out.lines().filter(|l| !l.trim().is_empty()).map(str::to_string).collect()
+    let mut lines = Vec::new();
+    for (pid, name) in procs() {
+        let window = name.eq_ignore_ascii_case("RealityHop.exe");
+        if pid == me || !(window || name.eq_ignore_ascii_case("rh-test.exe")) {
+            continue;
+        }
+        let c = if window { cmdline(pid) } else { None }; // read before it stops
+        stop_pid(pid);
+        lines.extend(c.filter(|c| !c.trim().is_empty()));
+    }
+    lines
 }
 
 // Copy this exe into the install folder (one UAC prompt), give the folder to this Windows user alone, add the Start
@@ -918,8 +930,21 @@ pub fn uninstall(paths: &Paths, ssh: &mut impl Ssh, keep_data: bool, router_too:
     }
     // this process runs from the install folder: a separate shell removes it once this one and the window's WebView2
     // processes have exited, and tries again for a few seconds while antivirus still holds a file
+    let id = WEBVIEW_ID.to_lowercase();
+    let webviews: Vec<String> = procs()
+        .into_iter()
+        .filter(|(p, n)| {
+            n.eq_ignore_ascii_case("msedgewebview2.exe") && cmdline(*p).is_some_and(|c| c.to_lowercase().contains(&id))
+        })
+        .map(|(p, _)| p.to_string())
+        .collect();
+    let wait = if webviews.is_empty() {
+        String::new()
+    } else {
+        format!("Wait-Process -Id {} -Timeout 30 -ErrorAction SilentlyContinue; ", webviews.join(","))
+    };
     let script = format!(
-        "Wait-Process -Id {} -ErrorAction SilentlyContinue; Get-CimInstance Win32_Process | Where-Object {{ $_.Name -eq 'msedgewebview2.exe' -and $_.CommandLine -like '*{WEBVIEW_ID}*' }} | ForEach-Object {{ Wait-Process -Id $_.ProcessId -Timeout 30 -ErrorAction SilentlyContinue }}; Start-Sleep 1; foreach ($i in 1..15) {{ {}; if (-not (Test-Path -LiteralPath {})) {{ break }}; Start-Sleep 2 }}",
+        "Wait-Process -Id {} -ErrorAction SilentlyContinue; {wait}Start-Sleep 1; foreach ($i in 1..15) {{ {}; if (-not (Test-Path -LiteralPath {})) {{ break }}; Start-Sleep 2 }}",
         std::process::id(),
         rm.join("; "),
         psq(&text(&installed_exe(exe)))

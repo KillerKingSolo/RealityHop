@@ -24,6 +24,28 @@ fn owner_name() -> String {
 }
 
 #[test]
+fn command_line_path_and_stop_of_one_process() {
+    let src = if cfg!(windows) { engine::process::system_tool("PING") } else { "/bin/sleep".into() };
+    let name = format!("rh-cmd-test-{}{}", std::process::id(), engine::paths::EXE);
+    let copy = std::env::temp_dir().join(&name);
+    std::fs::copy(&src, &copy).unwrap();
+    let args: &[&str] = if cfg!(windows) { &["-n", "30", "127.0.0.1"] } else { &["30"] };
+    let mut child = std::process::Command::new(&copy).args(args).stdout(std::process::Stdio::null()).spawn().unwrap();
+    if cfg!(windows) {
+        let c = pp::cmdline(child.id()).unwrap();
+        assert!(c.contains(&name) && c.ends_with("-n 30 127.0.0.1"), "{c}");
+        assert!(pp::exe_path(child.id()).unwrap().eq_ignore_ascii_case(&copy.to_string_lossy()));
+        assert_eq!(pp::cmdline(0), None, "no such process");
+    } else {
+        assert_eq!(pp::cmdline(child.id()), None);
+    }
+    let start = Instant::now();
+    pp::stop_pid(child.id());
+    assert!(!child.wait().unwrap().success() && start.elapsed() < Duration::from_secs(10));
+    let _ = std::fs::remove_file(&copy);
+}
+
+#[test]
 fn ports_taken_open_and_owned() {
     let l = TcpListener::bind("127.0.0.1:0").unwrap();
     let port = l.local_addr().unwrap().port();

@@ -425,7 +425,7 @@
  "Put the best {k} tested nodes into your slots?": "Đặt {k} nút đã kiểm tra tốt nhất vào các ô của bạn?",
  "sing-box is not installed": "sing-box chưa được cài",
  "missing {tools}": "thiếu {tools}",
- "PC + router": "PC + router",
+ "PC + Router": "PC + Router",
  "PC only": "Chỉ PC",
  "PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Then Settings > Multi-Hop: tick \"Multi-hop and Obfuscation\", choose SOCKS5 Proxy, EDIT: host 127.0.0.1, port 2080, no username or password": "PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Sau đó Settings > Multi-Hop: đánh dấu \"Multi-hop and Obfuscation\", chọn SOCKS5 Proxy, EDIT: host 127.0.0.1, cổng 2080, không có tên người dùng hay mật khẩu",
  "VPN app: PIA not found. Point your VPN app at SOCKS5 127.0.0.1:2080 and use OpenVPN over TCP port 443 (see the VPN step in the setup)": "Ứng dụng VPN: không tìm thấy PIA. Trỏ ứng dụng VPN vào SOCKS5 127.0.0.1:2080 và dùng OpenVPN qua TCP cổng 443 (xem bước VPN trong cài đặt)",

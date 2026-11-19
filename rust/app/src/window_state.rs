@@ -661,7 +661,7 @@ impl Worker<'_> {
         } else {
             engine::startup_tasks::manager_start(self.paths, cmd, watcher)
         };
-        self.w().boot_on = !matches!(engine::startup_tasks::task_state(), None | Some("Disabled"));
+        self.w().boot_on = !matches!(engine::startup_tasks::task_state_here(self.paths), None | Some("Disabled"));
         if !stop {
             self.check_local("pc");
         }

@@ -425,7 +425,7 @@
  "Put the best {k} tested nodes into your slots?": "{k} گره برتر آزمایش‌شده در جایگاه‌های شما گذاشته شوند؟",
  "sing-box is not installed": "sing-box نصب نیست",
  "missing {tools}": "کمبود {tools}",
- "PC + router": "رایانه + روتر",
+ "PC + Router": "رایانه + روتر",
  "PC only": "فقط رایانه",
  "PIA > Settings > Protocols: OpenVPN, Transport TCP, Remote Port 443. Then Settings > Multi-Hop: tick \"Multi-hop and Obfuscation\", choose SOCKS5 Proxy, EDIT: host 127.0.0.1, port 2080, no username or password": "PIA > Settings > Protocols: OpenVPN، Transport TCP، Remote Port 443. سپس Settings > Multi-Hop: «Multi-hop and Obfuscation» را علامت بزنید، SOCKS5 Proxy را انتخاب کنید، EDIT: میزبان 127.0.0.1، درگاه 2080، بدون نام کاربری و رمز",
  "VPN app: PIA not found. Point your VPN app at SOCKS5 127.0.0.1:2080 and use OpenVPN over TCP port 443 (see the VPN step in the setup)": "برنامه VPN: PIA پیدا نشد. برنامه VPN خود را به SOCKS5 127.0.0.1:2080 وصل کنید و از OpenVPN روی TCP درگاه ۴۴۳ استفاده کنید (مرحله VPN در راه‌اندازی را ببینید)",

@@ -399,13 +399,13 @@ impl Worker<'_> {
         )?;
         engine::startup_tasks::startup(self.paths, a["bg"] == true, cmd, |_| {});
         if settings::router_only(self.paths) {
-            if engine::pc_tunnel::boot_task_exists() {
+            if engine::pc_tunnel::boot_task_here(self.paths) {
                 engine::startup_tasks::boot_task(self.paths, false); // no PC tunnel to start at boot any more
             }
-        } else if a["boot"] == true && !engine::pc_tunnel::boot_task_exists() {
+        } else if a["boot"] == true && !engine::pc_tunnel::boot_task_here(self.paths) {
             engine::startup_tasks::boot_task(self.paths, true);
         }
-        self.w().boot_on = !matches!(engine::startup_tasks::task_state(), None | Some("Disabled")); // the window's switch
+        self.w().boot_on = !matches!(engine::startup_tasks::task_state_here(self.paths), None | Some("Disabled")); // the window's switch
         settings::set_this_pc(self.paths, obj(json!({"setup_done": true, "stopped": false})))
             .map_err(|e| e.to_string())?;
         self.w().wz.ok.insert("finish".into());
