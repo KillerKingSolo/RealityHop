@@ -21,6 +21,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// The Apps & features entry, under HKEY_CURRENT_USER.
 pub const UNINSTALL_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\RealityHop";
+/// The window's id: Windows keeps its WebView2 profile in %LOCALAPPDATA%\<id> (tauri.conf.json identifier).
+pub const WEBVIEW_ID: &str = "com.realityhop.app";
 /// The program file's name on Windows.
 pub const EXE_NAME: &str = "RealityHop.exe";
 /// --unpack-to's exit codes, as 1.7.x's updater reads them.
@@ -541,6 +543,45 @@ pub fn install(
     Ok((format!("installed to {}", d.display()), paths))
 }
 
+// True for an install made by 1.0.x: the program is in its folder, the data still in %LOCALAPPDATA% (install.needs_move)
+pub fn needs_move(paths: &Paths, exe: &Path) -> bool {
+    cfg!(windows) && installed_here(exe) && same(&paths.data, &old_data())
+}
+
+// Move such an install's data into the program folder. One UAC prompt: the folder goes to this Windows user alone and
+// the boot task is pointed at the new rh-core. rh-core starts again from there and the logon start follows; the caller
+// starts the watcher again. stop() runs once the prompt is answered, before anything moves. The paths to use from now
+// on (install.move_here)
+pub fn move_here(paths: &Paths, exe: &Path, stop: impl FnOnce()) -> Result<Paths, String> {
+    let sid = user_sid().ok_or("could not read this Windows user")?;
+    let (d, watcher) = (install_dir(), crate::startup_tasks::startup_on(paths));
+    let mut ps = format!("$d = {}; ", psq(&text(&d))) + &crate::windows_tasks::lock_ps(&sid);
+    if crate::pc_tunnel::boot_task_exists() {
+        let (domain, name) = crate::windows_system::user();
+        let pc = d.join("PC");
+        ps += "; ";
+        ps += &crate::windows_tasks::boot_task_ps(
+            &text(&pc.join("rh-core.exe")),
+            &text(&pc.join("pc-config.json")),
+            &domain,
+            &name,
+        );
+    }
+    if crate::windows_system::elevated(&ps) == crate::windows_system::DECLINED {
+        return Err("the admin prompt was declined".into());
+    }
+    stop();
+    others_kill(exe);
+    let paths = move_data(paths, &d);
+    if !settings::stopped(&paths) {
+        crate::pc_tunnel::core_restart(&paths);
+    }
+    if watcher {
+        crate::startup_tasks::startup(&paths, true, &[text(exe), "--watch".into()], |_| {});
+    }
+    Ok(paths)
+}
+
 // The release file this copy updates from: RealityHop.exe, or the .dmg for this Mac's chip
 pub fn asset() -> &'static str {
     if cfg!(windows) {
@@ -847,7 +888,9 @@ pub fn uninstall(paths: &Paths, ssh: &mut impl Ssh, keep_data: bool, router_too:
     traces_remove();
     out.push(proxy_off.into());
     let inst = install_dir();
-    let mut rm: Vec<String> = std::iter::once(legacy_dir())
+    // the window's WebView2 profile goes too: it holds only the window's cache
+    let mut rm: Vec<String> = [legacy_dir(), local().join(WEBVIEW_ID)]
+        .into_iter()
         .chain((!keep_data).then(|| paths.data.clone()))
         .map(|d| format!("Remove-Item -LiteralPath {} -Recurse -Force -ErrorAction SilentlyContinue", psq(&text(&d))))
         .collect();
@@ -863,16 +906,18 @@ pub fn uninstall(paths: &Paths, ssh: &mut impl Ssh, keep_data: bool, router_too:
             psq(&text(&inst))
         ));
     }
-    // this process runs from the install folder: a separate shell removes it once this one has exited, and tries again
-    // for a few seconds while antivirus still holds a file
+    // this process runs from the install folder: a separate shell removes it once this one and the window's WebView2
+    // processes have exited, and tries again for a few seconds while antivirus still holds a file
     let script = format!(
-        "Wait-Process -Id {} -ErrorAction SilentlyContinue; Start-Sleep 1; foreach ($i in 1..10) {{ {}; if (-not (Test-Path -LiteralPath {})) {{ break }}; Start-Sleep 2 }}",
+        "Wait-Process -Id {} -ErrorAction SilentlyContinue; Get-CimInstance Win32_Process | Where-Object {{ $_.Name -eq 'msedgewebview2.exe' -and $_.CommandLine -like '*{WEBVIEW_ID}*' }} | ForEach-Object {{ Wait-Process -Id $_.ProcessId -Timeout 30 -ErrorAction SilentlyContinue }}; Start-Sleep 1; foreach ($i in 1..15) {{ {}; if (-not (Test-Path -LiteralPath {})) {{ break }}; Start-Sleep 2 }}",
         std::process::id(),
         rm.join("; "),
         psq(&text(&installed_exe(exe)))
     );
     let mut c = std::process::Command::new(system_tool("powershell"));
     c.args(["-NoProfile", "-Command", &script]);
+    // not the install folder: PowerShell does not remove the folder it stands in
+    c.current_dir(system_tool("powershell").parent().unwrap_or(Path::new("/")));
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;

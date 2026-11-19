@@ -4,10 +4,14 @@
 //! the process. --unpack-to <folder> is 1.7.x's updater asking for the new version: answered without any window.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod candidates;
 mod dialogs;
 mod jobs;
+mod start;
 mod tray_icon;
+mod updates;
 mod window_state;
+mod wizard;
 
 use engine::app_install;
 use engine::paths::Paths;
@@ -103,18 +107,42 @@ pub(crate) fn show_tray(app: &AppHandle, state: &str, tip: &str, segs: &[String]
 // Open the window, or bring it to the front; page: "" or the part to show first ("setup", "uninstall")
 fn open_window(app: &AppHandle, page: &str) {
     if let Some(w) = app.get_webview_window("main") {
+        if !page.is_empty()
+            && let Ok(url) = w.url()
+            && let Ok(to) = url.join(&page_url(page))
+        {
+            let _ = w.navigate(to); // a second start asked for setup or uninstall while the window is open
+        }
         let _ = w.unminimize();
         let _ = w.show();
         let _ = w.set_focus();
         return;
     }
-    let url = if page.is_empty() { "index.html".to_string() } else { format!("index.html#{page}") };
-    let _ = WebviewWindowBuilder::new(app, "main", WebviewUrl::App(url.into()))
+    let ctx = app.state::<Ctx>();
+    let exe = std::env::current_exe().unwrap_or_default();
+    let is_setup = engine::setup_steps::is_setup(&ctx.paths);
+    // set up already, with this copy from the Downloads folder: the window asks to replace the installed copy
+    let replaces =
+        app_install::installed_exe(&exe).exists() || app_install::legacy_dir().join(app_install::EXE_NAME).exists();
+    let setup_due = !is_setup || (!cfg!(debug_assertions) && app_install::needs_install(&exe) && !replaces);
+    let page = if page.is_empty() && setup_due { "setup" } else { page };
+    let setup = page.starts_with("setup");
+    let _ = WebviewWindowBuilder::new(app, "main", WebviewUrl::App(page_url(page).into()))
         .title(engine::NAME)
-        .inner_size(1440.0, 1000.0)
-        .min_inner_size(1060.0, 560.0)
+        .inner_size(if setup { 1120.0 } else { 1440.0 }, if setup { 800.0 } else { 1000.0 })
+        .min_inner_size(if setup { 1000.0 } else { 1060.0 }, if setup { 700.0 } else { 560.0 })
         .theme(Some(tauri::Theme::Dark))
+        .background_color(tauri::window::Color(12, 12, 14, 255)) // app.css --bg: no white while WebView2 starts
         .build();
+}
+
+// The file and part for a page
+fn page_url(page: &str) -> String {
+    match page.strip_prefix("setup") {
+        Some(step) => format!("setup.html#{}", step.trim_start_matches(':')),
+        None if page.is_empty() => "index.html".to_string(),
+        None => format!("index.html#{page}"),
+    }
 }
 
 // The page a command line asks for
@@ -122,7 +150,13 @@ fn page_of(args: &[String]) -> &'static str {
     if args.iter().any(|a| a == "--uninstall") {
         "uninstall"
     } else if args.iter().any(|a| a == "--setup") {
-        "setup"
+        if args.iter().any(|a| a == "--router") {
+            "setup:ronly"
+        } else if args.windows(2).any(|w| w[0] == "--step" && w[1] == "router") {
+            "setup:router"
+        } else {
+            "setup"
+        }
     } else {
         ""
     }
@@ -170,7 +204,11 @@ fn set_auto(app: AppHandle, ctx: State<Ctx>, on: bool, fix: bool, minutes: Optio
 // Open the data folder or the logs folder in Explorer or Finder
 #[tauri::command]
 fn open_folder(ctx: State<Ctx>, which: String) {
-    let p = if which == "logs" { ctx.paths.logs.clone() } else { ctx.paths.data.clone() };
+    let p = match which.as_str() {
+        "logs" => ctx.paths.logs.clone(),
+        "reports" => ctx.paths.reports.clone(),
+        _ => ctx.paths.data.clone(),
+    };
     let tool =
         if cfg!(windows) { engine::process::system_tool("explorer").into_os_string() } else { "/usr/bin/open".into() };
     let _ = std::process::Command::new(tool).arg(p).spawn();
@@ -194,6 +232,37 @@ fn text(s: String, kw: Option<Map<String, Value>>) -> String {
         kw.unwrap_or_default().into_iter().map(|(k, v)| (k, engine::python_json::py_str(&v))).collect();
     let kw: Vec<(&str, String)> = kw.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
     tr(&s, &kw)
+}
+
+// Open the Candidates dialog: a fresh ping and test (Candidates.__init__)
+#[tauri::command]
+fn cand_open(app: AppHandle, ctx: State<Ctx>) {
+    {
+        let mut w = ctx.win.lock().unwrap_or_else(|e| e.into_inner());
+        w.cand = candidates::Cand {
+            open: true,
+            msg: tr("Downloading the node list and pinging from this PC...", &[]),
+            ..Default::default()
+        };
+    }
+    jobs::work(&app, window_state::Job { name: "cand_scan".into(), args: Value::Null });
+}
+
+// Close it; its queued scans and tests are dropped (Candidates.close)
+#[tauri::command]
+fn cand_close(app: AppHandle, ctx: State<Ctx>) {
+    let mut w = ctx.win.lock().unwrap_or_else(|e| e.into_inner());
+    w.cand.open = false;
+    w.jobs.retain(|j| j.name != "cand_scan" && j.name != "cand_test_tunnel");
+    drop(w);
+    jobs::changed(&app);
+}
+
+// What the Candidates dialog shows
+#[tauri::command]
+fn cand_view(ctx: State<Ctx>) -> Value {
+    let w = ctx.win.lock().unwrap_or_else(|e| e.into_inner());
+    candidates::view(&ctx.paths, &w)
 }
 
 // Settings the window needs to lay itself out
@@ -250,7 +319,7 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
 
 // Whether this process runs the watcher. A development build never does on its own: the watcher starts rh-core, asks
 // PIA to change its split tunnel and stops stray PIA monitors, which a build under test must not do to a real setup
-fn runs_watcher() -> bool {
+pub(crate) fn runs_watcher() -> bool {
     !cfg!(debug_assertions) || std::env::var_os("REALITYHOP_DEV_WATCH").is_some()
 }
 
@@ -290,8 +359,14 @@ fn main() -> std::process::ExitCode {
     let background = args.iter().any(|a| a == "--watch");
     let logon = args.iter().any(|a| a == "--logon");
     let first_page = page_of(&args);
-    let app = tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, argv, _| open_window(app, page_of(&argv[1..]))))
+    // a copy from the Downloads folder runs on its own next to the installed one: it installs over it, or is the setup
+    let installer = !cfg!(debug_assertions) && app_install::needs_install(&exe);
+    let mut builder = tauri::Builder::default();
+    if !installer {
+        builder =
+            builder.plugin(tauri_plugin_single_instance::init(|app, argv, _| open_window(app, page_of(&argv[1..]))));
+    }
+    let app = builder
         .plugin(tauri_plugin_notification::init())
         .manage(ctx)
         .manage(Tray(Mutex::new(("unk".into(), engine::NAME.into(), vec![]))))
@@ -304,13 +379,40 @@ fn main() -> std::process::ExitCode {
             open_url,
             text,
             top,
+            cand_open,
+            cand_close,
+            cand_view,
             dialogs::node_details,
             dialogs::settings_get,
             dialogs::sb_versions,
             dialogs::settings_save,
             dialogs::check_updates,
             dialogs::uninstall,
-            dialogs::quit
+            dialogs::quit,
+            dialogs::report_make,
+            dialogs::router_forget,
+            dialogs::report_issue,
+            dialogs::devices_get,
+            dialogs::lan_ip,
+            dialogs::devices_save,
+            dialogs::open_router_panel,
+            updates::window_opened,
+            updates::update_info,
+            updates::rcore_info,
+            updates::rcore_later,
+            wizard::wz_info,
+            wizard::wz_view,
+            wizard::wz_lang,
+            wizard::wz_france,
+            wizard::wz_mode,
+            wizard::wz_add_key,
+            wizard::wz_own_key,
+            wizard::wz_check_pia,
+            wizard::wz_relaunch,
+            wizard::wz_act,
+            wizard::wz_note_clear,
+            start::start_asks,
+            start::start_answer
         ])
         .setup(move |app| {
             jobs::log_sink(app.handle(), &paths);
@@ -325,7 +427,7 @@ fn main() -> std::process::ExitCode {
             if !background {
                 open_window(app.handle(), first_page);
             }
-            if runs_watcher() {
+            if runs_watcher() && !installer {
                 let (h, paths, watch_exe) = (app.handle().clone(), paths.clone(), exe.clone());
                 std::thread::spawn(move || {
                     let Some(_lock) = engine::watcher::watch_lock() else {
@@ -353,9 +455,11 @@ fn main() -> std::process::ExitCode {
             return std::process::ExitCode::FAILURE;
         }
     };
-    // closing the window keeps the tray and the watcher; only Quit ends the process
-    app.run(|_, event| {
-        if let RunEvent::ExitRequested { api, code: None, .. } = event {
+    // closing the window keeps the tray and the watcher; only Quit ends the process. The installer copy just ends
+    app.run(move |_, event| {
+        if let RunEvent::ExitRequested { api, code: None, .. } = event
+            && !installer
+        {
             api.prevent_exit();
         }
     });

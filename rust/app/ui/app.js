@@ -9,6 +9,10 @@ let snap = null, sel = null, logShown = true, built = '';
 
 // Hover help of every button, by its English text (TIPS)
 const TIPS = {
+  'Ping and test again': 'Downloads the node list again, pings port 443 of each candidate from this PC, then tests the fastest with a separate copy of sing-box: a real handshake and download through each. Runs on its own when this window opens.',
+  'Replace all 6 with the best 6': 'Puts the 6 fastest tunnel-tested candidates into your slots (it tests first if too few passed), restarts the tunnel, checks every slot and closes this window.',
+  'Put picked in slots': 'Puts the candidates you picked into the slots, in the order you clicked them, restarts the tunnel and checks them.',
+  'Test PC tunnel': 'Tests the nodes in your slots through the running PC tunnel, as Check now does. Restart first after a change.',
   'Show candidates': 'Opens the nodes from the public node list that could replace yours. Ping and test them, then put them in slots.',
   'Fix: test online nodes': 'Replaces the selected node with the best node from the online list that passes a test.',
   'Fix: nodes that worked before': 'Replaces the selected node with the best node from the vault of nodes that worked before.',
@@ -16,6 +20,15 @@ const TIPS = {
   'Replace all with best 6': 'Tests the fastest nodes from the online list and your current ones, then puts the best 6 in. About a minute.',
   'Rescue from verified vault': 'For when every node is dead. Tests the vault of nodes that worked before and puts the best 6 in.',
   'Restart PC tunnel': 'Restarts the PC tunnel on the nodes in your slots. About 2 seconds.',
+  'Change router': 'For a new or reset router: forgets the old one and opens the router steps of the setup.',
+  'Install update': 'Installs the new release now. The window restarts; the tunnel keeps running.',
+  'Later': 'Closes this window. The Update button at the top stays until you update.',
+  'Add': 'Adds the address you typed to the list.',
+  'Refresh list': "Reads the router's list of devices again.",
+  'Save and push': 'Saves the device list and sends it to the router.',
+  'Open GitHub issue': 'Opens a new GitHub issue with the summary filled in. Drag the report file into it.',
+  'Open folder': 'Opens the folder with the reports.',
+  'Copy': 'Copies the report to the clipboard.',
   'Run setup again': 'Opens the setup wizard again, to add a router or redo the VPN step or the background start. Your nodes are kept.',
   'Test on router': "The router's tunnel tests every node. If another PC changed the router, its nodes are taken first.",
   'Devices': 'Choose which devices on the router use the tunnel.',
@@ -59,10 +72,11 @@ let tipJob = null;
 function tipFor(e, english) {
   e.addEventListener('mouseenter', () => {
     clearTimeout(tipJob);
-    if (!TIPS[english]) return;
+    const slot = /^vless-(\d)$/.exec(english);
+    if (!TIPS[english] && !slot) return;
     tipJob = setTimeout(async () => {
       const t = $('tip'), r = e.getBoundingClientRect();
-      t.textContent = await T(TIPS[english]);
+      t.textContent = slot ? await T('Puts the selected candidate into slot vless-{n}, restarts the tunnel and checks it.', { n: slot[1] }) : await T(TIPS[english]);
       t.hidden = false;
       const below = r.bottom + 4, h = t.offsetHeight;
       t.style.left = Math.min(r.left, innerWidth - t.offsetWidth - 8) + 'px';
@@ -116,7 +130,7 @@ async function buildSide(m) {
     return b;
   };
   await group('Nodes', '');
-  await item('Show candidates', notYet);
+  await item('Show candidates', openCandidates);
   await item('Fix: test online nodes', () => fixSelected('online'));
   await item('Fix: nodes that worked before', () => fixSelected('vault'));
   await item('Fix: quick swap, untested', () => fixSelected('quick'));
@@ -125,28 +139,23 @@ async function buildSide(m) {
   if (!m.ronly) {
     await group('PC tunnel', '');
     await item('Restart PC tunnel', () => act('restart_pc'));
-    await item('Run setup again', notYet);
+    await item('Run setup again', rerunSetup);
   }
   if (m.router) {
     await group('Router', '');
     await item('Test on router', () => act('test_router'));
-    await item('Devices', notYet);
+    await item('Devices', openDevices);
     await item('Push to router', pushRouter);
-    if (m.ronly) await item('Run setup again', notYet);
+    if (m.ronly) await item('Run setup again', rerunSetup);
   }
   await group(m.backend ? 'Files & help' : 'Help', '');
-  await item('Report a problem', notYet);
+  await item('Report a problem', openReport);
   if (m.backend) {
     await item('Open backend folder', () => invoke('open_folder', { which: 'data' }));
     await item('Open logs folder', () => invoke('open_folder', { which: 'logs' }));
   }
   $('bootRow').hidden = m.ronly;
   $('bootText').textContent = await T(m.mac ? 'Start tunnel at login' : 'Start tunnel at boot');
-}
-
-// A part of the window that is not ported yet
-function notYet() {
-  info('This window is not in the Rust version yet.');
 }
 
 // ---- actions with their questions (replace_selected, replace_all, rescue, push_phone, power)
@@ -198,6 +207,7 @@ async function render(s) {
   await buildSide(m);
   $('modeLine').textContent = (await T(m.ronly ? 'Router only' : m.router ? 'PC + router' : 'PC only')) + '  ·  ' +
     (s.core_mode || m.ronly ? s.version : await T('rh-core MISSING'));
+  $('coreLine').textContent = s.core || '';
   $('rcoreLine').textContent = [s.rcore, s.router_away ? await T('Router not connected') : ''].filter(Boolean).join('\n');
   $('rcoreLine').classList.toggle('away', !!s.router_away);
   $('autoOn').checked = s.auto_on;
@@ -215,7 +225,8 @@ async function render(s) {
   $('powerBtn').textContent = await T(s.stopped ? 'Start' : 'Stop');
   $('restartBtn').textContent = await T(m.ronly ? 'Test on router' : 'Restart tunnel');
   $('updateBtn').hidden = !s.update;
-  if (s.update) $('updateBtn').textContent = await T('Update to {ver}', { ver: s.update });
+  if (!s.busy) updQueued = false;
+  if (s.update) $('updateBtn').textContent = updQueued ? await T('Update queued') : await T('Update to {ver}', { ver: s.update });
   // tiles
   const tiles = $('tiles');
   tiles.style.gridTemplateColumns = `repeat(${s.tiles.length}, minmax(0, 1fr))`;
@@ -343,7 +354,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   $('restartBtn').onclick = () => act(snap.mode.ronly ? 'test_router' : 'restart_pc');
   $('powerBtn').onclick = power;
   $('cancelBtn').onclick = () => invoke('cancel');
-  $('updateBtn').onclick = notYet;
   $('logBtn').onclick = async () => {
     logShown = !logShown;
     $('logBox').hidden = !logShown;

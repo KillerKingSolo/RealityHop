@@ -49,6 +49,14 @@ pub struct Win {
     pub boot_on: bool,
     pub watch: engine::watcher::WatchState,
     pub update: Option<engine::app_install::Update>,
+    /// The Candidates dialog.
+    pub cand: crate::candidates::Cand,
+    /// The setup wizard.
+    pub wz: crate::wizard::Wz,
+    /// The PC's sing-box under the mode line.
+    pub core_text: String,
+    /// A router build of sing-box to offer.
+    pub rc_offer: Option<engine::router_actions::Offer>,
 }
 
 // The local time as HH:MM
@@ -57,22 +65,22 @@ fn clock() -> String {
 }
 
 // time.time()
-fn now() -> f64 {
+pub(crate) fn now() -> f64 {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs_f64()
 }
 
 // A node's field as text
-fn f(n: &Value, k: &str) -> String {
+pub(crate) fn f(n: &Value, k: &str) -> String {
     n.get(k).map(engine::python_json::py_str).filter(|s| s != "None").unwrap_or_default()
 }
 
 // A field that is set (not missing, not null)
-fn has(n: &Value, k: &str) -> bool {
+pub(crate) fn has(n: &Value, k: &str) -> bool {
     n.get(k).is_some_and(|v| !v.is_null())
 }
 
 // "{v} ms", or none when there is no time (ms)
-fn ms(v: Option<&Value>, none: &str) -> String {
+pub(crate) fn ms(v: Option<&Value>, none: &str) -> String {
     match v.filter(|v| !v.is_null()) {
         Some(v) => format!("{} ms", engine::python_json::py_str(v)),
         None => none.to_string(),
@@ -345,7 +353,7 @@ pub struct Worker<'a> {
 
 impl Worker<'_> {
     // The window state, poisoned or not
-    fn w(&self) -> std::sync::MutexGuard<'_, Win> {
+    pub(crate) fn w(&self) -> std::sync::MutexGuard<'_, Win> {
         self.win.lock().unwrap_or_else(|e| e.into_inner())
     }
 
@@ -513,7 +521,7 @@ impl Worker<'_> {
     }
 
     // Configs deployed (after_deploy)
-    fn after_deploy(&self, sentence: &str) {
+    pub(crate) fn after_deploy(&self, sentence: &str) {
         self.forget_router();
         {
             let mut w = self.w();
@@ -898,7 +906,7 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
         "mode": {"router": mode.router, "ronly": mode.ronly, "mac": !cfg!(windows), "backend": s.backend_files != 0},
         "version": format!("v{}", engine::VERSION),
         "core_mode": engine::pc_tunnel::core_mode(paths),
-        "rcore": w.rcore_text, "router_away": w.router_away,
+        "core": w.core_text, "rcore": w.rcore_text, "router_away": w.router_away,
         "stopped": settings::stopped(paths), "startup_on": engine::startup_tasks::startup_on(paths), "boot_on": w.boot_on,
         "check_min": s.check_min, "auto_on": w.auto_on, "auto_fix": w.auto_fix, "next_auto": w.next_auto,
         "status": {"text": w.status_text, "state": w.status_state, "pill": tr(pill, &[])},

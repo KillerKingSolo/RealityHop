@@ -215,3 +215,13 @@ pub fn tr(text: &str, kw: &[(&str, String)]) -> String {
         None => Translations::new("en", None).t(text, kw, mac),
     }
 }
+
+// A version like 1.15.0-alpha.13 inside Persian or Arabic text: marked left to right, or the parts swap places (ltr)
+pub fn ltr(v: &str) -> String {
+    let rtl = CURRENT
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .is_some_and(|t| RTL_LANGS.contains(&t.lang.as_str()));
+    if rtl && !v.is_empty() { format!("\u{200e}{v}\u{200e}") } else { v.to_string() }
+}

@@ -1,8 +1,10 @@
 // The window's dialogs: node details and Settings (NodeDetails, SettingsDialog). They show inside the window.
 'use strict';
 
-// Show a dialog's content; null closes it
+// Show a dialog's content; null closes it and runs what the dialog asked for on close
+let panelClosed = null;
 function panel(content) {
+  if (!content && panelClosed) { const f = panelClosed; panelClosed = null; f(); }
   $('panelBox').replaceChildren(...(content || []));
   $('panel').hidden = !content;
 }
@@ -167,8 +169,8 @@ async function openSettings() {
       updNote.className = 'note c-bad'; updNote.textContent = await T('Could not reach GitHub: {e}', { e: String(e) });
     }
   });
-  await button('Run setup again', notYet);
-  if (s.router) await button('Change router', notYet);
+  await button('Run setup again', () => { panel(null); rerunSetup(); });
+  if (s.router) await button('Change router', changeRouter);
   await button('Uninstall', uninstall);
   c2.append(el('div', 'note', s.version), links, row, updNote);
   const foot = el('div', 'foot-buttons');
@@ -190,11 +192,27 @@ async function openSettings() {
     const r = await invoke('settings_save', { changes, routerOnly: toggles.ronly.checked });
     panel(null);
     for (const m of r.messages) await info(m);
+    if (r.ask_router && await yesNo('Router features', await T('The router is not set up yet. Open the router steps of the setup wizard now?'))) {
+      location.href = 'setup.html#ronly'; return;
+    }
     if (r.relayout) location.reload();
   };
   foot.append(defaults, cancel, save);
   const margin = el('div', 'note', await T('The switching margin takes effect on the next tunnel restart or router push.'));
   panel([el('div', 'title', await T('Settings')), c1, margin, langRow, c2, foot]);
+}
+
+// Open the setup wizard again; the tunnel keeps running (rerun_setup)
+async function rerunSetup() {
+  if (await yesNo('Run setup again', await T('Open the setup wizard? This window closes; the tunnel keeps running.\n\nNodes already in use are kept. Use it to add a GL.iNet router, redo the VPN step or the background start.')))
+    location.href = 'setup.html';
+}
+
+// A new or reset router: forget the old one, then the router steps of the setup (change_router)
+async function changeRouter() {
+  if (!await yesNo('Change router', await T('For a new router, a reset router or a new router address.\n\nReality Hop forgets the old router and opens the router steps of the setup, where you connect the new one. This window closes; the PC tunnel keeps running.'))) return;
+  await invoke('router_forget');
+  location.href = 'setup.html#ronly';
 }
 
 // Remove Reality Hop from this PC, after three questions (SettingsDialog.uninstall)
@@ -218,3 +236,37 @@ window.addEventListener('DOMContentLoaded', () => {
   $('panel').addEventListener('mousedown', e => { if (e.target === $('panel')) panel(null); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { panel(null); $('menu').hidden = true; } });
 });
+
+// Report a problem: a redacted copy of the logs plus a short summary, shown before anything leaves this PC (ReportDialog)
+async function openReport() {
+  const head = el('div', 'muted', await T('This makes a redacted report from the three logs (window, watch, core) and a short summary of your setup. Addresses, MAC addresses, your user and computer name, folder paths, e-mail addresses, keys and secrets are redacted. Nothing is sent: read it, then attach the file to a GitHub issue.'));
+  head.style.marginTop = '8px';
+  const card = el('div', 'card report');
+  const pre = el('pre', '', await T('Making the report...'));
+  card.append(pre);
+  const title = el('div', 'title', await T('Report a problem'));
+  const row = el('div', 'foot-buttons'), btns = [];
+  let made = null;
+  const button = async (english, fn, accent) => {
+    const b = el('button', accent ? 'accent' : '', await T(english));
+    b.onclick = fn; b.disabled = true; btns.push(b); row.append(b);
+  };
+  await button('Open GitHub issue', () => invoke('report_issue', { name: made.name }).catch(e => info(String(e))), true);
+  await button('Open folder', () => invoke('open_folder', { which: 'reports' }));
+  await button('Copy', () => navigator.clipboard.writeText(made.text));
+  row.append(el('span', 'grow'));
+  const close = el('button', '', await T('Close'));
+  close.onclick = () => panel(null);
+  row.append(close);
+  $('panelBox').classList.add('xwide');
+  panelClosed = () => $('panelBox').classList.remove('xwide');
+  panel([title, head, card, row]);
+  try {
+    made = await invoke('report_make');
+    pre.textContent = made.text;
+    title.textContent = await T('Report a problem') + '  ·  ' + made.name;
+    for (const b of btns) b.disabled = false;
+  } catch (e) {
+    pre.textContent = await T('Could not make the report: {e}', { e: String(e) });
+  }
+}

@@ -22,7 +22,8 @@ fn an_update_gives_up_only_the_sing_box_program() {
     let (top, prog) = if cfg!(windows) {
         (format!("sing-box-{ver}-windows-amd64"), "sing-box.exe")
     } else {
-        (format!("sing-box-{ver}-darwin-arm64"), "sing-box")
+        let arch = if cfg!(target_arch = "aarch64") { "arm64" } else { "amd64" };
+        (format!("sing-box-{ver}-darwin-{arch}"), "sing-box")
     };
     std::fs::create_dir_all(src.join(&top)).unwrap();
     std::fs::write(src.join(&top).join(prog), b"the program").unwrap();

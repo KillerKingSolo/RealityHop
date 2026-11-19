@@ -436,7 +436,7 @@ pub fn unpack(d: &Path, name: &str, b: &[u8], ver: &str) -> Result<PathBuf, Stri
     let member = if cfg!(windows) {
         format!("sing-box-{ver}-windows-amd64/sing-box.exe")
     } else {
-        format!("{}/sing-box", name.trim_end_matches(".tar.gz"))
+        format!("{}/sing-box", asset(ver).trim_end_matches(".tar.gz")) // one named member: from the version, not the name
     };
     let tar = crate::process::system_tool("tar");
     let cmd = [tar.as_os_str(), "-xf".as_ref(), archive.as_os_str(), "-C".as_ref(), d.as_os_str(), member.as_ref()];

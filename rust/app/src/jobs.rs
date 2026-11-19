@@ -8,7 +8,7 @@ use engine::paths::Paths;
 use engine::translations::tr;
 use serde_json::{Value, json};
 use std::cell::Cell;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 
@@ -25,8 +25,13 @@ pub struct Ctx {
     pub cmd: Vec<String>,
 }
 
+static APP: OnceLock<AppHandle> = OnceLock::new();
+// Where the data went when the setup installed this copy: the logs and last.json follow it
+static MOVED: Mutex<Option<Paths>> = Mutex::new(None);
+
 // Send say() to the window and to the right log file
 pub fn log_sink(app: &AppHandle, paths: &Paths) {
+    let _ = APP.set(app.clone());
     let (window, watch) = (FileLog::new(&paths.logs, "window"), FileLog::new(&paths.logs, "watch"));
     let h = app.clone();
     engine::activity_log::set_say(move |line| {
@@ -38,6 +43,26 @@ pub fn log_sink(app: &AppHandle, paths: &Paths) {
         let at = engine::local_time::now().format("%H:%M:%S");
         let _ = h.emit("log", json!({"at": at, "line": line}));
     });
+}
+
+// The setup moved the data folder (install): log and keep results there from now on. Lines logged between the move
+// and now went to the old folder: they are carried over, and the old folder goes once it holds no settings
+pub fn data_moved(from: &Paths, to: &Paths) {
+    if let Some(app) = APP.get() {
+        log_sink(app, to);
+    }
+    *MOVED.lock().unwrap_or_else(|e| e.into_inner()) = Some(to.clone());
+    if from.data == to.data || from.data.join("settings.json").exists() {
+        return;
+    }
+    for name in ["window.log", "watch.log"] {
+        if let Ok(t) = std::fs::read_to_string(from.logs.join(name))
+            && let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(to.logs.join(name))
+        {
+            let _ = std::io::Write::write_all(&mut f, t.as_bytes());
+        }
+    }
+    let _ = std::fs::remove_dir_all(&from.data);
 }
 
 // Tell the window to draw again
@@ -69,7 +94,7 @@ pub fn work(app: &AppHandle, job: Job) {
         WINDOW_JOB.with(|c| c.set(true));
         let ctx = h.state::<Ctx>();
         let t = Instant::now();
-        match run(&ctx, &job) {
+        match run(&h, &ctx, &job) {
             Ok(()) if engine::process::cancelled() => say("cancelled"),
             Ok(()) => say(&format!("done ({:.0} s)", t.elapsed().as_secs_f64())),
             Err(e) => {
@@ -90,7 +115,8 @@ fn done(app: &AppHandle) {
         let mut w = ctx.win.lock().unwrap_or_else(|e| e.into_inner());
         w.busy = false;
         w.current = None;
-        save_last(&ctx.paths, &w);
+        let moved = MOVED.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        save_last(moved.as_ref().unwrap_or(&ctx.paths), &w);
         tray_follows(app, &ctx.paths, &w);
         (!w.jobs.is_empty()).then(|| w.jobs.remove(0))
     };
@@ -188,7 +214,7 @@ fn now() -> f64 {
 }
 
 // One action
-fn run(ctx: &Ctx, job: &Job) -> Result<(), String> {
+fn run(app: &AppHandle, ctx: &Ctx, job: &Job) -> Result<(), String> {
     let wk = Worker { paths: &ctx.paths, win: &ctx.win };
     let arg = |k: &str| job.args.get(k).cloned().unwrap_or(Value::Null);
     let watch = Arc::clone(&ctx.watch);
@@ -248,6 +274,30 @@ fn run(ctx: &Ctx, job: &Job) -> Result<(), String> {
             }
             Ok(())
         }
+        "cand_scan" => {
+            wk.cand_ping()?;
+            changed(app);
+            wk.cand_test()
+        }
+        "cand_test" => wk.cand_test(),
+        "cand_test_tunnel" => {
+            wk.cand_test_tunnel();
+            Ok(())
+        }
+        "cand_put" => {
+            let picks: Vec<(usize, String)> = arg("picks")
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|p| Some((p.get(0)?.as_u64()? as usize, p.get(1)?.as_str()?.to_string())))
+                .collect();
+            wk.cand_put(&picks)
+        }
+        "cand_best" => wk.cand_best(),
+        "devices_push" => wk.devices_push(),
+        "router_core_install" => wk.router_core_install(),
+        "app_update" => crate::updates::app_update(app, ctx),
+        n if n.starts_with("wz_") => wk.wizard(n, &job.args, &ctx.cmd),
         other => Err(format!("unknown action: {other}")),
     }
 }

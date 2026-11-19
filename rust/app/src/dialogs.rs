@@ -1,5 +1,5 @@
 //! The commands behind the window's dialogs: node details, Settings (with the sing-box channels, the update check and
-//! uninstall) (NodeDetails, SettingsDialog).
+//! uninstall), the problem report (NodeDetails, SettingsDialog, ReportDialog).
 
 use crate::jobs::{self, Ctx};
 use crate::window_state::{Job, Mode};
@@ -118,10 +118,12 @@ pub fn settings_save(
     let p = &ctx.paths;
     let before = Settings::read(p).map_err(|e| e.to_string())?;
     let was_ronly = settings::router_only(p);
+    let rc_was = engine::router_actions::router_channel(p);
     let mut c = changes.clone();
     c.insert("pc_tunnel".into(), json!(i64::from(!router_only)));
     let mut d = Settings::save(p, &c).map_err(|e| e.to_string())?;
     let mut msgs: Vec<String> = Vec::new();
+    let mut ask_router = false;
     if router_only && d.router == 0 {
         d = Settings::save(p, json!({"pc_tunnel": 1}).as_object().unwrap()).map_err(|e| e.to_string())?;
         msgs.push(tr("Router only needs router features on; the tunnel stays on this PC.", &[]));
@@ -150,7 +152,7 @@ pub fn settings_save(
     let key = if d.router_key.is_empty() { p.router_key.clone() } else { std::path::PathBuf::from(&d.router_key) };
     if d.router != 0 && before.router == 0 && !key.exists() {
         Settings::save(p, json!({"router": 0}).as_object().unwrap()).map_err(|e| e.to_string())?;
-        msgs.push(tr("The router is not set up yet. Open the router steps of the setup wizard now?", &[]));
+        ask_router = true; // the page asks whether to open the router steps of the setup
     }
     engine::activity_log::say(&format!(
         "settings saved: {}",
@@ -160,8 +162,15 @@ pub fn settings_save(
         engine::activity_log::say(&format!("sing-box channel: {}; installing that build now...", d.singbox));
         jobs::work(&app, Job { name: "core_update".into(), args: Value::Null });
     }
+    if d.router != 0 && engine::router_actions::router_channel(p) != rc_was {
+        let h = app.clone(); // the router's channel changed: offer that build now
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_secs(2));
+            crate::updates::maybe_router_core(&h, true);
+        });
+    }
     jobs::changed(&app);
-    Ok(json!({"messages": msgs, "relayout": d.lang != before.lang}))
+    Ok(json!({"ask_router": ask_router, "messages": msgs, "relayout": d.lang != before.lang}))
 }
 
 // Ask GitHub for a newer Reality Hop: its version, or None (check_updates)
@@ -194,4 +203,92 @@ pub fn uninstall(ctx: State<Ctx>, keep: bool, router: bool) -> Result<Vec<String
 #[tauri::command]
 pub fn quit(app: AppHandle) {
     app.exit(0);
+}
+
+// Forget the router: a new router, a reset router or a new address (Change router)
+#[tauri::command]
+pub fn router_forget(ctx: State<Ctx>) {
+    engine::router_ssh::router_forget(&ctx.paths);
+}
+
+// Make a redacted report; its file name and text. Nothing is sent (ReportDialog.make)
+#[tauri::command]
+pub async fn report_make(app: AppHandle) -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let ctx = tauri::Manager::state::<Ctx>(&app);
+        let mut ssh = engine::router_ssh::RouterSsh { paths: &ctx.paths };
+        let (path, text) = engine::problem_report_file::make(&ctx.paths, &mut ssh)?;
+        let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        Ok(json!({"name": name, "text": text}))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+// A new GitHub issue with the report's summary filled in, and the reports folder to drag the file from
+// (ReportDialog.issue)
+#[tauri::command]
+pub fn report_issue(ctx: State<Ctx>, name: String) -> Result<(), String> {
+    if !name.starts_with("report-") || !name.ends_with(".txt") || name.contains(['/', '\\']) || name.contains("..") {
+        return Err("not a report".into());
+    }
+    let path = ctx.paths.reports.join(&name);
+    let text = engine::data_files::read_text(&path).map_err(|e| e.to_string())?;
+    let url = engine::problem_report::issue_url(&name, &text);
+    let tool =
+        if cfg!(windows) { engine::process::system_tool("explorer").into_os_string() } else { "/usr/bin/open".into() };
+    std::process::Command::new(&tool).arg(url).spawn().map_err(|e| e.to_string())?;
+    std::process::Command::new(&tool).arg(&ctx.paths.reports).spawn().map(|_| ()).map_err(|e| e.to_string())
+}
+
+// The devices the router tunnels and the router's DHCP leases (DevicesDialog.load)
+#[tauri::command]
+pub async fn devices_get(app: AppHandle) -> Value {
+    tauri::async_runtime::spawn_blocking(move || {
+        let ctx = tauri::Manager::state::<Ctx>(&app);
+        let s = Settings::read(&ctx.paths).unwrap_or_default();
+        let mut ssh = engine::router_ssh::RouterSsh { paths: &ctx.paths };
+        let (rows, err) = match engine::router::router_clients(&mut ssh) {
+            Ok(r) => (r, String::new()),
+            Err(e) => (
+                Vec::new(),
+                tr("Could not read the router ({e}); you can still add addresses by hand.", &[("e", e.to_string())]),
+            ),
+        };
+        json!({
+            "picked": engine::router::devices(&s.devices), "all": engine::router::all_devices(&s.devices),
+            "rows": rows, "err": err, "host": s.router_host,
+        })
+    })
+    .await
+    .unwrap_or(Value::Null)
+}
+
+// A local network address like 192.168.8.20
+#[tauri::command]
+pub fn lan_ip(ip: String) -> bool {
+    engine::validate::lan_ip(&ip)
+}
+
+// Keep the device list and push it to the router (DevicesDialog.save)
+#[tauri::command]
+pub fn devices_save(app: AppHandle, ctx: State<Ctx>, ips: Vec<String>) -> Result<(), String> {
+    let ips: Vec<String> = ips.into_iter().filter(|x| x == "all" || engine::validate::lan_ip(x)).collect();
+    let mut c = Map::new();
+    c.insert("devices".into(), json!(ips.join(", ")));
+    Settings::save(&ctx.paths, &c).map_err(|e| e.to_string())?;
+    jobs::work(&app, Job { name: "devices_push".into(), args: Value::Null });
+    Ok(())
+}
+
+// The router's web panel in the browser: only the router address from Settings
+#[tauri::command]
+pub fn open_router_panel(ctx: State<Ctx>) -> Result<(), String> {
+    let host = Settings::read(&ctx.paths).unwrap_or_default().router_host;
+    if !engine::validate::lan_ip(&host) {
+        return Err("the router address in Settings is not a local address".into());
+    }
+    let tool =
+        if cfg!(windows) { engine::process::system_tool("explorer").into_os_string() } else { "/usr/bin/open".into() };
+    std::process::Command::new(tool).arg(format!("http://{host}")).spawn().map(|_| ()).map_err(|e| e.to_string())
 }
