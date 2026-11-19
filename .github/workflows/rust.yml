@@ -31,6 +31,36 @@ jobs:
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked
 
+  build:   # test builds to try by hand: the Windows exe (MSVC links the WebView2 loader in) and the Apple silicon dmg
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [windows-latest, macos-15]
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        working-directory: rust
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Toolchain from rust-toolchain.toml
+        run: rustup toolchain install
+      - name: Windows exe
+        if: runner.os == 'Windows'
+        run: |
+          cargo build --locked --release -p realityhop-app
+          mkdir -p dist && cp target/release/RealityHop.exe dist/
+      - name: macOS dmg
+        if: runner.os == 'macOS'
+        run: sh build-mac.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-${{ runner.os }}
+          path: rust/dist/*
+          retention-days: 7
+
   parity:   # the fixtures still match what the Python code returns
     runs-on: windows-latest
     steps:
