@@ -16,7 +16,7 @@ from the release.
 - New: on a Mac, starting Reality Hop from the disk image now asks you to drag it into Applications first. A login item that points at the disk image stops working after a restart.
 - New: on a Mac, if Reality Hop was moved to a different folder, its login item points at the new place at the next start.
 - Note: on Windows, the window uses Microsoft Edge WebView2. It is part of Windows 11 and of current Windows 10.
-- Docs: new screenshots in all 9 languages, and a build guide for the Rust source. The Python source and its build files are removed from the repo; 1.7.2 and older stay in the releases and the git history.
+- Docs: new screenshots in all 9 languages, and a build guide for the Rust source. The Python source, its build files and the Python build tools are removed from the repo; the release checks and the router build of sing-box now run in Rust (`rust/tools`). 1.7.2 and older stay in the releases and the git history.
 
 ## 1.7.2 (2026-11-17)
 

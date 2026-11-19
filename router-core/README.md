@@ -17,7 +17,7 @@ Left out: every other protocol (Shadowsocks, VMess, Trojan, TUIC, Hysteria, Wire
 
 ## How it is built
 
-`build.py` builds the binary:
+`rh-tools router-core` ([`rust/tools/src/router_core.rs`](../rust/tools/src/router_core.rs)) builds the binary:
 
 1. It gets the official source at the release tag.
 2. It deletes the left-out CLI commands and protocol registrations.
@@ -27,8 +27,11 @@ Left out: every other protocol (Shadowsocks, VMess, Trojan, TUIC, Hysteria, Wire
 
 The same inputs give the same file, so anyone can rebuild a release and compare the SHA-256.
 
+It needs git and the Go version in `version.json`. From the repository:
+
 ```
-python build.py --verify
+cd rust
+cargo run -p realityhop-tools -- router-core --verify
 ```
 
 ## How it gets to routers

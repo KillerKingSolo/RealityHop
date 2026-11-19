@@ -1,10 +1,11 @@
 #!/bin/sh
-# Before a v* tag leaves this PC, check the build backend is up to date (tools/check-backend.py).
+# Before a v* tag leaves this PC, check the build backend is up to date (rh-tools check-backend, rust/tools).
 # Turn on once per clone: git config core.hooksPath .githooks
+# RH_TOOLCHAIN picks a toolchain for it (a PC without the MSVC linker: RH_TOOLCHAIN=stable-x86_64-pc-windows-gnu)
 while read local_ref local_sha remote_ref remote_sha; do
     case "$remote_ref" in
         refs/tags/v*)
-            python "$(git rev-parse --show-toplevel)/tools/check-backend.py" || {
+            (cd "$(git rev-parse --show-toplevel)/rust" && cargo ${RH_TOOLCHAIN:+"+$RH_TOOLCHAIN"} run --locked -q -p realityhop-tools -- check-backend) || {
                 echo "Push of $remote_ref stopped: update the backend first."; exit 1; }
             exit 0 ;;
     esac

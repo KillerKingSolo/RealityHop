@@ -29,7 +29,10 @@ jobs:
           persist-credentials: false   # the build tools run below must not find a token that can push
 
       - name: Refuse the release while the backend is out of date
-        run: python tools/check-backend.py
+        working-directory: rust
+        run: |
+          rustup toolchain install
+          cargo run --locked -q -p realityhop-tools -- check-backend
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
@@ -83,6 +86,15 @@ jobs:
           name: RealityHop-mac-${{ matrix.chip }}
           path: rust/dist/RealityHop-mac-${{ matrix.chip }}.dmg
 
+      - name: The test tool for the test jobs (rh-tools mac-app-test)
+        working-directory: rust
+        run: cargo build --locked -q -p realityhop-tools
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tools-mac-${{ matrix.chip }}
+          path: rust/target/debug/rh-tools
+
   mac-apple-silicon:
     permissions:
       contents: read
@@ -120,12 +132,19 @@ jobs:
           name: RealityHop-mac-${{ matrix.chip }}
           path: dist
 
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: tools-mac-${{ matrix.chip }}
+          path: tools-bin
+
       - name: Rosetta on this runner
         if: matrix.rosetta
         run: arch -x86_64 /usr/bin/true 2>/dev/null || sudo softwareupdate --install-rosetta --agree-to-license
 
       - name: Test the built app (disk image, start from the dmg, language, wizard, watcher, self-update)
-        run: python3 tools/mac-app-test.py "dist/RealityHop-mac-${{ matrix.chip }}.dmg" ${{ matrix.chip }} "$RUNNER_TEMP/shots"   # the runner's own Python: the test needs only the standard library
+        run: |   # an artifact loses the execute bit
+          chmod +x tools-bin/rh-tools
+          tools-bin/rh-tools mac-app-test "dist/RealityHop-mac-${{ matrix.chip }}.dmg" ${{ matrix.chip }} "$RUNNER_TEMP/shots"
 
       - name: Keep the screenshots
         if: always()

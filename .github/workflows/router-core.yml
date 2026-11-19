@@ -1,6 +1,6 @@
 name: router-core
 
-# Reality Hop's router build of sing-box (router-core/).
+# Reality Hop's router build of sing-box (router-core/), built by rh-tools router-core (rust/tools).
 # Daily: when sing-box (stable or preview) or Go has a new release, build and test it on Linux and open a pull request
 # with the new router-core/version.json. Nothing reaches a router until that pull request is merged.
 # On main (a merge, or any change in router-core/): build what version.json pins, fail unless every SHA-256 matches,
@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['router-core/**']
+    paths: ['router-core/**', 'rust/tools/src/router_core.rs']
 
 permissions:
   contents: read
@@ -31,6 +31,11 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: rh-tools (rust/tools)
+        run: |
+          cd rust && rustup toolchain install && cargo build --locked -q -p realityhop-tools
+          echo "RH_TOOLS=$PWD/target/debug/rh-tools" >> "$GITHUB_ENV"
+
       - name: Plan (newest sing-box and Go, or what version.json pins)
         id: plan
         env:
@@ -38,10 +43,10 @@ jobs:
           EVENT: ${{ github.event_name }}
         run: |
           if [ "$EVENT" = push ]; then
-            echo "go=$(python3 -c "import json; print(json.load(open('router-core/version.json'))['go'])")" >> "$GITHUB_OUTPUT"
+            echo "go=$(jq -r .go router-core/version.json)" >> "$GITHUB_OUTPUT"
             echo "new=no" >> "$GITHUB_OUTPUT"; echo "run=yes" >> "$GITHUB_OUTPUT"
           else
-            python3 router-core/build.py --plan | tee -a "$GITHUB_OUTPUT"
+            "$RH_TOOLS" router-core --plan | tee -a "$GITHUB_OUTPUT"
             grep -q '^new=yes' "$GITHUB_OUTPUT" && echo "run=yes" >> "$GITHUB_OUTPUT" || echo "run=no" >> "$GITHUB_OUTPUT"
           fi
 
@@ -56,13 +61,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           MODE: ${{ steps.plan.outputs.new == 'yes' && '--update' || '--verify' }}
-        run: python3 router-core/build.py "$MODE"
+        run: '"$RH_TOOLS" router-core "$MODE"'
 
       - name: Test both channels on Linux
         if: steps.plan.outputs.run == 'yes'
         run: |
-          python3 router-core/build.py --test stable
-          python3 router-core/build.py --test preview
+          "$RH_TOOLS" router-core --test stable
+          "$RH_TOOLS" router-core --test preview
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: steps.plan.outputs.run == 'yes'
@@ -96,7 +101,8 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           cp /tmp/rc/version.json router-core/version.json
-          read -r S P G <<< "$(python3 -c "import json; v=json.load(open('router-core/version.json')); print(v['stable']['singbox'], v['preview']['singbox'], v['go'])")"
+          V=router-core/version.json
+          S=$(jq -r .stable.singbox "$V"); P=$(jq -r .preview.singbox "$V"); G=$(jq -r .go "$V")
           B="router-core/$S-$P-go$G"
           if git ls-remote --exit-code --heads "https://github.com/$REPO.git" "$B" >/dev/null; then echo "$B is open already"; exit 0; fi
           git config user.name 'github-actions[bot]'
@@ -109,7 +115,9 @@ jobs:
             echo
             echo "| Channel | sing-box | SHA-256 (linux/arm64) |"
             echo "|---|---|---|"
-            python3 -c "import json; v=json.load(open('router-core/version.json')); [print(f\"| {c} | {v[c]['singbox']} | \`{v[c]['sha256']['arm64']}\` |\") for c in ('stable','preview')]"
+            for c in stable preview; do
+              echo "| $c | $(jq -r ".$c.singbox" "$V") | \`$(jq -r ".$c.sha256.arm64" "$V")\` |"
+            done
             echo
             echo "Go $G. Release notes: https://github.com/SagerNet/sing-box/releases"
             echo
@@ -136,8 +144,12 @@ jobs:
           SHA: ${{ github.sha }}
         run: |
           for ch in stable preview; do
-            t="router-core-$ch"; d="rc/out/$ch"
-            notes=$(python3 -c "import json,sys; m=json.load(open('$d/manifest-arm64.json')); print(f\"Reality Hop's router build of sing-box {m['singbox']} ({m['channel']}), from the official source at commit {m['source_commit']}, Go {m['go']}, built from router-core/ at $SHA.\n\nSHA-256 of {m['asset']}: \`{m['sha256']}\`\n\nNot a Reality Hop app release. Reality Hop offers it to routers by itself; see router-core/README.md.\")")
+            t="router-core-$ch"; d="rc/out/$ch"; m="$d/manifest-arm64.json"
+            notes="Reality Hop's router build of sing-box $(jq -r .singbox "$m") ($(jq -r .channel "$m")), from the official source at commit $(jq -r .source_commit "$m"), Go $(jq -r .go "$m"), built from router-core/ at $SHA.
+
+          SHA-256 of $(jq -r .asset "$m"): \`$(jq -r .sha256 "$m")\`
+
+          Not a Reality Hop app release. Reality Hop offers it to routers by itself; see router-core/README.md."
             if ! gh release view "$t" --repo "$REPO" >/dev/null 2>&1; then
               gh release create "$t" --repo "$REPO" --target "$SHA" --prerelease --latest=false --title "Router sing-box ($ch)" --notes "$notes"
             fi

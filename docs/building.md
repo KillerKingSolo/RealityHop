@@ -54,7 +54,7 @@ so configs, settings and data files from 1.x keep working.
 Releases are built by GitHub Actions ([`.github/workflows/release.yml`](../.github/workflows/release.yml)):
 
 1. Set the version in `rust/Cargo.toml` and add its section to [CHANGELOG.md](../CHANGELOG.md).
-2. Check the build backend: `python tools/check-backend.py`. It lists the GitHub Actions, the Rust toolchain, the
+2. Check the build backend: `cargo run -p realityhop-tools -- check-backend` (in `rust/`). It lists the GitHub Actions, the Rust toolchain, the
    pinned crates and cargo-deny, and checks that every crate in `rust/Cargo.lock` is at the newest version allowed
    (`cargo update --dry-run`). It fails while one is out of date; a crate held back by the crate that uses it is
    listed but allowed. A release cannot go out until it passes: the
@@ -90,7 +90,6 @@ rust/resources/             config templates, router scripts, translations, icon
 rust/parity/                1.x outputs that 2.0 must match
 rust/build-mac.sh           the Mac app and disk image
 router-core/                the router build of sing-box
-tools/check-backend.py      refuses a release while the build backend is out of date
-tools/mac-app-test.py       the release's test of the built Mac app
+rust/tools/                 rh-tools: the backend check, the release's test of the built Mac app, the router build
 docs/                       documentation
 ```

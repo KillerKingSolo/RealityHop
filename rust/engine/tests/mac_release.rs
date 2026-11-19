@@ -1,6 +1,6 @@
 //! macOS: the router key script, and the update swap from a built release .dmg into a copy in a temp Applications
 //! folder. The swap test runs only when RH_TEST_DMG names a built dmg (the release workflow sets it); the other checks
-//! of the built app are in tools/mac-app-test.py.
+//! of the built app are in rust/tools/src/mac_app_test.rs (rh-tools mac-app-test).
 #![cfg(target_os = "macos")]
 
 use engine::app_install::{cleanup, mac_swap};
