@@ -18,14 +18,19 @@ fn this_process_is_in_the_list() {
     assert!(pp::pids(&me().to_uppercase()).contains(&id), "any letter case");
 }
 
+// The name a port's owner shows: macOS keeps at most 31 characters of a process name, and test programs are longer
+fn owner_name() -> String {
+    if cfg!(windows) { me() } else { me().chars().take(31).collect() }
+}
+
 #[test]
 fn ports_taken_open_and_owned() {
     let l = TcpListener::bind("127.0.0.1:0").unwrap();
     let port = l.local_addr().unwrap().port();
     assert!(pp::port_taken(port) && pp::port_open(port));
-    assert_eq!(pp::port_owner(port), Some(me()));
+    assert_eq!(pp::port_owner(port), Some(owner_name()));
     let l6 = TcpListener::bind("[::1]:0").unwrap(); // the owner is found in the IPv6 table too
-    assert_eq!(pp::port_owner(l6.local_addr().unwrap().port()), Some(me()));
+    assert_eq!(pp::port_owner(l6.local_addr().unwrap().port()), Some(owner_name()));
     drop(l);
     assert!(!pp::port_taken(port) && !pp::port_open(port));
     assert_eq!(pp::port_owner(port), None);
