@@ -7,16 +7,21 @@ on:
   pull_request:
     paths: ['rust/**', 'src/**', 'tools/parity-dump.py', '.github/workflows/rust.yml']
   workflow_dispatch:
+  workflow_call:   # the release runs these checks on the tagged commit first
+    inputs:
+      release:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
-  test:   # format, lints and tests on every platform the app ships for
+  test:   # format, lints and tests on every platform the app ships for: macOS 15, 26 and 27, Apple silicon and Intel
     strategy:
       fail-fast: false
       matrix:
-        runner: [windows-latest, macos-15, macos-15-intel]
+        runner: [windows-latest, macos-15, macos-15-intel, macos-26, macos-26-intel, xcode-27]   # xcode-27: macOS 27 (GitHub preview image)
     runs-on: ${{ matrix.runner }}
     defaults:
       run:
@@ -32,6 +37,7 @@ jobs:
       - run: cargo test --locked
 
   build:   # test builds to try by hand: the Windows exe (MSVC links the WebView2 loader in) and the Apple silicon dmg
+    if: ${{ !inputs.release }}   # the release builds its own
     strategy:
       fail-fast: false
       matrix:

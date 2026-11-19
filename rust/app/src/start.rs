@@ -80,14 +80,16 @@ pub async fn start_answer(app: AppHandle, key: String, yes: bool) -> Result<Opti
             }
             ("legacy" | "replace", true) if !cfg!(debug_assertions) => {
                 ctx.watch.stop(); // the watcher must not restart rh-core while the data moves
-                app_install::install(&ctx.paths, None, &exe, |_| {})?;
+                let (_, moved) = app_install::install(&ctx.paths, None, &exe, |_| {})?;
+                crate::jobs::data_moved(&ctx.paths, &moved); // a job still running logs to the new folder
                 relaunch(&app, &app_install::installed_exe(&exe))?;
                 Ok(None)
             }
             ("move", true) if !cfg!(debug_assertions) => {
-                app_install::move_here(&ctx.paths, &exe, || ctx.watch.stop()).map_err(|e| {
+                let moved = app_install::move_here(&ctx.paths, &exe, || ctx.watch.stop()).map_err(|e| {
                     tr("Not moved: {e}\n\nEverything stays where it was; you are asked again next time.", &[("e", e)])
                 })?;
+                crate::jobs::data_moved(&ctx.paths, &moved); // a job still running logs to the new folder
                 relaunch(&app, &exe)?;
                 Ok(None)
             }

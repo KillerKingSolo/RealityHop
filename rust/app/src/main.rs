@@ -347,9 +347,18 @@ fn main() -> std::process::ExitCode {
     let paths = Paths::from_env().unwrap_or_else(|| Paths::new(&app_install::data_dir()));
     let lang = engine::settings::Settings::read(&paths).map(|s| s.lang).unwrap_or_default();
     engine::translations::use_lang(&lang);
+    if !cfg!(windows) && !cfg!(debug_assertions) && engine::macos_system::misplaced(&exe) {
+        // a login item must not point into the disk image or a quarantine copy; nothing is written
+        let msg = tr("Drag Reality Hop into the Applications folder first, then open it from there.", &[]);
+        engine::macos_system::alert(engine::NAME, &msg);
+        return std::process::ExitCode::SUCCESS;
+    }
     if app_install::installed_here(&exe) && !cfg!(debug_assertions) {
         app_install::cleanup(&exe); // old exes and 1.x program folders
         app_install::entry_fix(&exe);
+        if !cfg!(windows) {
+            engine::macos_system::start_fix(&paths, &exe);
+        }
     }
     let watch = Watch::new();
     let mut win = Win::new();

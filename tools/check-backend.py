@@ -1,9 +1,9 @@
 """check-backend.py  -  refuses a release while the build backend is out of date.
 
-Checks the GitHub Actions in .github/workflows (newest release), the Python version the release is built with
-(the newest one that PyInstaller, Pillow and setup-python all support), and any == pins in requirements.txt and requirements-mac.txt.
-Runs first in the release workflow, and before a v* tag is pushed (.githooks/pre-push). Exit code 1 = out of date.
-Standard library only.
+Checks the GitHub Actions in .github/workflows (newest release), the Rust toolchain in rust/rust-toolchain.toml (newest
+stable), the exact (=) crate pins in rust/Cargo.toml and rust/*/Cargo.toml (newest on crates.io) and the cargo-deny
+version the CI installs. Runs first in the release workflow, and before a v* tag is pushed (.githooks/pre-push).
+Exit code 1 = out of date. Standard library only.
 """
 import glob, json, os, re, sys, urllib.request
 
@@ -42,35 +42,37 @@ def actions():
             report(ver(tag) >= ver(latest) and real == sha, repo, f'uses {tag}, newest {latest}' + ('' if real == sha else f', but {tag} is commit {real}'))
 
 
-def python():
-    wf = open(os.path.join(ROOT, '.github', 'workflows', 'release.yml'), encoding='utf-8').read()
-    used = re.search(r"python-version:\s*'?([\d.]+)", wf).group(1)
-    pyi, pil = get('https://pypi.org/pypi/pyinstaller/json')['info'], get('https://pypi.org/pypi/pillow/json')
-    wheels = {f['filename'] for f in pil['urls']}
-    builds = {v['version'] for v in get('https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json')
-              if v.get('stable')}
-    below = re.search(r'<\s*([\d.]+)', pyi.get('requires_python') or '')
-    for c in get('https://endoflife.date/api/python.json'):   # newest first
-        cy = c['cycle']; tag = 'cp' + cy.replace('.', '')
-        if below and ver(cy) >= ver(below.group(1)):
-            continue
-        if any(f'-{tag}-{tag}-win_amd64' in w for w in wheels) and any(b.startswith(cy + '.') for b in builds):
-            report(used == cy, 'Python for the build', f"release.yml uses {used}, newest supported {cy} "
-                   f"(PyInstaller {pyi['version']}, Pillow {pil['info']['version']})")
-            return
-    report(False, 'Python for the build', 'no Python version found that PyInstaller, Pillow and setup-python all support')
+def text(url):
+    req = urllib.request.Request(url, headers={'User-Agent': 'RealityHop-check-backend'})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return r.read().decode()
 
 
-def pins():
-    lines = [l for f in sorted(glob.glob(os.path.join(ROOT, 'requirements*.txt'))) for l in open(f, encoding='utf-8')]   # Windows and Mac
-    for line in lines:
-        m = re.match(r'\s*([\w.-]+)\s*==\s*([\w.]+)', line)
-        if m:
-            latest = get(f'https://pypi.org/pypi/{m.group(1)}/json')['info']['version']
-            report(ver(m.group(2)) >= ver(latest), m.group(1), f'pinned {m.group(2)}, newest {latest}')
+def toolchain():
+    used = re.search(r'channel\s*=\s*"([\d.]+)"', open(os.path.join(ROOT, 'rust', 'rust-toolchain.toml')).read()).group(1)
+    stable = re.search(r'\[pkg\.rust\]\s*version\s*=\s*"([\d.]+)', text('https://static.rust-lang.org/dist/channel-rust-stable.toml')).group(1)
+    report(ver(used) >= ver(stable), 'Rust toolchain', f'rust-toolchain.toml uses {used}, newest stable {stable}')
 
 
-for check in (actions, python, pins):
+def crates():
+    seen = set()
+    for f in [os.path.join(ROOT, 'rust', 'Cargo.toml')] + sorted(glob.glob(os.path.join(ROOT, 'rust', '*', 'Cargo.toml'))):
+        for name, pin in re.findall(r'^([\w-]+)\s*=\s*(?:\{[^}\n]*?version\s*=\s*)?"=([\w.-]+)"', open(f, encoding='utf-8').read(), re.M):
+            if name in seen:
+                continue
+            seen.add(name)
+            latest = get(f'https://crates.io/api/v1/crates/{name}')['crate']['max_stable_version']
+            report(ver(pin) >= ver(latest), name, f'pinned {pin}, newest {latest}')
+
+
+def tools():
+    for wf in glob.glob(os.path.join(ROOT, '.github', 'workflows', '*.yml')):
+        for name, pin in re.findall(r'cargo install --locked ([\w-]+)@([\d.]+)', open(wf, encoding='utf-8').read()):
+            latest = get(f'https://crates.io/api/v1/crates/{name}')['crate']['max_stable_version']
+            report(ver(pin) >= ver(latest), name, f'{os.path.basename(wf)} installs {pin}, newest {latest}')
+
+
+for check in (actions, toolchain, crates, tools):
     try:
         check()
     except Exception as e:

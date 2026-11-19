@@ -693,13 +693,25 @@ fn mac_update(paths: &Paths, rel: &crate::installer::Latest, exe: &Path) -> Resu
     }
     let _ = std::fs::remove_file(&probe);
     let tmp = download(paths, rel, "update.dmg")?;
+    let r = mac_swap(&tmp, exe);
+    let _ = std::fs::remove_file(&tmp);
+    r?;
+    say(&format!("Reality Hop {} installed", rel.ver));
+    Ok(())
+}
+
+// Copy RealityHop.app out of a checked release .dmg next to the running app, then swap the two. The old one stays as
+// .RealityHop.old-<time>.app until cleanup() finds it 10 minutes old
+pub fn mac_swap(dmg: &Path, exe: &Path) -> Result<(), String> {
+    let app = crate::pia_split_tunnel::bundle_of(exe).ok_or("not running from RealityHop.app; not updated")?;
+    let dir = app.parent().ok_or("not running from RealityHop.app; not updated")?;
     let mnt = crate::data_files::TempDir::new("rh-update").map_err(|e| e.to_string())?;
     let mut new = app.as_os_str().to_owned();
     new.push(".new");
     let new = PathBuf::from(new);
     let r = (|| -> Result<(), String> {
         let m = text(mnt.path());
-        let t = text(&tmp);
+        let t = text(dmg);
         let o = run(
             &["/usr/bin/hdiutil", "attach", "-nobrowse", "-readonly", "-noautoopen", "-mountpoint", &m, &t],
             None,
@@ -740,7 +752,6 @@ fn mac_update(paths: &Paths, rel: &crate::installer::Latest, exe: &Path) -> Resu
         let _ = run(&["/usr/bin/hdiutil", "detach", &m, "-force"], None, Duration::from_secs(60), None);
         copied
     })();
-    let _ = std::fs::remove_file(&tmp);
     r?;
     others_stop(exe);
     let old = dir.join(format!(".RealityHop.old-{}.app", now()));
@@ -749,7 +760,6 @@ fn mac_update(paths: &Paths, rel: &crate::installer::Latest, exe: &Path) -> Resu
         let _ = std::fs::rename(&old, &app); // put the running version back
         return Err(e.to_string());
     }
-    say(&format!("Reality Hop {} installed", rel.ver));
     Ok(())
 }
 

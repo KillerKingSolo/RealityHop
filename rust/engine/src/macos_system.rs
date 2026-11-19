@@ -6,6 +6,22 @@ use std::time::Duration;
 /// rh-core's signing id. It starts with the app's own id (com.realityhop.app), so PIA's rule for the app covers it.
 pub const CORE_ID: &str = "com.realityhop.app.core";
 
+// True when the app runs from the disk image, or from the read-only copy macOS makes of a downloaded app that was not
+// moved (App Translocation): a login item would point at a path that is gone after a restart (macos.misplaced)
+pub fn misplaced(exe: &Path) -> bool {
+    crate::pia_split_tunnel::bundle_of(exe).is_some_and(|b| {
+        let b = b.to_string_lossy();
+        b.starts_with("/Volumes/") || b.contains("/AppTranslocation/")
+    })
+}
+
+// A native alert that waits for OK. The text goes to osascript as arguments, never into the script
+pub fn alert(title: &str, text: &str) {
+    let script =
+        ["-e", "on run argv", "-e", "display alert (item 1 of argv) message (item 2 of argv)", "-e", "end run"];
+    let _ = std::process::Command::new("/usr/bin/osascript").args(script).args([title, text]).status();
+}
+
 // ~/Library/LaunchAgents
 pub fn agents_dir() -> PathBuf {
     PathBuf::from(std::env::var_os("HOME").unwrap_or_default()).join("Library").join("LaunchAgents")
@@ -70,6 +86,23 @@ pub fn agent_write(label: &str, args: &[String], cwd: &Path) -> std::io::Result<
     tmp.push(".tmp");
     std::fs::write(&tmp, crate::macos::agent_plist(label, &args, &cwd.to_string_lossy()))?;
     std::fs::rename(&tmp, &path)
+}
+
+// The program and arguments the login item starts; empty when there is none (macos.agent_args)
+pub fn agent_args(label: &str) -> Vec<String> {
+    std::fs::read_to_string(agent_path(label)).map(|t| crate::macos::agent_plist_args(&t)).unwrap_or_default()
+}
+
+// At every start of the app in place (install.cleanup, macOS part): sing-box downloaded before 1.7 gets Reality Hop's
+// signing id, and a login item that still points at an app that was moved points at this one again
+pub fn start_fix(paths: &crate::paths::Paths, exe: &Path) {
+    if paths.core.exists() {
+        core_sign(&paths.core, crate::activity_log::say);
+    }
+    let me = exe.to_string_lossy().into_owned();
+    if agent_exists(crate::macos::WATCHER) && agent_args(crate::macos::WATCHER).first() != Some(&me) {
+        let _ = agent_write(crate::macos::WATCHER, &[me, "--watch".into(), "--logon".into()], &paths.data);
+    }
 }
 
 // Remove the login item. Not unloaded from launchd: that would also stop what it started at this login

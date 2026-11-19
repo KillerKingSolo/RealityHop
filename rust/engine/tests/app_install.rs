@@ -85,3 +85,23 @@ fn registry_value_names_and_tree_removal_on_a_test_key() {
     delete_tree(&path);
     assert!(Key::open(&path, false).is_err(), "the key and every key under it are gone");
 }
+
+#[test]
+fn an_app_on_the_disk_image_or_in_translocation_is_misplaced() {
+    use engine::macos_system::misplaced;
+    let exe = |b: &str| PathBuf::from(format!("{b}/RealityHop.app/Contents/MacOS/RealityHop"));
+    assert!(misplaced(&exe("/Volumes/Reality Hop")));
+    assert!(misplaced(&exe("/private/var/folders/x1/T/AppTranslocation/0A1B/d")));
+    assert!(!misplaced(&exe("/Applications")));
+    assert!(!misplaced(&exe("/Users/me/Applications")));
+    assert!(!misplaced(&PathBuf::from("/Volumes/Data/realityhop/target/release/RealityHop")));
+}
+
+#[test]
+fn login_item_arguments_read_back_as_written() {
+    use engine::macos::{agent_plist, agent_plist_args};
+    let args = ["/Applications/R&D <x>/RealityHop.app/Contents/MacOS/RealityHop", "--watch", "--logon"];
+    let plist = agent_plist("com.realityhop.watcher", &args, "/Users/me/Library/Application Support/RealityHop");
+    assert_eq!(agent_plist_args(&plist), args);
+    assert!(agent_plist_args("<plist><dict></dict></plist>").is_empty());
+}

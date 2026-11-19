@@ -23,6 +23,19 @@ pub fn agent_plist(label: &str, args: &[&str], cwd: &str) -> String {
     )
 }
 
+static PROGRAM_ARGS: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?s)<key>ProgramArguments</key>\s*<array>(.*?)</array>").unwrap());
+static PLIST_STRING: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<string>(.*?)</string>").unwrap());
+
+// The ProgramArguments of a login item plist, unescaped (macos.agent_args)
+pub fn agent_plist_args(plist: &str) -> Vec<String> {
+    let Some(a) = PROGRAM_ARGS.captures(plist) else { return vec![] };
+    let unxml = |s: &str| {
+        s.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&apos;", "'").replace("&amp;", "&")
+    };
+    PLIST_STRING.captures_iter(&a[1]).map(|c| unxml(&c[1])).collect()
+}
+
 static NAMESERVER: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"nameserver\[\d+\]\s*:\s*(\S+)").unwrap());
 
 // The DNS servers in `scutil --dns` output that are a local DNS app: loopback, or 192.0.2.0/24 that such apps use

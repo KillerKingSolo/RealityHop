@@ -2,15 +2,27 @@ name: release
 
 on:
   push:
-    tags: ['v*']
+    tags: ['v*']   # vX.Y.Z, or vX.Y.Z-beta.N for a prerelease (releases/latest skips it, so installed copies stay put)
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
+  checks:   # format, lints, tests on every platform, parity with the Python code, and cargo-deny, on the tagged commit
+    permissions:
+      contents: read
+    uses: ./.github/workflows/rust.yml
+    with:
+      release: true
+
   build:
+    permissions:
+      contents: read
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -21,32 +33,26 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: '3.15'
-
-      - name: Install build tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Version from the tag
-        shell: pwsh
+      - name: The tag matches the version in rust/Cargo.toml
+        if: startsWith(github.ref, 'refs/tags/')
         env:
           TAG: ${{ github.ref_name }}   # through the environment: a tag name must not become part of the script
         run: |
-          $v = $env:TAG.TrimStart('v')
-          if ($v -match '^\d+\.\d+\.\d+$') { "VERSION = '$v'" | Set-Content -Encoding ascii src/version.py }   # a manual run keeps the version in the code
-          else { Add-Content -Encoding ascii src/version.py "BUILD = '$($env:GITHUB_SHA.Substring(0, 7))'", 'DEBUG = True' }   # a test build: its commit and debug.log
+          v=$(sed -n 's/^version = "\(.*\)"/\1/p' rust/Cargo.toml | head -1)
+          t="${TAG#v}"; t="${t%%-*}"
+          [ "$t" = "$v" ] || { echo "tag $TAG does not match version $v in rust/Cargo.toml"; exit 1; }
 
-      - name: Build
-        shell: pwsh
-        run: ./build.ps1
+      - name: Build (MSVC, so the WebView2 loader is linked in)
+        working-directory: rust
+        run: |
+          rustup toolchain install
+          cargo build --locked --release -p realityhop-app
+          mkdir -p dist && cp target/release/RealityHop.exe dist/
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: RealityHop-windows
-          path: dist/RealityHop.exe
+          path: rust/dist/RealityHop.exe
 
   mac-intel:   # build only; one job per chip, so each chip's tests start as soon as its own build is done
     permissions:
@@ -62,30 +68,20 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: '3.15'
-
-      - name: Install build tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-mac.txt
-
-      - name: Version from the tag
-        env:
-          TAG: ${{ github.ref_name }}   # through the environment: a tag name must not become part of the script
-        run: |
-          v="${TAG#v}"
-          if echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then echo "VERSION = '$v'" > src/version.py   # a manual run keeps the version in the code
-          else printf "BUILD = '%s'\nDEBUG = True\n" "${GITHUB_SHA:0:7}" >> src/version.py; fi   # a test build: its commit and debug.log
-
       - name: Build
-        run: sh build-mac.sh
+        working-directory: rust
+        run: |
+          rustup toolchain install
+          sh build-mac.sh
+
+      - name: Update from this dmg into a copy of the app, router key script
+        working-directory: rust
+        run: RH_TEST_DMG="$PWD/dist/RealityHop-mac-${{ matrix.chip }}.dmg" cargo test --locked -p realityhop-engine --test mac_release -- --nocapture
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: RealityHop-mac-${{ matrix.chip }}
-          path: dist/RealityHop-mac-${{ matrix.chip }}.dmg
+          path: rust/dist/RealityHop-mac-${{ matrix.chip }}.dmg
 
   mac-apple-silicon:
     permissions:
@@ -97,52 +93,6 @@ jobs:
             chip: apple-silicon
     runs-on: ${{ matrix.runner }}
     steps: *mac-build
-
-  mac-smoke:   # from source, alongside the build: sing-box, nodes, tunnel, login items, menu bar icon, uninstall
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [macos-15, macos-15-intel]
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: '3.15'
-
-      - name: Install
-        run: pip install -r requirements.txt -r requirements-mac.txt
-
-      - name: Smoke test from source
-        env:
-          GITHUB_TOKEN: ${{ github.token }}   # read-only use: GitHub API lookups of the sing-box releases
-        run: |
-          export RH_SMOKE_HOME="$RUNNER_TEMP/smoke-home" SHOTS="$RUNNER_TEMP/shots"
-          mkdir -p "$RH_SMOKE_HOME" "$SHOTS"
-          HOME="$RH_SMOKE_HOME" python tools/mac-smoke.py
-          sleep 5
-          test ! -d "$RH_SMOKE_HOME/Library/Application Support/RealityHop"
-          echo "PASS  uninstall: data folder removed"
-
-      - name: Window test from source (wizard pages, Install, Finish, main window, Settings, Stop, Start, report, Uninstall)
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          export RH_SMOKE_HOME="$RUNNER_TEMP/gui-home" SHOTS="$RUNNER_TEMP/shots"
-          mkdir -p "$RH_SMOKE_HOME"
-          HOME="$RH_SMOKE_HOME" python tools/mac-gui-test.py
-
-      - name: Keep the screenshots
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: screenshots-smoke-${{ matrix.runner }}
-          path: ${{ runner.temp }}/shots
 
   test-apple-silicon:   # the Apple silicon app on macOS 15, 26 and 27
     needs: mac-apple-silicon
@@ -205,7 +155,7 @@ jobs:
     steps: *mac-test
 
   publish:
-    needs: [build, mac-intel, mac-apple-silicon, mac-smoke, test-apple-silicon, test-intel]
+    needs: [checks, build, mac-intel, mac-apple-silicon, test-apple-silicon, test-intel]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
@@ -236,6 +186,8 @@ jobs:
           $tail = "$src`n`n$win`n`n$mac`n`nInstalled copies update themselves. All changes: [CHANGELOG.md](https://github.com/KillerKingSolo/RealityHop/blob/main/CHANGELOG.md).`n`n$sums"
           "$notes`n`n---`n`n$tail" | Set-Content -Encoding utf8 dist/notes.md
           Get-Content dist/notes.md
+          "| Asset | Size |`n|---|---|" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+          $files | ForEach-Object { "| $_ | $([math]::Round((Get-Item "dist/$_").Length / 1MB, 1)) MB |" } | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
 
       - name: Publish the release
         uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
@@ -245,4 +197,5 @@ jobs:
             dist/RealityHop-mac-apple-silicon.dmg
             dist/RealityHop-mac-intel.dmg
           body_path: dist/notes.md
+          prerelease: ${{ contains(github.ref_name, '-') }}
           fail_on_unmatched_files: true
