@@ -55,7 +55,9 @@ Releases are built by GitHub Actions ([`.github/workflows/release.yml`](../.gith
 
 1. Set the version in `rust/Cargo.toml` and add its section to [CHANGELOG.md](../CHANGELOG.md).
 2. Check the build backend: `python tools/check-backend.py`. It lists the GitHub Actions, the Rust toolchain, the
-   pinned crates and cargo-deny, and fails while one is out of date. A release cannot go out until it passes: the
+   pinned crates and cargo-deny, and checks that every crate in `rust/Cargo.lock` is at the newest version allowed
+   (`cargo update --dry-run`). It fails while one is out of date; a crate held back by the crate that uses it is
+   listed but allowed. A release cannot go out until it passes: the
    workflow runs it first, and the pre-push hook runs it before a `v*` tag leaves your PC (turn the hook on once per
    clone with `git config core.hooksPath .githooks`).
 3. Tag and push:

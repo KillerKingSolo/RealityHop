@@ -2,10 +2,11 @@
 
 Checks the GitHub Actions in .github/workflows (newest release), the Rust toolchain in rust/rust-toolchain.toml (newest
 stable), the exact (=) crate pins in rust/Cargo.toml and rust/*/Cargo.toml (newest on crates.io) and the cargo-deny
-version the CI installs. Runs first in the release workflow, and before a v* tag is pushed (.githooks/pre-push).
+version the CI installs, and that every crate in rust/Cargo.lock is at the newest version its users allow
+(cargo update --dry-run). Runs first in the release workflow, and before a v* tag is pushed (.githooks/pre-push).
 Exit code 1 = out of date. Standard library only.
 """
-import glob, json, os, re, sys, urllib.request
+import glob, json, os, re, subprocess, sys, urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 problems = []
@@ -72,7 +73,25 @@ def tools():
             report(ver(pin) >= ver(latest), name, f'{os.path.basename(wf)} installs {pin}, newest {latest}')
 
 
-for check in (actions, toolchain, crates, tools):
+def lockfile():
+    # Every crate in Cargo.lock, direct or not, at the newest version its users allow. One held back by a parent
+    # crate's requirement is listed but allowed: only that parent's next release can move it
+    r = subprocess.run(['cargo', 'update', '--dry-run', '--verbose'], cwd=os.path.join(ROOT, 'rust'),
+                       capture_output=True, text=True, timeout=600)
+    if r.returncode != 0:
+        raise RuntimeError(r.stderr.strip()[-300:])
+    out = r.stdout + r.stderr
+    moves = re.findall(r'^\s*(?:Updating|Adding|Removing|Downgrading)\s+(\S+ v\S+(?: -> v\S+)?)', out, re.M)
+    held = re.findall(r'^\s*Unchanged\s+(\S+ v\S+) \(available: (v[^)\s]+)', out, re.M)
+    for name in moves:
+        report(False, 'Cargo.lock', f'{name} (run cargo update)')
+    for name, avail in held:
+        print(f'HELD      Cargo.lock: {name}, {avail} is out but a parent crate does not allow it yet')
+    if not moves:
+        report(True, 'Cargo.lock', f'every crate at the newest version allowed ({len(held)} held by a parent crate)')
+
+
+for check in (actions, toolchain, crates, tools, lockfile):
     try:
         check()
     except Exception as e:
