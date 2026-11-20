@@ -12,6 +12,7 @@ from the release.
 - Fixed: after you install an update with the Update button, Reality Hop goes back to the main page. What's new shows only after an automatic update.
 - Fixed: on a Mac, each update left one more Reality Hop in the Dock's recent apps. Updates now keep the same app folder.
 - Docs: step-by-step help for the first start on a Mac (System Settings → Privacy & Security → Open Anyway), in the README, the troubleshooting guide and the release notes.
+- Changed: cc 1.11.3, and on Linux builds zcheapstr 1.4.0 and zruntime 0.2.4.
 
 ## 2.0.2 (2026-11-19)
 
