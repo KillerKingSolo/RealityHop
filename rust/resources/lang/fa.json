@@ -530,5 +530,11 @@
  "Do you live in France?": "آیا در فرانسه زندگی می‌کنید؟",
  "Reality Hop looks up website names with Quad9 (9.9.9.9). After a Paris court order, Quad9 stops serving France on 24 November 2026. In France, Reality Hop uses Cloudflare (1.1.1.1) instead.": "Reality Hop نام وب‌سایت‌ها را با Quad9 (9.9.9.9) پیدا می‌کند. به دنبال حکم یک دادگاه در پاریس، Quad9 از 24 نوامبر 2026 به فرانسه سرویس نمی‌دهد. در فرانسه، Reality Hop به جای آن از Cloudflare (1.1.1.1) استفاده می‌کند.",
  "Yes, use Cloudflare": "بله، از Cloudflare استفاده کن",
- "No, keep Quad9": "نه، Quad9 بماند"
+ "No, keep Quad9": "نه، Quad9 بماند",
+ "If Reality Hop helps you, please give it a star. It is free and takes one click. Stars show me that people are using it, help others find it, and keep me motivated to fix problems and add new features.": "اگر Reality Hop به شما کمک می‌کند، لطفاً به آن ستاره بدهید. رایگان است و فقط یک کلیک می‌خواهد. ستاره‌ها به من نشان می‌دهند که مردم از آن استفاده می‌کنند، به دیگران کمک می‌کنند آن را پیدا کنند و به من انگیزه می‌دهند مشکلات را رفع کنم و قابلیت‌های تازه اضافه کنم.",
+ "Star Reality Hop on GitHub": "به Reality Hop در گیت‌هاب ستاره بدهید",
+ "Reality Hop is updated to {ver}": "Reality Hop به {ver} به‌روز شد",
+ "What's new since your last version:": "تازه‌ها از نسخهٔ قبلی شما:",
+ "Reality Hop was updated to {ver}. Open it to see what is new.": "Reality Hop به {ver} به‌روز شد. آن را باز کنید تا تازه‌ها را ببینید.",
+ "Star on GitHub": "ستاره در گیت‌هاب"
 }

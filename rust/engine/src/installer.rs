@@ -83,3 +83,27 @@ pub fn changes(releases: &Value, since: &str) -> Vec<(String, String, String)> {
     out.sort_by_key(|c| std::cmp::Reverse(vtuple(&c.0)));
     out
 }
+
+static CL_HEAD: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^## (\d+\.\d+\.\d+)(?: \((\d{4}-\d\d-\d\d)\))?\s*$").unwrap());
+
+// (version, date, notes) from CHANGELOG.md for every version after since, up to and with upto, newest first. Without
+// since: only upto
+pub fn changelog(md: &str, since: Option<&str>, upto: &str) -> Vec<(String, String, String)> {
+    let mut out: Vec<(String, String, String)> = Vec::new();
+    for line in md.lines() {
+        if let Some(c) = CL_HEAD.captures(line) {
+            out.push((c[1].to_string(), c.get(2).map_or("", |d| d.as_str()).to_string(), String::new()));
+        } else if line.starts_with("## ") {
+            out.push((String::new(), String::new(), String::new())); // a heading of another kind ends the last version
+        } else if let Some(v) = out.last_mut() {
+            v.2.push_str(line);
+            v.2.push('\n');
+        }
+    }
+    let keep = |v: &str| match since {
+        Some(s) => vtuple(v) > vtuple(s) && vtuple(v) <= vtuple(upto),
+        None => v == upto,
+    };
+    out.into_iter().filter(|c| !c.0.is_empty() && keep(&c.0)).map(|(v, d, n)| (v, d, n.trim().to_string())).collect()
+}

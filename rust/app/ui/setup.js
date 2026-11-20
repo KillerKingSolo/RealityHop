@@ -178,6 +178,10 @@ const PAGES = {
       await T('A VPN app that can use a SOCKS5 proxy. Private Internet Access (PIA) works out of the box; the VPN step shows how.'),
       await T('Optional: a GL.iNet router (firmware 4.x) to put other devices, such as a phone or a console, through the tunnel too.')]);
     p(await T('Public nodes are run by strangers. Your VPN still encrypts everything end to end, so a node only sees encrypted VPN traffic. Always keep the VPN on top. Make sure you are allowed to use a VPN on the network you are on, and in the country you are in.'), true);
+    const star = el('div', 'card star');
+    star.append(el('div', 'star-text', await T('If Reality Hop helps you, please give it a star. It is free and takes one click. Stars show me that people are using it, help others find it, and keep me motivated to fix problems and add new features.')));
+    link('★  ' + await T('Star Reality Hop on GitHub'), `https://github.com/${info.repo}`, star);
+    body().append(star);
   },
   async install() {
     await h(await T('Install'));

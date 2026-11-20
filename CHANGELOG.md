@@ -4,6 +4,17 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 2.0.2 (2026-11-19)
+
+**Why update:** after an update Reality Hop now tells you and shows what changed, and the tray icon matches the window again.
+
+- New: the first time you open Reality Hop after an update, it shows what changed since the version you had.
+- New: after an automatic update in the background, a notification says which version is now installed.
+- New: the setup welcome page and the What's new window ask for a star on GitHub, with a link.
+- Fixed: the tray icon went back to an older result after the window checked the nodes, so the two disagreed.
+- Changed: the Windows download is about 220 KB smaller. Reality Hop no longer builds in Tauri features it never uses.
+- Docs: new screenshots in all 9 languages.
+
 ## 2.0.1 (2026-11-19)
 
 **Why update:** Reality Hop runs fewer background commands on Windows, so security scanners have less reason to flag it.

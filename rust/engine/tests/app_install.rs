@@ -105,3 +105,34 @@ fn login_item_arguments_read_back_as_written() {
     assert_eq!(agent_plist_args(&plist), args);
     assert!(agent_plist_args("<plist><dict></dict></plist>").is_empty());
 }
+
+const CL: &str = "# Changelog\n\nIntro.\n\n## 2.0.2 (2026-11-20)\n\n**Why update:** C.\n\n- Fixed: c.\n\n## 2.0.1 (2026-11-19)\n\n- Fixed: b.\n\n## 2.0.0 (2026-11-19)\n\n- New: a.\n";
+
+#[test]
+fn the_changelog_gives_the_versions_since_the_last_one_seen() {
+    use engine::installer::changelog;
+    let vers = |since, upto| changelog(CL, since, upto).into_iter().map(|c| c.0).collect::<Vec<_>>();
+    assert_eq!(vers(Some("2.0.0"), "2.0.2"), ["2.0.2", "2.0.1"]);
+    assert_eq!(vers(None, "2.0.1"), ["2.0.1"]);
+    assert!(vers(Some("2.0.2"), "2.0.2").is_empty());
+    assert!(vers(Some("2.0.3"), "2.0.2").is_empty()); // an older build after a newer one: nothing
+    let c = &changelog(CL, None, "2.0.2")[0];
+    assert_eq!((c.1.as_str(), c.2.as_str()), ("2026-11-20", "**Why update:** C.\n\n- Fixed: c."));
+}
+
+#[test]
+fn whats_new_shows_once_after_an_update_and_never_on_a_new_install() {
+    let d = dir("whatsnew");
+    let paths = engine::paths::Paths::new(&d);
+    let cl = format!("## {} (2026-11-20)\n\n- Fixed: x.\n", engine::VERSION);
+    // not set up yet: nothing, and this version counts as seen
+    assert!(engine::app_install::whats_new(&paths, &cl).is_empty());
+    assert!(engine::app_install::whats_new(&paths, &cl).is_empty());
+    // set up by an older version that never kept seen_ver: this version's notes, once
+    std::fs::write(&paths.this_pc, r#"{"setup_done": true}"#).unwrap();
+    let first = engine::app_install::whats_new(&paths, &cl);
+    assert_eq!(first.len(), 1);
+    assert_eq!(first[0].0, engine::VERSION);
+    assert!(engine::app_install::whats_new(&paths, &cl).is_empty());
+    let _ = std::fs::remove_dir_all(&d);
+}

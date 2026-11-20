@@ -15,6 +15,9 @@ use tauri::{AppHandle, Emitter, Manager, State};
 
 static ROUTER_LOOK: AtomicBool = AtomicBool::new(false);
 
+/// The changelog this build ships with: what the window shows after an update, with no download.
+const CHANGELOG: &str = include_str!("../../../CHANGELOG.md");
+
 // The router's sing-box under the PC's; GL.iNet's package says so (show_router_core)
 fn rcore_text(st: &Value) -> Option<String> {
     let ver = st.get("ver").and_then(Value::as_str).filter(|v| !v.is_empty())?;
@@ -140,6 +143,18 @@ pub fn update_info(ctx: State<Ctx>) -> Option<Value> {
         u.changes.clone()
     };
     Some(json!({"ver": u.latest.ver, "have": engine::VERSION, "changes": changes, "repo": engine::REPO}))
+}
+
+// What changed since the version last opened here, once after each update (WhatsNew). None in a development build
+// and in a copy outside the install folder
+#[tauri::command]
+pub fn whats_new(ctx: State<Ctx>) -> Option<Value> {
+    let exe = std::env::current_exe().unwrap_or_default();
+    if !cfg!(debug_assertions) && !engine::app_install::installed_here(&exe) {
+        return None;
+    }
+    let changes = engine::app_install::whats_new(&ctx.paths, CHANGELOG);
+    (!changes.is_empty()).then(|| json!({"ver": engine::VERSION, "changes": changes, "repo": engine::REPO}))
 }
 
 // The router build on offer: what the router runs, what it would get, the download size (RouterCoreDialog)

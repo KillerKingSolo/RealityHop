@@ -26,12 +26,10 @@ function mdLine(parent, text) {
   }
 }
 
-// What changed in every version since this one, then install now or later (UpdateDialog)
-async function openUpdate() {
-  const u = await invoke('update_info');
-  if (!u || !$('panel').hidden) return;
+// The notes of some versions, newest first
+async function notesCard(changes) {
   const notes = el('div', 'card notes');
-  for (const [ver, date, text] of u.changes) {
+  for (const [ver, date, text] of changes) {
     const h = el('div', 'ver', await T('Version {ver}', { ver }));
     if (date) h.append(el('span', 'date', '   ' + date));
     notes.append(h);
@@ -42,6 +40,23 @@ async function openUpdate() {
       notes.append(d);
     }
   }
+  return notes;
+}
+
+// Ask for a star on GitHub, with the link
+async function starBox(repo) {
+  const box = el('div', 'card star row');
+  const b = el('button', '', '★  ' + await T('Star on GitHub'));
+  b.onclick = () => invoke('open_url', { url: `https://github.com/${repo}` });
+  box.append(el('div', 'star-icon', '★'), el('div', 'star-text', await T('If Reality Hop helps you, please give it a star. It is free and takes one click. Stars show me that people are using it, help others find it, and keep me motivated to fix problems and add new features.')), b);
+  return box;
+}
+
+// What changed in every version since this one, then install now or later (UpdateDialog)
+async function openUpdate() {
+  const u = await invoke('update_info');
+  if (!u || !$('panel').hidden) return;
+  const notes = await notesCard(u.changes);
   const row = el('div', 'foot-buttons');
   const install = el('button', 'accent', await T('Install update'));
   install.onclick = async () => {
@@ -59,6 +74,20 @@ async function openUpdate() {
   row.append(install, later, el('span', 'grow'), links);
   panel([el('div', 'title', await T('Reality Hop {ver} is ready', { ver: u.ver })),
     el('div', 'muted', await T('You have {ver}. The update takes a few seconds, and the tunnel keeps running.', { ver: u.have })), notes, row]);
+}
+
+// Once after an update: what changed since the version last opened, and a star on GitHub (WhatsNew)
+async function openWhatsNew(u) {
+  const row = el('div', 'foot-buttons');
+  const links = el('div', 'links');
+  const a = el('a', '', await T('All changes on GitHub'));
+  a.onclick = () => invoke('open_url', { url: `https://github.com/${u.repo}/blob/main/CHANGELOG.md` });
+  links.append(a);
+  const ok = el('button', 'accent', await T('Close'));
+  ok.onclick = () => panel(null);
+  row.append(links, el('span', 'grow'), ok);
+  panel([el('div', 'title', await T('Reality Hop is updated to {ver}', { ver: u.ver })),
+    el('div', 'muted', await T("What's new since your last version:")), await notesCard(u.changes), await starBox(u.repo), row]);
 }
 
 // Update the router's sing-box, or later (RouterCoreDialog)
@@ -111,5 +140,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // a second start with --uninstall while this page is open changes only the #part: no reload
   window.addEventListener('hashchange', () => { if (location.hash === '#uninstall') startAsks(); });
   await startAsks();
+  const wn = await invoke('whats_new');
+  if (wn && $('panel').hidden) await openWhatsNew(wn);
   invoke('window_opened');
 });

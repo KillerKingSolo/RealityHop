@@ -193,6 +193,13 @@ body.setup #side { width: 230px; min-width: 230px; }
 #body .toggle { font-size: 10pt; margin: 6px 0 4px; }
 #body .btnrow { margin: 6px 0 10px; }
 .wz-links { display: flex; gap: 4px; align-items: center; margin: 0 0 10px; font-size: 9pt; }
+.star, .dialog .card.star { padding: 14px 18px; margin-top: 14px; line-height: 1.45; max-width: 780px; box-sizing: border-box; }
+.star .star-text { color: var(--muted); margin-bottom: 8px; }
+.star a { color: var(--link); text-decoration: underline; cursor: pointer; font-family: var(--uib); }
+.star.row { display: flex; gap: 16px; align-items: center; }
+.star.row .star-text { flex: 1; margin: 0; }
+.star.row button { white-space: nowrap; }
+.star-icon { font-size: 30pt; color: var(--warn); line-height: 1; }
 .wz-links a { color: var(--link); text-decoration: underline; cursor: pointer; margin-right: 14px; }
 .wz-log { flex: 1; min-height: 120px; overflow-y: auto; padding: 8px 12px; margin-top: 6px; }
 .wz-log pre { margin: 0; font: 9pt Consolas, monospace; color: var(--muted); white-space: pre-wrap; user-select: text; }

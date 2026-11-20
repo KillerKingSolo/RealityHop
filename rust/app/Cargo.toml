@@ -15,7 +15,7 @@ path = "src/main.rs"
 [dependencies]
 realityhop-engine = { path = "../engine" }
 serde_json.workspace = true
-tauri = { version = "=2.12.7", features = ["tray-icon"] }
+tauri = { version = "=2.12.7", default-features = false, features = ["wry", "compression", "common-controls-v6", "tray-icon"] }
 tauri-plugin-single-instance = "=2.5.5"
 tauri-plugin-notification = "=2.8.1"
 tiny-skia = { version = "=0.12.0", default-features = false, features = ["std"] }

@@ -545,6 +545,18 @@ pub fn tray_load(paths: &Paths) -> WatchState {
     st
 }
 
+// The window checks while it is open and writes what it found to tray.json. When this pass of the watcher found
+// nothing new, the tray follows that file, not the watcher's older state
+pub fn tray_adopt(paths: &Paths, st: &mut WatchState, before: &WatchState) {
+    if (&st.last, &st.segs) != (&before.last, &before.segs) {
+        return;
+    }
+    let disk = tray_load(paths);
+    if disk.last.is_some() {
+        (st.last, st.segs) = (disk.last, disk.segs);
+    }
+}
+
 // Show the state in the tray and keep it in tray.json
 fn show(paths: &Paths, watch: &Watch, hooks: &impl WatchHooks, st: &WatchState) {
     if let Some((a, b, c)) = &st.last {
@@ -624,6 +636,7 @@ pub fn watch_loop(paths: &Paths, watch: &Arc<Watch>, hooks: &impl WatchHooks, cm
     loop {
         crate::process::reset_cancel();
         let t = now();
+        let before = st.clone();
         let s = Settings::read(paths).unwrap_or_default();
         crate::translations::use_lang(&s.lang);
         let every = (s.check_min * 60) as f64;
@@ -711,6 +724,7 @@ pub fn watch_loop(paths: &Paths, watch: &Arc<Watch>, hooks: &impl WatchHooks, cm
                 st.last = Some(("bad".into(), format!("error: {e}").chars().take(80).collect(), clock()));
             }
         }
+        tray_adopt(paths, &mut st, &before);
         show(paths, watch, hooks, &st);
         memory_trim();
         // sleep until the next check is due, a tray request, or a PIA change (checked again a minute after a drop)

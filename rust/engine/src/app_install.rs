@@ -635,6 +635,22 @@ pub fn check_update(paths: &Paths) -> Result<Option<Update>, String> {
     Ok(Some(Update { latest, changes }))
 }
 
+// What changed since the version last opened on this PC, once after each update: (version, date, notes) from the
+// changelog, newest first. Marks this version as seen. Empty on a new install and when nothing changed
+pub fn whats_new(paths: &Paths, changelog: &str) -> Vec<(String, String, String)> {
+    let seen = crate::settings::this_pc(paths).get("seen_ver").and_then(Value::as_str).map(String::from);
+    if seen.as_deref() == Some(crate::VERSION) {
+        return Vec::new();
+    }
+    let mut kw = serde_json::Map::new();
+    kw.insert("seen_ver".into(), crate::VERSION.into());
+    let _ = crate::settings::set_this_pc(paths, kw);
+    if seen.is_none() && !crate::setup_steps::is_setup(paths) {
+        return Vec::new(); // set up with this version: nothing to tell
+    }
+    crate::installer::changelog(changelog, seen.as_deref(), crate::VERSION)
+}
+
 // Download the release file and check its SHA-256 against the release (GitHub's asset digest, or the checksum printed
 // in the release notes); the file in the data folder
 fn download(paths: &Paths, rel: &crate::installer::Latest, name: &str) -> Result<PathBuf, String> {

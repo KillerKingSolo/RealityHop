@@ -342,7 +342,8 @@ fn main() -> std::process::ExitCode {
         let Some(dir) = args.get(i + 1) else { return std::process::ExitCode::from(app_install::NOT_UNPACKED) };
         return std::process::ExitCode::from(app_install::unpack_to(&exe, std::path::Path::new(dir)));
     }
-    if args.iter().any(|a| a == "--after-update") {
+    let after_update = args.iter().any(|a| a == "--after-update");
+    if after_update {
         wait_for_previous();
     }
     let paths = Paths::from_env().unwrap_or_else(|| Paths::new(&app_install::data_dir()));
@@ -408,6 +409,7 @@ fn main() -> std::process::ExitCode {
             dialogs::open_router_panel,
             updates::window_opened,
             updates::update_info,
+            updates::whats_new,
             updates::rcore_info,
             updates::rcore_later,
             wizard::wz_info,
@@ -436,6 +438,13 @@ fn main() -> std::process::ExitCode {
             });
             if !background {
                 open_window(app.handle(), first_page);
+            } else if after_update {
+                // an automatic update: say so, the window shows what changed when it next opens
+                let text = tr(
+                    "Reality Hop was updated to {ver}. Open it to see what is new.",
+                    &[("ver", engine::VERSION.into())],
+                );
+                let _ = app.notification().builder().title(engine::NAME).body(text).show();
             }
             if runs_watcher() && !installer {
                 let (h, paths, watch_exe) = (app.handle().clone(), paths.clone(), exe.clone());

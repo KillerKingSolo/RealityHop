@@ -3,7 +3,7 @@
 
 use engine::paths::Paths;
 use engine::router::{Error, Ssh};
-use engine::watcher::{Watch, WatchState, tray_load, tray_tip, watch_cycle};
+use engine::watcher::{Watch, WatchState, tray_adopt, tray_load, tray_tip, watch_cycle};
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
@@ -74,6 +74,27 @@ fn the_last_tray_state_comes_back_from_tray_json() {
     let st = tray_load(&paths);
     assert_eq!(st.last, Some(("ok".into(), "6 of 6 nodes working".into(), "09:15".into())));
     assert_eq!(st.segs, ["ok", "warn"]);
+    let _ = std::fs::remove_dir_all(&d);
+}
+
+#[test]
+fn the_tray_follows_the_window_unless_the_watcher_found_something_new() {
+    let d = data("adopt");
+    let paths = Paths::new(&d);
+    let old =
+        WatchState { last: Some(("bad".into(), "2 of 6 nodes working".into(), "08:00".into())), ..Default::default() };
+    let t = serde_json::json!({"last": ["ok", "6 of 6 nodes working", "09:15"], "segs": ["ok", "ok"]});
+    engine::data_files::jsave(&paths.tray_last, &t, None).unwrap();
+    // the watcher's pass changed nothing: the window's newer result shows
+    let mut st = old.clone();
+    tray_adopt(&paths, &mut st, &old);
+    assert_eq!(st.last.as_ref().map(|l| l.0.as_str()), Some("ok"));
+    assert_eq!(st.segs, ["ok", "ok"]);
+    // the watcher found something itself: its own result stays
+    let mut st =
+        WatchState { last: Some(("warn".into(), "5 of 6 nodes working".into(), "09:20".into())), ..old.clone() };
+    tray_adopt(&paths, &mut st, &old);
+    assert_eq!(st.last.as_ref().map(|l| l.0.as_str()), Some("warn"));
     let _ = std::fs::remove_dir_all(&d);
 }
 
