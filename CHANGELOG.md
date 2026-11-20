@@ -14,6 +14,7 @@ from the release.
 - Fixed: the tray icon went back to an older result after the window checked the nodes, so the two disagreed.
 - Changed: the Windows download is about 220 KB smaller. Reality Hop no longer builds in Tauri features it never uses.
 - Docs: new screenshots in all 9 languages.
+- Changed: serde_with 3.25.0, and on Linux builds zbus 6.4.0 and zcheapstr 1.3.0.
 
 ## 2.0.1 (2026-11-19)
 
