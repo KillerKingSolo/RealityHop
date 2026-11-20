@@ -106,7 +106,15 @@ and a VPN app that can use a SOCKS5 proxy.
 1. Download **`RealityHop-mac-apple-silicon.dmg`** (M1 and newer) or **`RealityHop-mac-intel.dmg`** from
    [Releases](../../releases/latest).
 2. Open it and drag **Reality Hop** onto **Applications**. Run it from Applications, not from the disk image.
-3. The first time, right-click Reality Hop in Applications and choose **Open**: the app is not notarized by Apple.
+3. Open Reality Hop from Applications. The first time, macOS blocks it, because the app is not notarized by Apple
+   (that needs a paid Apple developer account). Allow it once:
+   1. macOS says it cannot verify Reality Hop. Click **Done**, not **Move to Trash**.
+   2. Open **System Settings → Privacy & Security** and scroll down to **Security**.
+   3. Next to "Reality Hop" was blocked, click **Open Anyway**, then **Open Anyway** again and enter your Mac password.
+
+   You do this only once. Updates open without asking again. Right-click → **Open** no longer works on macOS 15 and
+   newer. The source is all here, and you can [build it yourself](docs/building.md).
+   [More help](docs/troubleshooting.md#mac-reality-hop-cannot-be-opened).
 4. Follow the same setup wizard. No admin password is needed: everything stays in `~/Library/Application
    Support/RealityHop`, readable by your user only, and the background watcher shows in the menu bar.
 5. PIA on a Mac: nothing to set in Split Tunnel. Reality Hop adds itself (Bypass VPN) and keeps its node addresses

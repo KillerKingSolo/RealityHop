@@ -54,8 +54,10 @@ fn the_release_dmg_updates_an_app_in_place() {
     assert!(copied, "copy like a drag to Applications");
     let exe = app.join("Contents/MacOS/RealityHop");
     let before = std::fs::metadata(&exe).unwrap().ino();
+    let bundle = std::fs::metadata(&app).unwrap().ino();
     mac_swap(Path::new(&dmg), &exe).unwrap();
     assert_ne!(std::fs::metadata(&exe).unwrap().ino(), before, "app replaced");
+    assert_eq!(std::fs::metadata(&app).unwrap().ino(), bundle, "same bundle folder: one Dock entry");
     let olds: Vec<String> = names(&apps).into_iter().filter(|n| n.starts_with(".RealityHop.old-")).collect();
     assert_eq!(olds.len(), 1, "old copy kept until it has exited: {olds:?}");
     assert!(!apps.join("RealityHop.app.new").exists(), "no leftovers");

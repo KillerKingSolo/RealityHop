@@ -136,3 +136,16 @@ fn whats_new_shows_once_after_an_update_and_never_on_a_new_install() {
     assert!(engine::app_install::whats_new(&paths, &cl).is_empty());
     let _ = std::fs::remove_dir_all(&d);
 }
+
+#[test]
+fn an_update_installed_from_the_window_shows_no_whats_new_but_an_auto_update_does() {
+    let d = dir("whatsnew-manual");
+    let paths = engine::paths::Paths::new(&d);
+    let cl = format!("## {} (2026-11-20)\n\n- Fixed: x.\n\n## 1.0.0\n\n- Old.\n", engine::VERSION);
+    std::fs::write(&paths.this_pc, r#"{"setup_done": true, "seen_ver": "1.0.0"}"#).unwrap();
+    engine::app_install::mark_seen(&paths, engine::VERSION); // the Update dialog showed the notes
+    assert!(engine::app_install::whats_new(&paths, &cl).is_empty());
+    std::fs::write(&paths.this_pc, r#"{"setup_done": true, "seen_ver": "1.0.0"}"#).unwrap(); // the watcher updated
+    assert_eq!(engine::app_install::whats_new(&paths, &cl).len(), 1);
+    let _ = std::fs::remove_dir_all(&d);
+}

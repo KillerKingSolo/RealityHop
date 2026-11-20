@@ -136,6 +136,30 @@ fn open_window(app: &AppHandle, page: &str) {
         .build();
 }
 
+// Once, when the window first draws: grow it by what its content overflows (CSS px), so nothing scrolls. It stays on
+// the screen; a screen too small for it keeps the scroll bar
+#[tauri::command]
+fn fit_height(w: tauri::WebviewWindow, extra: f64) {
+    let (Ok(inner), Ok(outer), Ok(pos), Ok(scale)) =
+        (w.inner_size(), w.outer_size(), w.outer_position(), w.scale_factor())
+    else {
+        return;
+    };
+    let Ok(Some(m)) = w.current_monitor() else { return };
+    let work = m.work_area();
+    let frame = outer.height.saturating_sub(inner.height);
+    let h = (inner.height + (extra.max(0.0) * scale).ceil() as u32).min(work.size.height.saturating_sub(frame));
+    if h <= inner.height {
+        return;
+    }
+    let _ = w.set_size(tauri::PhysicalSize::new(inner.width, h));
+    let bottom = work.position.y + work.size.height as i32;
+    if pos.y + (h + frame) as i32 > bottom {
+        let y = (bottom - (h + frame) as i32).max(work.position.y);
+        let _ = w.set_position(tauri::PhysicalPosition::new(pos.x, y));
+    }
+}
+
 // The file and part for a page
 fn page_url(page: &str) -> String {
     match page.strip_prefix("setup") {
@@ -383,6 +407,7 @@ fn main() -> std::process::ExitCode {
         .manage(Tray(Mutex::new(("unk".into(), engine::NAME.into(), vec![]))))
         .invoke_handler(tauri::generate_handler![
             snapshot,
+            fit_height,
             act,
             cancel,
             set_auto,

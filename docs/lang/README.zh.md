@@ -45,7 +45,7 @@ VPN 应用 → 你电脑上的 Reality Hop（SOCKS5 `127.0.0.1:2080`）→ 公�
 
 ## 安装
 
-1. 从[最新版本](https://github.com/KillerKingSolo/RealityHop/releases/latest)下载 `RealityHop.exe`。需要 64 位 Windows 10 或 11。 Mac：下载 `RealityHop-mac-apple-silicon.dmg`（M1 及更新）或 `RealityHop-mac-intel.dmg`。需要 macOS 15 或更新。 Mac 版 PIA 请从[其官网](https://www.privateinternetaccess.com/download/mac-vpn)下载，不要从 Mac App Store 下载：App Store 版本没有 Multi-Hop 和 Split Tunnel。
+1. 从[最新版本](https://github.com/KillerKingSolo/RealityHop/releases/latest)下载 `RealityHop.exe`。需要 64 位 Windows 10 或 11。 Mac：下载 `RealityHop-mac-apple-silicon.dmg`（M1 及更新）或 `RealityHop-mac-intel.dmg`。需要 macOS 15 或更新。 Mac 版 PIA 请从[其官网](https://www.privateinternetaccess.com/download/mac-vpn)下载，不要从 Mac App Store 下载：App Store 版本没有 Multi-Hop 和 Split Tunnel。 首次打开时，macOS 会阻止 Reality Hop，因为它未经 Apple 公证：点击 **Done**（完成），打开 **System Settings → Privacy & Security**（系统设置 → 隐私与安全性），然后点击 **Open Anyway**（仍要打开）。只需一次。[分步说明](https://github.com/KillerKingSolo/RealityHop/blob/main/docs/troubleshooting.md#mac-reality-hop-cannot-be-opened)。
 2. 运行它并选择语言。
 3. 向导会安装 Reality Hop（一次 UAC 提示），从官方版本下载 sing-box（校验 SHA-256），找到第一批节点并启动隧道。约一分钟。
 

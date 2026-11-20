@@ -45,7 +45,7 @@ Nó lấy các nút công khai miễn phí từ [rtwo2/FastNodes](https://github
 
 ## Cài đặt
 
-1. Tải `RealityHop.exe` từ [bản phát hành mới nhất](https://github.com/KillerKingSolo/RealityHop/releases/latest). Cần Windows 10 hoặc 11 bản 64-bit. Trên Mac: `RealityHop-mac-apple-silicon.dmg` (M1 trở lên) hoặc `RealityHop-mac-intel.dmg`. Cần macOS 15 trở lên. Hãy tải PIA cho Mac từ [trang web của họ](https://www.privateinternetaccess.com/download/mac-vpn), không phải từ Mac App Store: bản App Store không có Multi-Hop và Split Tunnel.
+1. Tải `RealityHop.exe` từ [bản phát hành mới nhất](https://github.com/KillerKingSolo/RealityHop/releases/latest). Cần Windows 10 hoặc 11 bản 64-bit. Trên Mac: `RealityHop-mac-apple-silicon.dmg` (M1 trở lên) hoặc `RealityHop-mac-intel.dmg`. Cần macOS 15 trở lên. Hãy tải PIA cho Mac từ [trang web của họ](https://www.privateinternetaccess.com/download/mac-vpn), không phải từ Mac App Store: bản App Store không có Multi-Hop và Split Tunnel. Lần đầu, macOS chặn Reality Hop vì ứng dụng chưa được Apple công chứng: bấm **Done** (Xong), mở **System Settings → Privacy & Security** (Cài đặt hệ thống → Quyền riêng tư & Bảo mật) rồi bấm **Open Anyway** (Vẫn mở). Chỉ một lần. [Từng bước](https://github.com/KillerKingSolo/RealityHop/blob/main/docs/troubleshooting.md#mac-reality-hop-cannot-be-opened).
 2. Chạy nó và chọn ngôn ngữ.
 3. Trình hướng dẫn cài Reality Hop (một lời nhắc UAC), tải sing-box từ bản phát hành chính thức (kiểm tra SHA-256), tìm các nút đầu tiên và khởi động đường hầm. Khoảng một phút.
 

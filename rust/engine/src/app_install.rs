@@ -651,6 +651,13 @@ pub fn whats_new(paths: &Paths, changelog: &str) -> Vec<(String, String, String)
     crate::installer::changelog(changelog, seen.as_deref(), crate::VERSION)
 }
 
+// An update installed from the window, where its notes were shown already: no What's new for it after the restart
+pub fn mark_seen(paths: &Paths, ver: &str) {
+    let mut kw = serde_json::Map::new();
+    kw.insert("seen_ver".into(), ver.into());
+    let _ = crate::settings::set_this_pc(paths, kw);
+}
+
 // Download the release file and check its SHA-256 against the release (GitHub's asset digest, or the checksum printed
 // in the release notes); the file in the data folder
 fn download(paths: &Paths, rel: &crate::installer::Latest, name: &str) -> Result<PathBuf, String> {
@@ -783,11 +790,49 @@ pub fn mac_swap(dmg: &Path, exe: &Path) -> Result<(), String> {
     r?;
     others_stop(exe);
     let old = dir.join(format!(".RealityHop.old-{}.app", now()));
+    if contents_swap(&app, &new, &old).is_ok() {
+        // the same bundle folder, so its approval mark stays; the new code was checked against the release, as a
+        // whole new bundle has no mark either. Then Finder and Launchpad read the new version
+        use std::ffi::OsStr;
+        let _ = run(
+            &[
+                Path::new("/usr/bin/xattr").as_os_str(),
+                OsStr::new("-d"),
+                OsStr::new("com.apple.quarantine"),
+                app.as_os_str(),
+            ],
+            None,
+            Duration::from_secs(10),
+            None,
+        );
+        let ls =
+            "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister";
+        let _ =
+            run(&[Path::new(ls).as_os_str(), OsStr::new("-f"), app.as_os_str()], None, Duration::from_secs(30), None);
+        return Ok(());
+    }
     std::fs::rename(&app, &old).map_err(|e| e.to_string())?;
     if let Err(e) = std::fs::rename(&new, &app) {
         let _ = std::fs::rename(&old, &app); // put the running version back
         return Err(e.to_string());
     }
+    Ok(())
+}
+
+// Move the new Contents into the running bundle folder, the old Contents into old. The folder stays the same file, so
+// the Dock's recent apps keep one Reality Hop instead of one more per update. Nothing changed on an error
+fn contents_swap(app: &Path, new: &Path, old: &Path) -> std::io::Result<()> {
+    std::fs::create_dir(old)?;
+    if let Err(e) = std::fs::rename(app.join("Contents"), old.join("Contents")) {
+        let _ = std::fs::remove_dir(old);
+        return Err(e);
+    }
+    if let Err(e) = std::fs::rename(new.join("Contents"), app.join("Contents")) {
+        let _ = std::fs::rename(old.join("Contents"), app.join("Contents")); // put the running version back
+        let _ = std::fs::remove_dir(old);
+        return Err(e);
+    }
+    let _ = std::fs::remove_dir_all(new);
     Ok(())
 }
 

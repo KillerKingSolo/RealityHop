@@ -226,6 +226,7 @@ pub fn app_update(app: &AppHandle, ctx: &Ctx) -> Result<(), String> {
     let rel = rel.ok_or("no update found")?;
     say(&format!("installing Reality Hop {}", rel.ver));
     engine::app_install::apply_update(&ctx.paths, &rel, &exe)?;
+    engine::app_install::mark_seen(&ctx.paths, &rel.ver); // its notes were in the Update dialog
     std::process::Command::new(&exe).arg("--after-update").spawn().map_err(|e| e.to_string())?;
     app.exit(0);
     Ok(())

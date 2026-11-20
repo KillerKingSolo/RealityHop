@@ -203,7 +203,7 @@ jobs:
           $sums = ($files | ForEach-Object { "**SHA-256 of ${_}:** ``$((Get-FileHash "dist/$_" -Algorithm SHA256).Hash.ToLower())``" }) -join "`n`n"
           $src = "**Where the nodes come from:** the public node list [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), tested by Reality Hop on your PC. Tunnel engine: [SagerNet/sing-box](https://github.com/SagerNet/sing-box)."
           $win = "**Windows:** download ``RealityHop.exe`` and run it."
-          $mac = "**Mac:** download ``RealityHop-mac-apple-silicon.dmg`` (M1 and newer) or ``RealityHop-mac-intel.dmg`` (Intel), open it and drag Reality Hop to Applications. The first time, right-click Reality Hop and choose Open: the app is not notarized by Apple."
+          $mac = "**Mac:** download ``RealityHop-mac-apple-silicon.dmg`` (M1 and newer) or ``RealityHop-mac-intel.dmg`` (Intel), open it and drag Reality Hop to Applications. The app is not notarized by Apple, so macOS blocks the first start: click Done, then open System Settings, Privacy & Security, and click Open Anyway next to Reality Hop. Only once; updates open without asking. [Step by step](https://github.com/KillerKingSolo/RealityHop/blob/main/docs/troubleshooting.md#mac-reality-hop-cannot-be-opened)."
           $tail = "$src`n`n$win`n`n$mac`n`nInstalled copies update themselves. All changes: [CHANGELOG.md](https://github.com/KillerKingSolo/RealityHop/blob/main/CHANGELOG.md).`n`n$sums"
           "$notes`n`n---`n`n$tail" | Set-Content -Encoding utf8 dist/notes.md
           Get-Content dist/notes.md

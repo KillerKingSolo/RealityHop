@@ -47,7 +47,7 @@
 
 ## نصب
 
-1. `RealityHop.exe` را از [آخرین نسخه](https://github.com/KillerKingSolo/RealityHop/releases/latest) دانلود کنید. ویندوز ۱۰ یا ۱۱، ۶۴ بیتی لازم است. در Mac: `RealityHop-mac-apple-silicon.dmg` (M1 و جدیدتر) یا `RealityHop-mac-intel.dmg`. macOS 15 یا جدیدتر لازم است. PIA برای Mac را از [وب‌سایت خودش](https://www.privateinternetaccess.com/download/mac-vpn) بگیرید، نه از Mac App Store: نسخهٔ App Store گزینه‌های Multi-Hop و Split Tunnel را ندارد.
+1. `RealityHop.exe` را از [آخرین نسخه](https://github.com/KillerKingSolo/RealityHop/releases/latest) دانلود کنید. ویندوز ۱۰ یا ۱۱، ۶۴ بیتی لازم است. در Mac: `RealityHop-mac-apple-silicon.dmg` (M1 و جدیدتر) یا `RealityHop-mac-intel.dmg`. macOS 15 یا جدیدتر لازم است. PIA برای Mac را از [وب‌سایت خودش](https://www.privateinternetaccess.com/download/mac-vpn) بگیرید، نه از Mac App Store: نسخهٔ App Store گزینه‌های Multi-Hop و Split Tunnel را ندارد. بار اول، macOS برنامه Reality Hop را مسدود می‌کند، چون Apple آن را تأیید (notarize) نکرده است: روی **Done** کلیک کنید، **System Settings → Privacy & Security** را باز کنید و روی **Open Anyway** کلیک کنید. فقط یک بار. [گام به گام](https://github.com/KillerKingSolo/RealityHop/blob/main/docs/troubleshooting.md#mac-reality-hop-cannot-be-opened).
 2. آن را اجرا کنید و زبان خود را انتخاب کنید.
 3. دستیار، Reality Hop را نصب می‌کند (یک درخواست UAC)، sing-box را از نسخه‌های رسمی دانلود می‌کند (چکیده SHA-256 را بررسی می‌کند)، اولین گره‌ها را پیدا می‌کند و تونل را شروع می‌کند. حدود یک دقیقه.
 

@@ -45,7 +45,7 @@ VPN uygulaması → PC'nizdeki Reality Hop (SOCKS5 `127.0.0.1:2080`) → genel R
 
 ## Kurulum
 
-1. `RealityHop.exe` dosyasını [son sürümden](https://github.com/KillerKingSolo/RealityHop/releases/latest) indirin. 64 bit Windows 10 veya 11 gerekir. Mac'te: `RealityHop-mac-apple-silicon.dmg` (M1 ve sonrası) veya `RealityHop-mac-intel.dmg`. macOS 15 veya üstü gerekir. Mac için PIA'yı Mac App Store'dan değil, [kendi web sitesinden](https://www.privateinternetaccess.com/download/mac-vpn) indirin: App Store sürümünde Multi-Hop ve Split Tunnel yoktur.
+1. `RealityHop.exe` dosyasını [son sürümden](https://github.com/KillerKingSolo/RealityHop/releases/latest) indirin. 64 bit Windows 10 veya 11 gerekir. Mac'te: `RealityHop-mac-apple-silicon.dmg` (M1 ve sonrası) veya `RealityHop-mac-intel.dmg`. macOS 15 veya üstü gerekir. Mac için PIA'yı Mac App Store'dan değil, [kendi web sitesinden](https://www.privateinternetaccess.com/download/mac-vpn) indirin: App Store sürümünde Multi-Hop ve Split Tunnel yoktur. macOS, Apple tarafından onaylanmadığı için Reality Hop'u ilk açılışta engeller: **Done** (Bitti) düğmesine tıklayın, **System Settings → Privacy & Security** (Sistem Ayarları → Gizlilik ve Güvenlik) bölümünü açın ve **Open Anyway** (Yine de Aç) düğmesine tıklayın. Yalnızca bir kez. [Adım adım](https://github.com/KillerKingSolo/RealityHop/blob/main/docs/troubleshooting.md#mac-reality-hop-cannot-be-opened).
 2. Çalıştırın ve dilinizi seçin.
 3. Sihirbaz Reality Hop'u kurar (bir UAC istemi), sing-box'ı resmi sürümlerinden indirir (SHA-256 doğrular), ilk düğümleri bulur ve tüneli başlatır. Yaklaşık bir dakika.
 

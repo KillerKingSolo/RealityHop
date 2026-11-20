@@ -45,7 +45,7 @@ VPN-приложение → Reality Hop на вашем ПК (SOCKS5 `127.0.0.1
 
 ## Установка
 
-1. Скачайте `RealityHop.exe` из [последнего релиза](https://github.com/KillerKingSolo/RealityHop/releases/latest). Нужна 64-битная Windows 10 или 11. На Mac: `RealityHop-mac-apple-silicon.dmg` (M1 и новее) или `RealityHop-mac-intel.dmg`. Нужна macOS 15 или новее. PIA для Mac скачайте с [его сайта](https://www.privateinternetaccess.com/download/mac-vpn), а не из Mac App Store: в версии из App Store нет Multi-Hop и Split Tunnel.
+1. Скачайте `RealityHop.exe` из [последнего релиза](https://github.com/KillerKingSolo/RealityHop/releases/latest). Нужна 64-битная Windows 10 или 11. На Mac: `RealityHop-mac-apple-silicon.dmg` (M1 и новее) или `RealityHop-mac-intel.dmg`. Нужна macOS 15 или новее. PIA для Mac скачайте с [его сайта](https://www.privateinternetaccess.com/download/mac-vpn), а не из Mac App Store: в версии из App Store нет Multi-Hop и Split Tunnel. При первом запуске macOS блокирует Reality Hop, потому что приложение не нотариально заверено Apple: нажмите **Done** (Готово), откройте **System Settings → Privacy & Security** (Системные настройки → Конфиденциальность и безопасность) и нажмите **Open Anyway** (Все равно открыть). Только один раз. [Пошагово](https://github.com/KillerKingSolo/RealityHop/blob/main/docs/troubleshooting.md#mac-reality-hop-cannot-be-opened).
 2. Запустите его и выберите язык.
 3. Мастер устанавливает Reality Hop (один запрос UAC), скачивает sing-box из официальных релизов (проверяет SHA-256), находит первые узлы и запускает туннель. Около минуты.
 

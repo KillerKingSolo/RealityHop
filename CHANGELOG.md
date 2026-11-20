@@ -4,6 +4,15 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 2.0.3 (2026-11-20)
+
+**Why update:** the window opens at a size that shows everything, and an update you start yourself no longer shows its notes twice.
+
+- Fixed: the window opened a little too short, with a scroll bar. It now grows to fit on its first draw, within the screen.
+- Fixed: after you install an update with the Update button, Reality Hop goes back to the main page. What's new shows only after an automatic update.
+- Fixed: on a Mac, each update left one more Reality Hop in the Dock's recent apps. Updates now keep the same app folder.
+- Docs: step-by-step help for the first start on a Mac (System Settings → Privacy & Security → Open Anyway), in the README, the troubleshooting guide and the release notes.
+
 ## 2.0.2 (2026-11-19)
 
 **Why update:** after an update Reality Hop now tells you and shows what changed, and the tray icon matches the window again.

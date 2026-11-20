@@ -374,5 +374,14 @@ window.addEventListener('DOMContentLoaded', async () => {
   await listen('changed', refresh);
   await listen('tray', refresh);
   await refresh();
+  await fitOnce();
   act('check');
 });
+
+// The first draw: the window grows to show everything, with no scroll bar
+async function fitOnce() {
+  await document.fonts.ready;
+  await new Promise(r => setTimeout(r, 50));   // not requestAnimationFrame: it never fires in a window not yet shown
+  const extra = Math.max(...['main', 'side'].map(id => $(id).scrollHeight - $(id).clientHeight));
+  if (extra > 0) await invoke('fit_height', { extra });
+}

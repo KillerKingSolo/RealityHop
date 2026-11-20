@@ -22,6 +22,23 @@ The exe is not code-signed. SmartScreen: **More info → Run anyway**. Some anti
 mistake. Check its SHA-256 against the one printed in the release notes, or build from source
 ([building.md](building.md)).
 
+## Mac: Reality Hop cannot be opened
+
+The app is not notarized by Apple, so macOS blocks its first start. This is expected.
+
+1. Open Reality Hop from **Applications**, not from the disk image. When macOS says it cannot verify it, click
+   **Done**.
+2. Open **System Settings → Privacy & Security**, scroll down to **Security**, and click **Open Anyway** next to
+   "Reality Hop" was blocked. Confirm with **Open Anyway** and your Mac password.
+
+- **No Open Anyway button:** the button shows for about an hour after the block. Open Reality Hop again, then go
+  back to Privacy & Security.
+- **"Reality Hop is damaged and can't be opened":** the download was cut off or changed. Download the .dmg again and
+  check its SHA-256 against the one in the release notes: `shasum -a 256 ~/Downloads/RealityHop-mac-*.dmg`.
+- **"Drag Reality Hop into the Applications folder first":** you opened it from the disk image. Drag it onto
+  Applications, eject the disk image, and open it from Applications.
+- Do not turn off Gatekeeper for the whole Mac (`spctl --global-disable`). Open Anyway allows only Reality Hop.
+
 ## "port 2080 is used by ..."
 
 Another program already listens on port 2080, so the PC tunnel cannot start. The window names the program. Close it,
