@@ -221,7 +221,13 @@ fn dns_query(name: &str, port: u16) -> Result<Vec<String>, String> {
     sock.set_read_timeout(Some(std::time::Duration::from_secs(10))).map_err(|e| e.to_string())?;
     sock.send_to(&msg, ("127.0.0.1", port)).map_err(|e| e.to_string())?;
     let mut d = [0u8; 2048];
-    let n = sock.recv(&mut d).map_err(|e| e.to_string())?;
+    // Windows reports an ICMP "unreachable" for this socket as a failed receive (WSAECONNRESET); wait for the answer
+    let n = loop {
+        match sock.recv(&mut d) {
+            Err(e) if e.kind() == std::io::ErrorKind::ConnectionReset => continue,
+            r => break r.map_err(|e| e.to_string())?,
+        }
+    };
     let d = &d[..n];
     let be16 = |i: usize| d.get(i..i + 2).map_or(0, |b| u16::from_be_bytes([b[0], b[1]]) as usize);
     let (mut i, mut ips) = (12 + q.len(), Vec::new());
