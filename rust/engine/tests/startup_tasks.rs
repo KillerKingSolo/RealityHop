@@ -91,6 +91,8 @@ fn live_boot_task_read_only() {
     assert_eq!(exists, state.is_some());
 }
 
+// Windows only: other systems do not read C:\ paths
+#[cfg(windows)]
 #[test]
 fn stop_closes_only_this_installs_rh_core_with_admin_rights() {
     let ps = engine::startup_tasks::stop_ps(std::path::Path::new(r"C:\Program Files\O'Brien\PC\rh-core.exe"));
