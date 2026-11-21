@@ -36,7 +36,7 @@ ones on its own.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/flow-dark.png">
-  <img alt="VPN app to Reality Hop on your PC over SOCKS5 127.0.0.1:2080, then to a public REALITY node, looking like HTTPS to cloudflare.com, then to the VPN server and the internet. Optionally a phone, console or TV goes through the GL.iNet router tunnel to the same node." src="docs/images/flow-light.png">
+  <img alt="Your PC: the VPN app connects to Reality Hop over SOCKS5 port 2080. Its OpenVPN tunnel (TCP 443) runs inside a VLESS + REALITY tunnel across your network, where DPI on school, work, hotel and dorm Wi-Fi sees only HTTPS to cloudflare.com. The REALITY node, which appears as cloudflare.com, passes the VPN tunnel on to the VPN server and the internet. Optionally, a phone running its own VPN app goes through a GL.iNet router in its own VLESS + REALITY tunnel to the same node." src="docs/images/flow-light.png">
 </picture>
 
 The network in between only sees an ordinary encrypted connection to a big website. Your VPN's own encryption stays
