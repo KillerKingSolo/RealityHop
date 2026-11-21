@@ -4,6 +4,13 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 2.0.6 (2026-11-21)
+
+**Why update:** the Last 24 hours legend no longer shows each label twice.
+
+- Fixed: the Last 24 hours legend could show PIA Dropped, Node Replaced, Tunnel Restart and Rescue twice when the chart drew twice in quick succession as the window opened.
+- Changed: jiff 1.0.2.
+
 ## 2.0.5 (2026-11-20)
 
 **Why update:** Stop and Restart now really close the PC tunnel, and the folder and GitHub buttons work again.
