@@ -218,16 +218,29 @@ fn dns_query(name: &str, port: u16) -> Result<Vec<String>, String> {
     let mut msg = vec![0x52, 0x48, 0x01, 0x00, 0, 1, 0, 0, 0, 0, 0, 0];
     msg.extend_from_slice(&q);
     let sock = std::net::UdpSocket::bind("127.0.0.1:0").map_err(|e| e.to_string())?;
-    sock.set_read_timeout(Some(std::time::Duration::from_secs(10))).map_err(|e| e.to_string())?;
-    sock.send_to(&msg, ("127.0.0.1", port)).map_err(|e| e.to_string())?;
+    sock.set_read_timeout(Some(std::time::Duration::from_secs(5))).map_err(|e| e.to_string())?;
     let mut d = [0u8; 2048];
-    // Windows reports an ICMP "unreachable" for this socket as a failed receive (WSAECONNRESET); wait for the answer
-    let n = loop {
-        match sock.recv(&mut d) {
-            Err(e) if e.kind() == std::io::ErrorKind::ConnectionReset => continue,
-            r => break r.map_err(|e| e.to_string())?,
+    // UDP can drop the query or a slow DoH upstream can miss it: send up to 3 times, 5 s each
+    let mut n = None;
+    for _ in 0..3 {
+        sock.send_to(&msg, ("127.0.0.1", port)).map_err(|e| e.to_string())?;
+        // Windows reports an ICMP "unreachable" for this socket as a failed receive (WSAECONNRESET); wait for the answer
+        let r = loop {
+            match sock.recv(&mut d) {
+                Err(e) if e.kind() == std::io::ErrorKind::ConnectionReset => continue,
+                r => break r,
+            }
+        };
+        match r {
+            Ok(len) => {
+                n = Some(len);
+                break;
+            }
+            Err(e) if matches!(e.kind(), std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut) => continue,
+            Err(e) => return Err(e.to_string()),
         }
-    };
+    }
+    let n = n.ok_or("no DNS answer after 3 tries")?;
     let d = &d[..n];
     let be16 = |i: usize| d.get(i..i + 2).map_or(0, |b| u16::from_be_bytes([b[0], b[1]]) as usize);
     let (mut i, mut ips) = (12 + q.len(), Vec::new());
@@ -373,6 +386,32 @@ mod tests {
             r[2] = 0x81;
             r[3] = 0x80;
             r[7] = 1; // one answer
+            r.extend_from_slice(&[0xc0, 0x0c, 0, 1, 0, 1, 0, 0, 0, 60, 0, 4, 93, 184, 215, 14]);
+            srv.send_to(&r, from).unwrap();
+        });
+        assert_eq!(dns_query("example.com", port).unwrap(), ["93.184.215.14"]);
+        h.join().unwrap();
+    }
+
+    #[test]
+    fn a_lost_dns_query_is_sent_again() {
+        // the fake server ignores everything in the first second (some Windows filters deliver a datagram twice),
+        // then answers the query sent again
+        let srv = std::net::UdpSocket::bind("127.0.0.1:0").unwrap();
+        let port = srv.local_addr().unwrap().port();
+        let h = std::thread::spawn(move || {
+            let mut b = [0u8; 512];
+            let start = std::time::Instant::now();
+            let (n, from) = loop {
+                let got = srv.recv_from(&mut b).unwrap();
+                if start.elapsed() > std::time::Duration::from_secs(1) {
+                    break got;
+                }
+            };
+            let mut r = b[..n].to_vec();
+            r[2] = 0x81;
+            r[3] = 0x80;
+            r[7] = 1;
             r.extend_from_slice(&[0xc0, 0x0c, 0, 1, 0, 1, 0, 0, 0, 60, 0, 4, 93, 184, 215, 14]);
             srv.send_to(&r, from).unwrap();
         });
