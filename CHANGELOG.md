@@ -4,6 +4,19 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 2.0.5 (2026-11-20)
+
+**Why update:** Stop and Restart now really close the PC tunnel, and the folder and GitHub buttons work again.
+
+- Fixed: Stop left the PC tunnel running when Windows would not let Reality Hop close it, so the VPN app could still connect. Stop now closes it in the same UAC step.
+- Fixed: Restart failed with "an old rh-core would not stop" and the tunnel kept the old nodes. Reality Hop now asks once for UAC to close it, then starts it on the new nodes.
+- Fixed: Open backend folder, Open logs folder, Star on GitHub and All changes on GitHub did nothing on Windows.
+- New: click the PC tunnel tile when it says Needs restart to restart the tunnel.
+- New: click a problem in the status line to go to the activity log; logs/core.log in it opens that file.
+- New: the update window asks for a star on GitHub every time.
+- Changed: toml 1.2.2, toml_edit 0.25.20 and toml_parser 1.1.6.
+- Changed: every line in the activity log, the setup log, the status line and notifications starts with a capital letter. Ctrl+A selects only the log, and the progress bar stays at the top when you scroll.
+
 ## 2.0.4 (2026-11-20)
 
 **Why update:** labels and status lines in the window start with a capital letter, in every language.

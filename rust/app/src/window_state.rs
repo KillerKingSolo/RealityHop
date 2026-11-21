@@ -360,7 +360,7 @@ impl Worker<'_> {
     // Set the status line
     fn status(&self, text: String, state: &str) {
         let mut w = self.w();
-        w.status_text = text;
+        w.status_text = engine::translations::cap_first(&text);
         w.status_state = state.into();
     }
 
@@ -671,7 +671,7 @@ impl Worker<'_> {
                 || l.contains("still")
         });
         let head = tr(if stop { "Reality Hop is stopped." } else { "Reality Hop is running." }, &[]);
-        let lines: Vec<String> = res.iter().map(|l| tr(l, &[])).collect();
+        let lines: Vec<String> = res.iter().map(|l| engine::translations::cap_first(&tr(l, &[]))).collect();
         self.status(format!("{head} {}", lines.join(" ")), if stop || bad { "warn" } else { "ok" });
     }
 
@@ -797,7 +797,7 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
                     tr(if old { "Needs restart" } else { "Running" }, &[]),
                     if old { "warn" } else { "ok" },
                     format!("{now}  ·  {}", tr("Exit {ip}", &[("ip", exit)])),
-                    None,
+                    if old { Some("restart_pc") } else { None },
                 )
             }
             Some(_) => tile("pc", "PC TUNNEL", tr("Down", &[]), "bad", tr("Nothing on 127.0.0.1:2080", &[]), None),

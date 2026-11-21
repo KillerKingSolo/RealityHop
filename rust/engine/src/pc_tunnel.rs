@@ -28,6 +28,17 @@ fn core_name(paths: &Paths) -> String {
     paths.core.file_name().unwrap_or_default().to_string_lossy().into_owned()
 }
 
+// PowerShell that closes this install's rh-core by its full path. Run as admin: a copy started by the boot task or by
+// an elevated install cannot be closed without admin rights
+pub fn kill_ps(core: &Path) -> String {
+    let name = core.file_stem().unwrap_or_default().to_string_lossy();
+    format!(
+        "Get-Process -Name {} -ErrorAction SilentlyContinue | Where-Object {{ $_.Path -eq {} }} | Stop-Process -Force",
+        crate::powershell::psq(&name),
+        crate::powershell::psq(&core.to_string_lossy())
+    )
+}
+
 // The folder rh-core runs in
 fn core_dir(paths: &Paths) -> &Path {
     paths.core.parent().unwrap_or(&paths.data)
@@ -126,6 +137,25 @@ pub fn core_stop(paths: &Paths) -> bool {
             rh_procs()
         )
     });
+    false
+}
+
+// When rh-core cannot be closed without admin rights: close it as admin (one UAC prompt). True when it is gone
+fn core_stop_admin(paths: &Paths) -> bool {
+    if !cfg!(windows) || !core_running(paths) {
+        return false;
+    }
+    say("rh-core runs with admin rights and will not close; answer the UAC prompt to close it...");
+    if crate::windows_system::elevated(&kill_ps(&paths.core)) == crate::windows_system::DECLINED {
+        say("UAC declined: rh-core keeps running on the old nodes");
+        return false;
+    }
+    for _ in 0..50 {
+        if !core_running(paths) && !port_taken(2080) {
+            return true;
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
     false
 }
 
@@ -261,7 +291,7 @@ pub fn core_restart(paths: &Paths) -> bool {
         event(paths, "error", &format!("{owner} holds port 2080"));
         return false;
     }
-    if !core_stop(paths) {
+    if !core_stop(paths) && !core_stop_admin(paths) {
         say("an old rh-core would not stop; trying anyway");
     }
     let how = core_start(paths);

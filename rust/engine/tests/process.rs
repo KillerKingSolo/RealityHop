@@ -47,6 +47,8 @@ fn system_tool_paths() {
     if cfg!(windows) {
         assert!(p.ends_with(r"System32\OpenSSH\ssh.exe"), "{}", p.display());
         assert!(process::system_tool("curl").ends_with(r"System32\curl.exe"));
+        // the folder and link buttons start explorer: it must be the real file
+        assert!(process::system_tool("explorer").is_file());
     }
 }
 

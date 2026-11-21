@@ -216,6 +216,23 @@ pub fn tr(text: &str, kw: &[(&str, String)]) -> String {
     }
 }
 
+// A line as the window shows it: a capital first letter. Names written in lower case (vless-1, rh-core, sing-box,
+// node-3, macOS, iPhone) and lines that start with a space or a digit (tables, counts) stay as they are. Turkish i
+// becomes İ
+pub fn cap_first(line: &str) -> String {
+    const KEEP: [&str; 9] = ["vless-", "rh-core", "sing-box", "node-", "ip-", "lan-", "ipv6-", "host-", "mac-"];
+    let mut chars = line.chars();
+    let Some(c) = chars.next() else { return String::new() };
+    // a first word with a capital in it is a name: macOS, iPhone
+    let named = line.split_whitespace().next().is_some_and(|w| w.chars().any(char::is_uppercase));
+    if !c.is_lowercase() || KEEP.iter().any(|k| line.starts_with(k)) || named {
+        return line.to_string();
+    }
+    let turkish = CURRENT.read().unwrap_or_else(|e| e.into_inner()).as_ref().is_some_and(|t| t.lang == "tr");
+    let up: String = if turkish && c == 'i' { "İ".into() } else { c.to_uppercase().collect() };
+    up + chars.as_str()
+}
+
 // A version like 1.15.0-alpha.13 inside Persian or Arabic text: marked left to right, or the parts swap places (ltr)
 pub fn ltr(v: &str) -> String {
     let rtl = CURRENT

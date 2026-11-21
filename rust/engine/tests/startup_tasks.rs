@@ -90,3 +90,12 @@ fn live_boot_task_read_only() {
     println!("boot task: exists {exists}, state {state:?}, priority {priority:?}");
     assert_eq!(exists, state.is_some());
 }
+
+#[test]
+fn stop_closes_only_this_installs_rh_core_with_admin_rights() {
+    let ps = engine::startup_tasks::stop_ps(std::path::Path::new(r"C:\Program Files\O'Brien\PC\rh-core.exe"));
+    assert_eq!(
+        ps,
+        r"schtasks /end /tn 'RealityHop tunnel'; schtasks /change /tn 'RealityHop tunnel' /disable; Get-Process -Name 'rh-core' -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq 'C:\Program Files\O''Brien\PC\rh-core.exe' } | Stop-Process -Force"
+    );
+}

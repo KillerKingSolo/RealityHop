@@ -231,15 +231,28 @@ async function render(s) {
   const tiles = $('tiles');
   tiles.style.gridTemplateColumns = `repeat(${s.tiles.length}, minmax(0, 1fr))`;
   tiles.replaceChildren(...s.tiles.map(t => {
-    const d = el('div', 'tile');
-    const sub = el('div', 'ts' + (t.act ? ' link' : ''), t.sub);
-    if (t.act) sub.onclick = () => t.act === 'push_router' ? pushRouter() : act(t.act);
+    const d = el('div', 'tile' + (t.act ? ' click' : ''));
+    // the router tiles' line says what to press; the PC tile's line shows the node and exit
+    const sub = el('div', 'ts' + (t.act && t.act !== 'restart_pc' ? ' link' : ''), t.sub);
+    if (t.act) d.onclick = () => t.act === 'push_router' ? pushRouter() : act(t.act);
+    if (t.act === 'restart_pc') tipFor(d, 'Restart PC tunnel');
     d.append(el('div', 'tl', t.label), el('div', 'tv c-' + t.color, t.value), sub);
     return d;
   }));
   // status line
-  $('status').textContent = s.status.text;
-  $('status').className = s.status.state === 'ok' || s.status.state === 'unk' ? '' : 'c-' + s.status.state;
+  // a problem line opens the activity log; "logs/core.log" in it opens that file
+  const st = $('status'), bad = s.status.state === 'bad';
+  st.replaceChildren(...s.status.text.split(/(logs\/core\.log)/).map(p => {
+    if (p !== 'logs/core.log') return document.createTextNode(p);
+    const a = el('span', 'link', p);
+    a.onclick = e => { e.stopPropagation(); invoke('open_folder', { which: 'core_log' }); };
+    return a;
+  }));
+  st.className = (s.status.state === 'ok' || s.status.state === 'unk' ? '' : 'c-' + s.status.state) + (bad ? ' click' : '');
+  st.onclick = bad ? () => {
+    if (!logShown) $('logBtn').click();
+    $('log').focus(); $('log').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('log').scrollTop = $('log').scrollHeight;
+  } : null;
   $('statusBar').style.background = s.status.state === 'unk' ? 'var(--acc)' : `var(--${s.status.state})`;
   await drawHistory();
   await drawLists();
@@ -329,11 +342,11 @@ async function drawHistory() {
   $('histInfo').textContent = parts.join('   ·   ');
 }
 
-// One activity line, with its time (drain)
+// One activity line, with its time (drain); Rust sends it with a capital first letter (cap_first)
 function logLine(at, line) {
   const log = $('log');
   const end = log.scrollTop + log.clientHeight >= log.scrollHeight - 4;
-  log.append(el('span', 't', at + '  '), el('span', /^(error|FAIL)/.test(line) || line.includes('NOT ') ? 'err' : '', line + '\n'));
+  log.append(el('span', 't', at + '  '), el('span', /^(Error|FAIL)/.test(line) || line.includes('NOT ') ? 'err' : '', line + '\n'));
   while (log.childElementCount > 4000) log.firstChild.remove();   // a window left open for days: the last 2000 lines
   if (end) log.scrollTop = log.scrollHeight;
 }
@@ -354,6 +367,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   $('restartBtn').onclick = () => act(snap.mode.ronly ? 'test_router' : 'restart_pc');
   $('powerBtn').onclick = power;
   $('cancelBtn').onclick = () => invoke('cancel');
+  // Ctrl+A (Cmd+A) in the activity log selects only the log
+  $('log').addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') { e.preventDefault(); getSelection().selectAllChildren($('log')); }
+  });
   $('logBtn').onclick = async () => {
     logShown = !logShown;
     $('logBox').hidden = !logShown;

@@ -62,6 +62,10 @@ pub fn cancelled() -> bool {
 pub fn system_tool(name: &str) -> PathBuf {
     if cfg!(windows) {
         let root = std::env::var_os("SystemRoot").map_or_else(|| PathBuf::from(r"C:\Windows"), PathBuf::from);
+        // explorer.exe is in the Windows folder, not in System32
+        if name == "explorer" {
+            return root.join("explorer.exe");
+        }
         let rel = match name {
             "powershell" => r"WindowsPowerShell\v1.0\powershell.exe".to_string(),
             "ssh" => r"OpenSSH\ssh.exe".to_string(),

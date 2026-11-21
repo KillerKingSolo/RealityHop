@@ -41,7 +41,7 @@ pub fn log_sink(app: &AppHandle, paths: &Paths) {
             watch.write(line)
         }
         let at = engine::local_time::now().format("%H:%M:%S");
-        let _ = h.emit("log", json!({"at": at, "line": line}));
+        let _ = h.emit("log", json!({"at": at, "line": engine::translations::cap_first(line)}));
     });
 }
 

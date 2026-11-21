@@ -73,7 +73,7 @@ async function openUpdate() {
   links.append(a);
   row.append(install, later, el('span', 'grow'), links);
   panel([el('div', 'title', await T('Reality Hop {ver} is ready', { ver: u.ver })),
-    el('div', 'muted', await T('You have {ver}. The update takes a few seconds, and the tunnel keeps running.', { ver: u.have })), notes, row]);
+    el('div', 'muted', await T('You have {ver}. The update takes a few seconds, and the tunnel keeps running.', { ver: u.have })), notes, await starBox(u.repo), row]);
 }
 
 // Once after an update: what changed since the version last opened, and a star on GitHub (WhatsNew)

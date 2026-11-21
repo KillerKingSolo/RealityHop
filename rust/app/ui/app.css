@@ -72,7 +72,7 @@ button.ghost:hover:not(:disabled) { background: #202026; }
 
 /* main */
 #main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding: 0 8px 4px; min-width: 0; }
-.prog-slot { height: 3px; margin: 0 -8px; border-radius: 2px; position: relative; overflow: hidden; flex: none; }
+.prog-slot { height: 3px; margin: 0 -8px; border-radius: 2px; position: sticky; top: 0; z-index: 5; overflow: hidden; flex: none; }
 .prog { position: absolute; top: 0; height: 3px; width: 30%; background: var(--acc); animation: prog 1.2s linear infinite; }
 @keyframes prog { from { left: -30%; } to { left: 100%; } }
 #head { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex: none; }
@@ -86,11 +86,15 @@ h1 { font: 20pt var(--uib); margin: 0; }
 .tile .tl { color: var(--dim); font: 8pt var(--uib); }
 .tile .tv { font: 17pt var(--uib); }
 .tile .ts { color: var(--muted); font-size: 9pt; overflow-wrap: anywhere; }
+.tile.click { cursor: pointer; }
+.tile.click:hover { border-color: var(--muted); }
 .tile .ts.link { color: var(--link); text-decoration: underline; cursor: pointer; }
 .c-ok { color: var(--ok) !important; } .c-warn { color: var(--warn) !important; } .c-bad { color: var(--bad) !important; } .c-unk { color: var(--muted) !important; }
 .strip { display: flex; margin-top: 12px; overflow: hidden; }
 .strip .bar { width: 4px; background: var(--acc); flex: none; }
 .strip #status { padding: 11px 14px; font-size: 10pt; user-select: text; }
+.strip #status.click { cursor: pointer; }
+#status .link { color: var(--link); text-decoration: underline; cursor: pointer; }
 .hist { margin-top: 12px; padding: 10px 16px; }
 .hist-top { display: flex; align-items: center; flex-wrap: wrap; gap: 0 4px; }
 #legend span.d { margin-left: 14px; margin-right: 2px; font-size: 9pt; }
@@ -119,6 +123,7 @@ col.c-tcp { width: 90px; } col.c-tunnel { width: 95px; }
 .log-head { display: flex; align-items: center; margin: 14px 0 4px; flex: none; }
 #logBox { flex: 1 0 120px; display: flex; min-height: 120px; }
 #log { margin: 0; border-radius: var(--r-card); padding: 10px 14px; font: 9pt var(--mono); color: var(--muted); overflow: auto; flex: 1; white-space: pre; user-select: text; }
+#log:focus { outline: none; }
 #log .t { color: var(--dim); } #log .err { color: var(--bad); }
 
 /* menu, tooltip, dialogs */

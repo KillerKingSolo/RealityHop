@@ -345,7 +345,7 @@ async function refresh() {
 
 function logLine(at, line) {
   if (!logw) return;
-  logw.append(el('span', 't', at + '  '), el('span', /^(error|FAIL)/.test(line) || line.includes('NOT ') ? 'err' : '', line + '\n'));
+  logw.append(el('span', 't', at + '  '), el('span', /^(Error|FAIL)/.test(line) || line.includes('NOT ') ? 'err' : '', line + '\n'));
   logw.parentElement.scrollTop = logw.parentElement.scrollHeight;
 }
 

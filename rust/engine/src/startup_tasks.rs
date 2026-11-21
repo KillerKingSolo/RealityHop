@@ -217,6 +217,15 @@ pub fn startup_on(paths: &Paths) -> bool {
     settings::this_pc(paths).get("logon_task").is_some_and(settings::py_truthy) || startup_lnk().exists()
 }
 
+// The admin step of Stop: end and switch off the boot task, then close this install's rh-core by its full path. The
+// copy the boot task started cannot be closed without admin rights, and it keeps the VPN app connected
+pub fn stop_ps(core: &std::path::Path) -> String {
+    format!(
+        "schtasks /end /tn '{BOOT_TASK}'; schtasks /change /tn '{BOOT_TASK}' /disable; {}",
+        crate::pc_tunnel::kill_ps(core)
+    )
+}
+
 // Stop everything on this PC for when the person is away: the PC tunnel, the watcher (and its tray icon), the start at
 // logon and the start at boot. The router and the files are not touched. cmd and watcher as for startup. The lines
 // for the window (engine.manager_stop)
@@ -227,7 +236,7 @@ pub fn manager_stop(paths: &Paths, cmd: &[String], watcher: impl FnOnce(bool)) -
         if MAC {
             agent_enable(macos::TUNNEL, false);
         } else {
-            elevated(&format!("schtasks /end /tn '{BOOT_TASK}'; schtasks /change /tn '{BOOT_TASK}' /disable"));
+            elevated(&stop_ps(&paths.core));
         }
         out.push(if task_state() == Some("Disabled") {
             "boot start: switched off".into()
