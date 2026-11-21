@@ -40,7 +40,8 @@ struct Hooks {
 impl WatchHooks for Hooks {
     // A notification from the watcher
     fn notify(&self, text: &str) {
-        let _ = self.app.notification().builder().title(engine::NAME).body(engine::translations::cap_first(text)).show();
+        let _ =
+            self.app.notification().builder().title(engine::NAME).body(engine::translations::cap_first(text)).show();
     }
 
     // The tray icon and tooltip, and the same state to the window
@@ -232,7 +233,9 @@ fn open_folder(ctx: State<Ctx>, which: String) {
         "logs" => ctx.paths.logs.clone(),
         "reports" => ctx.paths.reports.clone(),
         // the file itself opens in its default app; the folder when there is no file yet
-        "core_log" => Some(ctx.paths.logs.join("core.log")).filter(|p| p.is_file()).unwrap_or_else(|| ctx.paths.logs.clone()),
+        "core_log" => {
+            Some(ctx.paths.logs.join("core.log")).filter(|p| p.is_file()).unwrap_or_else(|| ctx.paths.logs.clone())
+        }
         _ => ctx.paths.data.clone(),
     };
     let tool =
