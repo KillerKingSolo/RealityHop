@@ -306,12 +306,16 @@ async function popup(e) {
 // The last 24 hours: PIA drops and returns, replacements, restarts, rescues (draw_history)
 async function drawHistory() {
   const legend = $('legend');
-  if (!legend.childElementCount) {
+  // mark it before the first await: two draws close together must not both fill it
+  if (!legend.dataset.done) {
+    legend.dataset.done = '1';
+    const kids = [];
     for (const k of ['drop', 'replace', 'restart', 'rescue']) {
       const d = el('span', 'd', '●');
       d.style.color = EVENTS[k][0];
-      legend.append(d, el('span', 'n', await T(EVENTS[k][1])));
+      kids.push(d, el('span', 'n', await T(EVENTS[k][1])));
     }
+    legend.replaceChildren(...kids);
   }
   const c = $('hist'), w = c.clientWidth, h = 40, dpr = devicePixelRatio || 1;
   c.width = w * dpr; c.height = h * dpr;
