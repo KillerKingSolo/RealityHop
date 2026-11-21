@@ -2895,7 +2895,7 @@ checksum = "20675572f6f24e9e76ef639bc5552774ed45f1c30e2951e1e99c59888861c539"
 
 [[package]]
 name = "realityhop-app"
-version = "2.0.6"
+version = "2.0.7"
 dependencies = [
  "realityhop-engine",
  "serde_json",
@@ -2908,7 +2908,7 @@ dependencies = [
 
 [[package]]
 name = "realityhop-cli"
-version = "2.0.6"
+version = "2.0.7"
 dependencies = [
  "realityhop-engine",
  "serde_json",
@@ -2916,7 +2916,7 @@ dependencies = [
 
 [[package]]
 name = "realityhop-engine"
-version = "2.0.6"
+version = "2.0.7"
 dependencies = [
  "fancy-regex",
  "libc",
@@ -2931,7 +2931,7 @@ dependencies = [
 
 [[package]]
 name = "realityhop-tools"
-version = "2.0.6"
+version = "2.0.7"
 dependencies = [
  "libc",
  "regex",

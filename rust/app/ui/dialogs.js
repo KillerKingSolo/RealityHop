@@ -161,9 +161,10 @@ async function openSettings() {
     updNote.className = 'note'; updNote.textContent = await T('Checking') + '...';
     try {
       const nv = await invoke('check_updates');
-      if (mine !== gen) return;
-      updNote.textContent = nv ? await T('Update to {ver}', { ver: nv }) :
-        await T('Reality Hop {ver} is the newest version.', { ver: snap.version.slice(1) }) + '  ' + new Date().toLocaleTimeString();
+      if (mine !== gen || !updNote.isConnected) return;   // Settings closed while it checked
+      // an update: close Settings and show the update window
+      if (nv) { panel(null); return openUpdate(); }
+      updNote.textContent = await T('Reality Hop {ver} is the newest version.', { ver: snap.version.slice(1) }) + '  ' + new Date().toLocaleTimeString();
     } catch (e) {
       if (mine !== gen) return;
       updNote.className = 'note c-bad'; updNote.textContent = await T('Could not reach GitHub: {e}', { e: String(e) });

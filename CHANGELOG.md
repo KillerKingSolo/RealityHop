@@ -4,6 +4,12 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 2.0.7 (2026-11-21)
+
+**Why update:** Check for updates in Settings now shows the update window when there is an update.
+
+- Fixed: Check for updates in Settings found the update but did not show it. Settings now closes and the update window opens.
+
 ## 2.0.6 (2026-11-21)
 
 **Why update:** the Last 24 hours legend no longer shows each label twice.
