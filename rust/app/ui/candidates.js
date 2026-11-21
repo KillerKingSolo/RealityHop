@@ -75,7 +75,7 @@ async function drawCandidates() {
     body.append(tr);
   }
   t.replaceChildren(cols, thead, body);
-  cand.pick.textContent = cand.order.length ? cand.order.map((s, i) => `vless-${i + 1} ← ${s}`).join('   ') : await T('no candidates picked');
+  cand.pick.textContent = cand.order.length ? cand.order.map((s, i) => `vless-${i + 1} ← ${s}`).join('   ') : await T('No candidates picked');
 }
 
 // A click picks one; Ctrl+click adds or removes, up to the slot count (on_select)
@@ -103,7 +103,7 @@ async function candMenu(e) {
 
 // The picks as lines for a question (picks)
 async function picksText(pairs) {
-  const ok = await T('tested, works'), no = await T('NOT tunnel-tested');
+  const ok = await T('Tested, works'), no = await T('NOT tunnel-tested');
   return pairs.map(([i, s]) => {
     const r = cand.view.rows.find(x => x.server === s);
     return `vless-${i + 1}  ←  ${s}  (${r && r.ok ? ok : no})`;

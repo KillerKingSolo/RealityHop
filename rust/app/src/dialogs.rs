@@ -43,14 +43,14 @@ pub fn node_details(ctx: State<Ctx>, key: String, tag: String) -> Result<Value, 
         ("Location", or(f(&n, "where"), f(&v, "where"))),
         ("Host", or(f(&v, "isp"), f(&n, "isp"))),
         ("Front site (SNI)", or(f(&n, "sni"), String::new())),
-        ("443 ping from this PC", ms(n.get("tcp_ms"), &tr("no answer", &[]))),
+        ("443 ping from this PC", ms(n.get("tcp_ms"), &tr("No answer", &[]))),
         ("Through the PC tunnel", ms(n.get("pc_ms"), &or(f(&n, "pc_why"), "-".into()))),
     ];
     if Mode::of(&ctx.paths).router {
         rows.push(("Through the router tunnel", ms(n.get("phone_ms"), &or(f(&n, "phone_why"), "-".into()))));
     }
     let last: String =
-        if f(&v, "last_ok").is_empty() { tr("never", &[]) } else { f(&v, "last_ok") }.chars().take(16).collect();
+        if f(&v, "last_ok").is_empty() { tr("Never", &[]) } else { f(&v, "last_ok") }.chars().take(16).collect();
     let passes = v.get("passes").and_then(Value::as_i64).unwrap_or(0).to_string();
     rows.push(("Passed tests", tr("{n}x, last {at}", &[("n", passes), ("at", last)])));
     rows.push(("Best tested", ms(v.get("ms"), "-")));

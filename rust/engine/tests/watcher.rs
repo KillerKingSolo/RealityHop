@@ -61,7 +61,7 @@ fn the_tooltip_says_what_the_tray_shows() {
     assert_eq!(state, "warn");
     assert_eq!(tip, "Reality Hop  ·  5 of 6 nodes working  ·  12:34  ·  PIA dropped 2x in the last hour");
     let (state, tip) = tray_tip(&WatchState::default(), 0, false);
-    assert_eq!((state.as_str(), tip.as_str()), ("unk", "Reality Hop  ·  not checked yet  ·  rh-core missing"));
+    assert_eq!((state.as_str(), tip.as_str()), ("unk", "Reality Hop  ·  Not checked yet  ·  rh-core missing"));
 }
 
 #[test]

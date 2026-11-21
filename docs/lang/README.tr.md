@@ -23,10 +23,10 @@
 ([sing-box](https://github.com/SagerNet/sing-box)). Ağ için bu, cloudflare.com gibi büyük bir siteye giden sıradan
 HTTPS gibi görünür. VPN'leri engelleyen ağlar için yapılmıştır:
 
-- okul, iş, otel ve yurt Wi-Fi'ı
-- havalimanı, kafe, tren ve kütüphanelerdeki herkese açık Wi-Fi
+- Okul, İş, Otel ve Yurt Wi-Fi'ı
+- Havalimanı, Kafe, Tren ve Kütüphanelerdeki Herkese Açık Wi-Fi
 - "VPN engelleme" özelliği olan router'lar ve VPN trafiğini yavaşlatan ya da engelleyen internet sağlayıcıları
-- interneti filtreleyen ülkeler: Çin'in Büyük Güvenlik Duvarı, Rusya, İran, Türkmenistan ve BAE gibi
+- İnterneti filtreleyen Ülkeler: Çin'in Büyük Güvenlik Duvarı, Rusya, İran, Türkmenistan ve BAE gibi
 
 [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes) üzerinden ücretsiz herkese açık düğümleri bulur, kendisi test
 eder, çalışan en hızlıları kullanır ve çalışmayanları kendiliğinden değiştirir.

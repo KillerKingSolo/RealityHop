@@ -175,7 +175,7 @@ impl Win {
             return if has(n, "phone_ms") {
                 (
                     "ok",
-                    tr("working, {ms} ms through the router tunnel", &[("ms", f(n, "phone_ms"))]),
+                    tr("Working, {ms} ms through the router tunnel", &[("ms", f(n, "phone_ms"))]),
                     tr("Working", &[]),
                 )
             } else {
@@ -186,7 +186,7 @@ impl Win {
         let pc = if key == "pc" { Some(n) } else { self.list("pc").iter().find(|m| f(m, "server") == f(n, "server")) };
         if let Some(pc) = pc.filter(|p| has(p, "pc_why")) {
             return if has(pc, "pc_ms") {
-                ("ok", tr("working, {ms} ms through the PC tunnel", &[("ms", f(pc, "pc_ms"))]), tr("Working", &[]))
+                ("ok", tr("Working, {ms} ms through the PC tunnel", &[("ms", f(pc, "pc_ms"))]), tr("Working", &[]))
             } else {
                 let why = f(pc, "pc_why");
                 (
@@ -197,19 +197,19 @@ impl Win {
             };
         }
         if !has(n, "tcp_ms") {
-            return ("bad", tr("not answering on 443 from this PC", &[]), tr("Not answering on 443", &[]));
+            return ("bad", tr("Not answering on 443 from this PC", &[]), tr("Not answering on 443", &[]));
         }
         let ms = f(n, "tcp_ms");
         if key == "pc" && self.pc_pending {
             return (
                 "warn",
-                tr("answers on 443 in {ms} ms; the PC tunnel loads it on the next restart", &[("ms", ms)]),
+                tr("Answers on 443 in {ms} ms; the PC tunnel loads it on the next restart", &[("ms", ms)]),
                 tr("Waiting for PC restart", &[]),
             );
         }
         (
             "warn",
-            tr("answers on 443 in {ms} ms; not tunnel-tested yet", &[("ms", ms)]),
+            tr("Answers on 443 in {ms} ms; not tunnel-tested yet", &[("ms", ms)]),
             tr("Reachable  ·  not tunnel-tested", &[]),
         )
     }
@@ -760,12 +760,12 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
                 let using = if active.is_empty() {
                     String::new()
                 } else {
-                    format!("   ·   {}", tr("in use by {who}", &[("who", active.join(" & "))]))
+                    format!("   ·   {}", tr("In use by {who}", &[("who", active.join(" & "))]))
                 };
                 json!({
                     "tag": f(n, "tag"), "server": f(n, "server"), "front": brand(&f(n, "sni")),
                     "where": if has(n, "where") { f(n, "where") } else { "?".into() },
-                    "tcp": ms(n.get("tcp_ms"), &tr("none", &[])), "tunnel": ms(tun.as_ref(), "-"),
+                    "tcp": ms(n.get("tcp_ms"), &tr("None", &[])), "tunnel": ms(tun.as_ref(), "-"),
                     "state": if state == "bad" && !has(n, "tcp_ms") { "broken" } else { state },
                     "text": format!("{mark}{text}{using}"),
                     "node": n,
@@ -778,7 +778,7 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
             note.push(tr("Router not connected", &[]));
         }
         if stale {
-            note.push(tr("config newer than what runs", &[]));
+            note.push(tr("Config newer than what runs", &[]));
         }
         lists.push(json!({"key": key, "label": label, "file": file, "note": note.join("  ·  "), "rows": rows}));
     }
@@ -796,7 +796,7 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
                     "PC TUNNEL",
                     tr(if old { "Needs restart" } else { "Running" }, &[]),
                     if old { "warn" } else { "ok" },
-                    format!("{now}  ·  {}", tr("exit {ip}", &[("ip", exit)])),
+                    format!("{now}  ·  {}", tr("Exit {ip}", &[("ip", exit)])),
                     None,
                 )
             }
@@ -830,7 +830,7 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
                         "ROUTER TUNNEL",
                         tr(if w.router_stale { "Older config" } else { "Running" }, &[]),
                         if w.router_stale { "warn" } else { "ok" },
-                        format!("{now}  ·  {}", tr("checked {at}", &[("at", at.clone())])),
+                        format!("{now}  ·  {}", tr("Checked {at}", &[("at", at.clone())])),
                         None,
                     )
                 }
@@ -872,7 +872,7 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
         let sub = if !tested {
             tr("443 ping only", &[])
         } else if key == "phone" {
-            tr("router tunnel test", &[])
+            tr("Router tunnel test", &[])
         } else {
             tr("PC tunnel test", &[])
         };

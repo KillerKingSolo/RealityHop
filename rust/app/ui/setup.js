@@ -186,10 +186,10 @@ const PAGES = {
   async install() {
     await h(await T('Install'));
     p(await T('This step:'));
-    items([...(info.frozen && !info.mac ? [await T('copies Reality Hop into its install folder and adds it to the Start menu (one admin prompt). Everything it keeps stays in that folder (settings, nodes, logs, the tunnel engine); only your Windows account can open it, and Reality Hop updates itself there without asking again')] : []),
-      await T('downloads sing-box from its official releases (github.com/SagerNet/sing-box, about 35 MB) and checks its SHA-256 checksum'),
-      await T('downloads the public node list (github.com/rtwo2/FastNodes), tests the {top} fastest candidates from this PC and keeps the 6 fastest that work (about a minute)', { top: info.top }),
-      await T('starts the tunnel on 127.0.0.1:2080')]);
+    items([...(info.frozen && !info.mac ? [await T('Copies Reality Hop into its install folder and adds it to the Start menu (one admin prompt). Everything it keeps stays in that folder (settings, nodes, logs, the tunnel engine); only your Windows account can open it, and Reality Hop updates itself there without asking again')] : []),
+      await T('Downloads sing-box from its official releases (github.com/SagerNet/sing-box, about 35 MB) and checks its SHA-256 checksum'),
+      await T('Downloads the public node list (github.com/rtwo2/FastNodes), tests the {top} fastest candidates from this PC and keeps the 6 fastest that work (about a minute)', { top: info.top }),
+      await T('Starts the tunnel on 127.0.0.1:2080')]);
     if (info.frozen && info.first_install) {   // first install: the folder can be chosen
       const row = el('div', 'btnrow');
       row.style.alignItems = 'center';
@@ -274,7 +274,7 @@ const PAGES = {
     const row = el('div', 'btnrow');
     row.style.alignItems = 'center';
     form.extra = el('input'); form.extra.type = 'text'; form.extra.style.width = '320px';
-    row.append(el('span', '', await T('Other addresses')), form.extra, el('span', 'muted', await T('comma separated')));
+    row.append(el('span', '', await T('Other addresses')), form.extra, el('span', 'muted', await T('Comma separated')));
     body().append(row);
     p(await T('Give each chosen device a fixed address, or it can lose the tunnel when its address changes. On phones, first turn off rotating private addresses for this Wi-Fi (iPhone: Private Wi-Fi Address set to Off or Fixed; Android: use device MAC). Then GL.iNet web panel > CLIENTS: turn on the Reserved IP slider next to the device.'), true);
     await buttons([[await T('Push to router'), () => act('wz_push_devices', { extra: form.extra.value, every: form.all.checked, picked: [...picked] }), true]]);
@@ -355,7 +355,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (hash === 'router') info.start = 'router';
   document.title = await T('Reality Hop setup');
   $('brandName').textContent = await T(' Reality Hop');
-  $('setupLine').textContent = await T('setup') + '  ·  ' + info.version;
+  $('setupLine').textContent = await T('Setup') + '  ·  ' + info.version;
   $('steps').replaceChildren(...info.steps.map(([k, name]) => { const d = el('div', 'wz-step', name); d.id = 'step-' + k; return d; }));
   $('nextBtn').onclick = next;
   $('backBtn').onclick = back;

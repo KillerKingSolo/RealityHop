@@ -54,18 +54,18 @@
    "args": [
     "ru",
     false,
-    "next auto-check {at}",
+    "Next auto-check {at}",
     {
      "at": "12:30"
     }
    ],
-   "out": "следующая автопроверка 12:30"
+   "out": "Следующая автопроверка 12:30"
   },
   {
    "args": [
     "zh",
     false,
-    "answers on 443 in {ms} ms; not tunnel-tested yet",
+    "Answers on 443 in {ms} ms; not tunnel-tested yet",
     {
      "ms": 42
     }

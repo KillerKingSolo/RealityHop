@@ -23,10 +23,10 @@
 VLESS + REALITY ([sing-box](https://github.com/SagerNet/sing-box)). Para la red parece HTTPS normal hacia una web
 grande, como cloudflare.com. Está hecho para redes que bloquean las VPN:
 
-- Wi-Fi de escuela, trabajo, hotel y residencia
-- Wi-Fi pública en aeropuertos, cafeterías, trenes y bibliotecas
-- routers con «bloqueo de VPN» y proveedores de internet que frenan o bloquean el tráfico VPN
-- países que filtran internet, como la Gran Muralla de China, Rusia, Irán, Turkmenistán y los EAU
+- Wi-Fi de Escuela, Trabajo, Hotel y Residencia
+- Wi-Fi Pública en Aeropuertos, Cafeterías, Trenes y Bibliotecas
+- Routers con «bloqueo de VPN» y proveedores de internet que frenan o bloquean el tráfico VPN
+- Países que filtran internet, como la Gran Muralla de China, Rusia, Irán, Turkmenistán y los EAU
 
 Toma nodos públicos gratuitos de [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), los prueba él mismo, usa los
 más rápidos que funcionan y sustituye los caídos por sí solo.

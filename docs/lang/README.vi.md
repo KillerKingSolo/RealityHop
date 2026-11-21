@@ -23,10 +23,10 @@
 ([sing-box](https://github.com/SagerNet/sing-box)). Với mạng, nó trông như HTTPS bình thường tới một trang web lớn,
 chẳng hạn cloudflare.com. Nó được làm cho các mạng chặn VPN:
 
-- Wi-Fi ở trường học, nơi làm việc, khách sạn và ký túc xá
-- Wi-Fi công cộng ở sân bay, quán cà phê, tàu hỏa và thư viện
-- router có tính năng "chặn VPN", và nhà mạng làm chậm hoặc chặn lưu lượng VPN
-- các quốc gia lọc internet, như Vạn lý tường lửa của Trung Quốc, Nga, Iran, Turkmenistan và UAE
+- Wi-Fi ở Trường học, Nơi làm việc, Khách sạn và Ký túc xá
+- Wi-Fi Công cộng ở Sân bay, Quán cà phê, Tàu hỏa và Thư viện
+- Router có tính năng "chặn VPN", và nhà mạng làm chậm hoặc chặn lưu lượng VPN
+- Các quốc gia lọc internet, như Vạn lý tường lửa của Trung Quốc, Nga, Iran, Turkmenistan và UAE
 
 Nó lấy các nút công cộng miễn phí từ [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), tự kiểm tra chúng, dùng các
 nút hoạt động nhanh nhất và tự thay các nút hỏng.

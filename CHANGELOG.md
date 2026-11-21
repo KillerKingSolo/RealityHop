@@ -4,6 +4,14 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 2.0.4 (2026-11-20)
+
+**Why update:** labels and status lines in the window start with a capital letter, in every language.
+
+- Changed: status lines, dialog states, setup steps and the tray tip now start with a capital letter (for example "Checking", "Not tunnelled", "Next auto-check"), in all 9 languages.
+- Docs: the README lists the networks Reality Hop works on with capital letters, in English and the translations.
+- Changed: url 2.5.9, form_urlencoded 1.2.3, walkdir 2.5.1, and on Linux builds zbus 6.5.0.
+
 ## 2.0.3 (2026-11-20)
 
 **Why update:** the window opens at a size that shows everything, and an update you start yourself no longer shows its notes twice.

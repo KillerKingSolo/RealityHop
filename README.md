@@ -21,10 +21,10 @@
 ([sing-box](https://github.com/SagerNet/sing-box)). To the network it looks like ordinary HTTPS to a big website,
 such as cloudflare.com. It is made for networks that block VPNs:
 
-- school, work, hotel and dorm Wi-Fi
-- public Wi-Fi in airports, cafés, trains and libraries
-- routers with "VPN blocking", and internet providers that throttle or block VPN traffic
-- countries that filter the internet, such as China's Great Firewall, Russia, Iran, Turkmenistan and the UAE
+- School, Work, Hotel and Dorm Wi-Fi
+- Public Wi-Fi in Airports, Cafés, Trains and Libraries
+- Routers with "VPN blocking", and internet providers that throttle or block VPN traffic
+- Countries that filter the internet, such as China's Great Firewall, Russia, Iran, Turkmenistan and the UAE
 
 It finds free
 public nodes from [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), tests them itself, keeps the fastest working ones in use and replaces dead

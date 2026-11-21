@@ -67,12 +67,12 @@ impl Worker<'_> {
             if let Some(at) = dead.get(&s).and_then(Value::as_f64) {
                 let at = engine::local_time::at(at as i64).format("%H:%M");
                 n["ok"] = json!(false);
-                n["why"] = json!(tr("failed in your PC tunnel at {at}", &[("at", at)]));
+                n["why"] = json!(tr("Failed in your PC tunnel at {at}", &[("at", at)]));
                 n["ms"] = Value::Null;
                 n["known"] = json!(true);
             } else if failed.contains(&s) {
                 n["ok"] = json!(false);
-                n["why"] = json!(tr("failed the last scan", &[]));
+                n["why"] = json!(tr("Failed the last scan", &[]));
                 n["ms"] = Value::Null;
                 n["known"] = json!(true);
             }
@@ -339,7 +339,7 @@ pub fn view(paths: &engine::paths::Paths, w: &crate::window_state::Win) -> Value
         .iter()
         .map(|n| {
             let (state, res) = if is(n, true) {
-                ("ok", tr("works, {ms} ms in the test, exit {ip}", &[("ms", f(n, "ms")), ("ip", f(n, "exit"))]))
+                ("ok", tr("Works, {ms} ms in the test, exit {ip}", &[("ms", f(n, "ms")), ("ip", f(n, "exit"))]))
             } else if is(n, false) {
                 let why = if has(n, "why") { f(n, "why") } else { "?".into() };
                 (
@@ -347,16 +347,16 @@ pub fn view(paths: &engine::paths::Paths, w: &crate::window_state::Win) -> Value
                     if n.get("known") == Some(&json!(true)) {
                         why
                     } else {
-                        tr("failed the test: {why}", &[("why", why)])
+                        tr("Failed the test: {why}", &[("why", why)])
                     },
                 )
             } else {
-                ("warn", tr("answers on 443; not tunnel-tested", &[]))
+                ("warn", tr("Answers on 443; not tunnel-tested", &[]))
             };
             json!({
                 "server": f(n, "server"), "front": f(n, "sni"),
                 "where": if has(n, "where") { f(n, "where") } else { "?".into() },
-                "tcp": ms(n.get("tcp_ms"), &tr("no answer", &[])), "tunnel": ms(n.get("ms"), ""),
+                "tcp": ms(n.get("tcp_ms"), &tr("No answer", &[])), "tunnel": ms(n.get("ms"), ""),
                 "result": res, "state": state, "ok": is(n, true),
             })
         })

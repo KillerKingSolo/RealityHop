@@ -197,9 +197,9 @@ pub fn ticker(app: AppHandle) {
             let at =
                 engine::local_time::at(now() as i64 + due.saturating_duration_since(Instant::now()).as_secs() as i64);
             let text = if engine::settings::stopped(&ctx.paths) {
-                tr("stopped", &[])
+                tr("Stopped", &[])
             } else if auto_on {
-                tr("next auto-check {at}", &[("at", at.format("%H:%M"))])
+                tr("Next auto-check {at}", &[("at", at.format("%H:%M"))])
             } else {
                 String::new()
             };

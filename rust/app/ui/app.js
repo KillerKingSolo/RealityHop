@@ -313,7 +313,7 @@ async function drawHistory() {
   for (let hr = 0; hr <= 24; hr += 3) {
     const x = Math.round(R - hr / 24 * (R - L)) + .5;
     g.beginPath(); g.moveTo(x, h - 15); g.lineTo(x, h - 9); g.stroke();
-    g.fillText(hr === 0 ? await T('now') : await T('-{n}h', { n: hr }), x, h - 1);
+    g.fillText(hr === 0 ? await T('Now') : await T('-{n}h', { n: hr }), x, h - 1);
   }
   const counts = {};
   for (const [t, kind] of snap.events) {

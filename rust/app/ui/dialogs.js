@@ -113,7 +113,7 @@ async function openSettings() {
   // sing-box channels: each choice shows the version it gives and marks the one running
   const sb = el('div', 'form'); sb.style.marginTop = '12px';
   const names = { '': await T('Same as this PC'), stable: await T('Stable'), testing: await T('Test builds (beta, alpha)') };
-  const installed = await T('installed');
+  const installed = await T('Installed');
   let pcSel = null, rcSel = null, vers = { pc: {}, router: {} };
   const note = el('div', 'note');
   const fill = async () => {

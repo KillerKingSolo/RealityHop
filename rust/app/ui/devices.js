@@ -81,8 +81,8 @@ async function fillDevices(err) {
   const rows = [];
   for (const ip of ips) {
     const on = dev.picked.has(ip);
-    let state = on ? await T(dev.tunnelled.has(ip) ? 'tunnelled' : 'added, press Save and push') : await T('not tunnelled');
-    if (on && !dev.shown.has(ip)) state += '  ·  ' + await T('not connected now');
+    let state = on ? await T(dev.tunnelled.has(ip) ? 'Tunnelled' : 'Added, press Save and push') : await T('Not tunnelled');
+    if (on && !dev.shown.has(ip)) state += '  ·  ' + await T('Not connected now');
     const tr = el('tr', on ? 'ok' : 'unk');
     for (const x of [on ? '✓' : '', ip, dev.names.get(ip) || await T('(not in the router list)'), state]) tr.append(el('td', '', x));
     tr.onclick = () => { dev.picked.has(ip) ? dev.picked.delete(ip) : dev.picked.add(ip); fillDevices(); };
@@ -97,7 +97,7 @@ async function fillDevices(err) {
 // Push the list to the router, after asking (save)
 async function saveDevices() {
   const ips = dev.all.checked ? ['all'] : [...dev.picked].sort((a, b) => ipKey(a) - ipKey(b));
-  const what = ips[0] === 'all' ? await T('every device on the main network, this PC included') :
+  const what = ips[0] === 'all' ? await T('Every device on the main network, this PC included') :
     ips.join('\n') || await T('(none: the router tunnel then carries no device)');
   if (!await yesNo('Router devices', await T('Push this to the router?\n\n{what}\n\nThe router tunnel restarts; it drops for a few seconds.', { what }))) return;
   devMsg(await T('Pushing to the router...'));

@@ -277,7 +277,7 @@ impl Worker<'_> {
             return Err("the router did not answer over SSH; add the key first, and check the address".into());
         }
         let i = engine::router::router_info(&mut ssh).map_err(|e| e.to_string())?;
-        let bx = i.singbox.unwrap_or_else(|| tr("not installed", &[]));
+        let bx = i.singbox.unwrap_or_else(|| tr("Not installed", &[]));
         self.done_ok(
             "ssh",
             tr(
@@ -312,7 +312,7 @@ impl Worker<'_> {
                 let miss = if miss.is_empty() {
                     String::new()
                 } else {
-                    format!("; {}", tr("missing {tools}", &[("tools", miss.join(", "))]))
+                    format!("; {}", tr("Missing {tools}", &[("tools", miss.join(", "))]))
                 };
                 self.note(
                     format!("{}: {what}{miss}. {}", i.model, tr("Click Install sing-box on the router.", &[])),

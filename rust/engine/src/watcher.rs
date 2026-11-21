@@ -505,7 +505,7 @@ impl Watch {
 // The tray's tooltip for a state (engine.watch.show)
 pub fn tray_tip(st: &WatchState, drops: usize, core: bool) -> (String, String) {
     let (state, text, at) =
-        st.last.clone().unwrap_or_else(|| ("unk".into(), tr("not checked yet", &[]), String::new()));
+        st.last.clone().unwrap_or_else(|| ("unk".into(), tr("Not checked yet", &[]), String::new()));
     let mut tip = format!("Reality Hop  ·  {text}");
     if !at.is_empty() {
         tip += &format!("  ·  {at}");
