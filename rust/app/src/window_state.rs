@@ -434,10 +434,7 @@ impl Worker<'_> {
         if mode.router {
             self.router_seen();
             if nm::router_up(self.paths, &mut ssh) {
-                if let Some(s) = nm::router_sync(self.paths, &mut ssh)? {
-                    say(&s);
-                    engine::history::record(&self.paths.history, &[], Some(("heal", &s)), now());
-                }
+                engine::watcher::follow_router(self.paths, &mut ssh)?;
                 let secret =
                     engine::router::secret(&engine::data_files::read_json(&self.paths.router_cfg).unwrap_or_default());
                 self.w().router_now = engine::router::router_now(&mut ssh, &secret);
@@ -454,9 +451,7 @@ impl Worker<'_> {
     pub fn check_router(&self) -> Result<(), String> {
         let mut ssh = RouterSsh { paths: self.paths };
         self.router_seen();
-        if let Some(s) = nm::router_sync(self.paths, &mut ssh)? {
-            say(&s);
-            engine::history::record(&self.paths.history, &[], Some(("heal", &s)), now());
+        if engine::watcher::follow_router(self.paths, &mut ssh)?.is_some() {
             self.check_local("both");
         }
         let mut nodes = self.w().list("phone").to_vec();

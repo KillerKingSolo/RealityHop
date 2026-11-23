@@ -26,6 +26,11 @@ pub const APP_EVERY: f64 = 6.0 * 3600.0;
 pub const LOGON_HOLD: f64 = 90.0;
 /// The slow-node fix and the vault refresh run at most this often.
 const SIX_HOURS: f64 = 6.0 * 3600.0;
+const DAY: f64 = 24.0 * 3600.0;
+/// Traffic through the PC tunnel under this (KB/s) counts as a quiet line: the speed check may run.
+pub const IDLE_KBPS: f64 = 10.0;
+/// PIA drops within an hour, each while the same node carried the tunnel, that get that node replaced.
+pub const BREAKS: usize = 3;
 
 // time.time()
 fn now() -> f64 {
@@ -51,6 +56,8 @@ pub struct WatchState {
     pub segs: Vec<String>,
     /// When the slow-node fix last ran.
     pub speed_t: f64,
+    /// Since when the due speed check waits for a quiet line; 0 when it does not wait.
+    pub speed_wait: f64,
     /// When the vault was last tested again.
     pub vault_t: f64,
 }
@@ -127,9 +134,7 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
         return Ok(Some(out));
     }
     if router_up(paths, ssh) {
-        if let Some(healed) = router_sync(paths, ssh)? {
-            say(&healed);
-            event(paths, "heal", &healed);
+        if let Some(healed) = follow_router(paths, ssh)? {
             return Ok(Some(healed));
         }
         // the router's self-repair stands down while this PC looks after the nodes
@@ -202,8 +207,19 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
     let s = Settings::read(paths).unwrap_or_default();
     if out.is_none() && s.min_mbps != 0 && paths.core.exists() && !router_only(paths) && now() - st.speed_t > SIX_HOURS
     {
-        st.speed_t = now();
-        out = slow_fix(paths, ssh, &cur)?;
+        let rate = crate::clash_api::tunnel_rate(paths);
+        if st.speed_wait == 0.0 {
+            st.speed_wait = now();
+        }
+        if speed_check_go(rate, now() - st.speed_wait) {
+            (st.speed_t, st.speed_wait) = (now(), 0.0);
+            out = slow_fix(paths, ssh, &cur)?;
+        } else {
+            say(&format!(
+                "speed check postponed: {:.0} KB/s through the PC tunnel now (a game, a call or a download)",
+                rate.unwrap_or(0.0)
+            ));
+        }
     }
     match &out {
         Some(o) => {
@@ -226,6 +242,38 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
         }
     }
     Ok(out)
+}
+
+// Follow the router's nodes when another PC or the router's self-repair changed them (router_sync), logged and kept in
+// the history. No download test here: while PIA is connected the PC tunnel keeps its own working nodes, and the
+// 6-hourly speed check judges the new ones. A sentence when the nodes changed
+pub fn follow_router(paths: &Paths, ssh: &mut impl Ssh) -> Result<Option<String>, String> {
+    let Some(healed) = router_sync(paths, ssh)? else { return Ok(None) };
+    say(&healed);
+    event(paths, "heal", &healed);
+    Ok(Some(healed))
+}
+
+// The 6-hourly speed check fills the line for a few seconds. It waits while something uses the PC tunnel (traffic
+// over IDLE_KBPS: a game, a call, a download), but not longer than a day. rate: the traffic now, None when unknown
+pub fn speed_check_go(rate_kbps: Option<f64>, waited: f64) -> bool {
+    rate_kbps.is_none_or(|r| r < IDLE_KBPS) || waited > DAY
+}
+
+// A node that carried the tunnel at BREAKS PIA drops within an hour: it passes the short tests but breaks long
+// connections. It stays out of the spares for 12 hours and is replaced at once (a real failure, not a speed swap).
+// A sentence when something changed
+pub fn break_fix(paths: &Paths, ssh: &mut impl Ssh, server: &str) -> Result<Option<String>, String> {
+    crate::clash_api::pia_break_note(paths, server, now());
+    let cur = inuse(paths)?;
+    let Some(slot) = cur.iter().position(|n| field(n, "server") == server) else {
+        say("the node that broke PIA's connection is no longer in use");
+        return Ok(None);
+    };
+    say(&format!("{} broke PIA's connection {BREAKS} times in an hour; replacing it", field(&cur[slot], "tag")));
+    let swaps = replace(paths, ssh, &[slot], None, false, false)?;
+    Ok((!swaps.is_empty())
+        .then(|| format!("{} (it broke PIA's connection {BREAKS} times in an hour).", replaced(&swaps))))
 }
 
 // In-use nodes under the floor on two download tests in a row are swapped for spares that reach it; every 6 hours from
@@ -295,16 +343,27 @@ pub fn pia_state() -> String {
     r.map(|o| crate::python_compat::strip(&o.stdout).to_string()).unwrap_or_default()
 }
 
+// Whether PIA is installed and connected now
+pub fn pia_connected() -> bool {
+    std::path::Path::new(crate::pia_split_tunnel::PIACTL).exists() && pia_state() == "Connected"
+}
+
 static FEED: Mutex<Option<std::process::Child>> = Mutex::new(None);
+// Which feed may run: pia_feed_stop moves it on, so an old feed thread ends instead of starting piactl again
+static FEED_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
 // PIA's own state feed (piactl monitor): one line per change, no polling and no network traffic. Starts again 20 s
-// after it ends (PIA not running yet). Nothing without PIA: the hourly check covers other VPN apps (engine.pia_feed)
+// after it ends (PIA not running yet), until pia_feed_stop. One feed at a time: a new one ends the old. Nothing
+// without PIA: the hourly check covers other VPN apps (engine.pia_feed)
 pub fn pia_feed(on_change: impl Fn(&str) + Send + 'static) {
     if !std::path::Path::new(crate::pia_split_tunnel::PIACTL).exists() {
         return;
     }
+    pia_feed_stop();
+    let mine = FEED_GEN.load(std::sync::atomic::Ordering::SeqCst);
+    let live = move || FEED_GEN.load(std::sync::atomic::Ordering::SeqCst) == mine;
     std::thread::spawn(move || {
-        loop {
+        while live() {
             let mut c = std::process::Command::new(crate::pia_split_tunnel::PIACTL);
             c.args(["monitor", "connectionstate"]);
             c.stdin(std::process::Stdio::null())
@@ -317,28 +376,47 @@ pub fn pia_feed(on_change: impl Fn(&str) + Send + 'static) {
             }
             if let Ok(mut child) = c.spawn() {
                 let out = child.stdout.take();
-                *FEED.lock().unwrap_or_else(|e| e.into_inner()) = Some(child);
+                {
+                    let mut f = FEED.lock().unwrap_or_else(|e| e.into_inner());
+                    if !live() {
+                        // stopped while piactl started
+                        let _ = child.kill();
+                        let _ = child.wait();
+                        return;
+                    }
+                    *f = Some(child);
+                }
                 if let Some(out) = out {
                     use std::io::BufRead;
                     for line in std::io::BufReader::new(out).lines().map_while(Result::ok) {
                         let line = crate::python_compat::strip(&line);
-                        if !line.is_empty() {
+                        if !line.is_empty() && live() {
                             on_change(line);
                         }
                     }
                 }
-                if let Some(mut c) = FEED.lock().unwrap_or_else(|e| e.into_inner()).take() {
+                let mut f = FEED.lock().unwrap_or_else(|e| e.into_inner());
+                if live()
+                    && let Some(mut c) = f.take()
+                {
                     let _ = c.wait();
                 }
             }
-            std::thread::sleep(Duration::from_secs(20));
+            for _ in 0..20 {
+                if !live() {
+                    return;
+                }
+                std::thread::sleep(Duration::from_secs(1));
+            }
         }
     });
 }
 
-// Stop this watcher's PIA state feed (Quit)
+// Stop the PIA state feed for good (Quit, Stop, the watcher ending)
 pub fn pia_feed_stop() {
-    if let Some(mut c) = FEED.lock().unwrap_or_else(|e| e.into_inner()).take() {
+    let mut f = FEED.lock().unwrap_or_else(|e| e.into_inner());
+    FEED_GEN.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    if let Some(mut c) = f.take() {
         let _ = c.kill();
         let _ = c.wait();
     }
@@ -399,6 +477,8 @@ struct Pia {
     state: String,
     bad_since: Option<f64>,
     drops: Vec<f64>,
+    // (when, node in use) for each drop
+    blame: Vec<(f64, String)>,
 }
 
 #[derive(Default)]
@@ -439,10 +519,18 @@ impl Watch {
         self.wake();
     }
 
-    // End the loop (Quit)
+    // End the loop (Quit, Stop)
     pub fn stop(&self) {
         self.lock().stop = true;
         self.wake();
+    }
+
+    // Let the loop run again (Start after Stop): a loop that has not ended yet carries on; tray requests made while
+    // stopped are dropped
+    pub fn resume(&self) {
+        let mut g = self.lock();
+        g.stop = false;
+        g.want.clear();
     }
 
     // Take a request when it was made
@@ -472,6 +560,15 @@ impl Watch {
             }
             (prev, dropped)
         };
+        // the node that carried PIA when it lost its connection; not a disconnect by hand or a settings change, and
+        // not a drop Reality Hop caused by restarting the tunnel
+        if wake
+            && state == "Reconnecting"
+            && !crate::pc_tunnel::restarted_within(60.0)
+            && let Some(node) = crate::clash_api::tunnel_node(paths)
+        {
+            self.blame(&node, t);
+        }
         dbg(|| format!("PIA {} -> {state}", if prev.is_empty() { "?" } else { &prev }));
         if wake {
             say(&format!("PIA dropped ({state})"));
@@ -479,7 +576,27 @@ impl Watch {
         } else if state == "Connected" && !prev.is_empty() && prev != "Connected" {
             event(paths, "back", "PIA connected");
             say("PIA connected again");
+        } else if state == "Disconnected" && prev != state {
+            self.wake(); // a node set waiting for the PC tunnel can go in now
         }
+    }
+
+    // A PIA drop while node carried the tunnel
+    pub fn blame(&self, node: &str, t: f64) {
+        self.lock().pia.blame.push((t, node.to_string()));
+    }
+
+    // A node that carried the tunnel at BREAKS PIA drops within the last hour, at time now
+    pub fn breaker(&self, now: f64) -> Option<String> {
+        let mut g = self.lock();
+        g.pia.blame.retain(|(t, _)| now - t < 3600.0);
+        let b = &g.pia.blame;
+        b.iter().map(|(_, n)| n).find(|n| b.iter().filter(|(_, m)| m == *n).count() >= BREAKS).cloned()
+    }
+
+    // Forget the drops blamed on node (it was replaced)
+    pub fn forgive(&self, node: &str) {
+        self.lock().pia.blame.retain(|(_, n)| n != node);
     }
 
     // PIA drops in the last hour
@@ -590,9 +707,11 @@ pub fn watch_loop(paths: &Paths, watch: &Arc<Watch>, hooks: &impl WatchHooks, cm
     if cfg!(windows) {
         crate::startup_tasks::lnk_migrate(&crate::startup_tasks::startup_lnk());
     }
+    let turn = crate::process::work();
     crate::setup_steps::api_lockdown(paths);
     crate::pia_split_tunnel::pia_bypass(paths, &[], true); // at login, before the tunnel starts
     let started = crate::pc_tunnel::core_fast_start(paths); // first, so PIA finds the proxy when it connects
+    drop(turn);
     kill_feeds();
     let log = FileLog::new(&paths.logs, "watch");
     if !crate::activity_log::has_say() {
@@ -634,7 +753,12 @@ pub fn watch_loop(paths: &Paths, watch: &Arc<Watch>, hooks: &impl WatchHooks, cm
     let mut ssh = crate::router_ssh::RouterSsh { paths };
     wait_api(paths, Duration::from_secs(90));
     loop {
-        crate::process::reset_cancel();
+        // never together with a window action: it waits for this check, and this check for it
+        let turn = crate::process::work();
+        if watch.lock().stop {
+            pia_feed_stop(); // stopped while it waited for the window's action
+            return;
+        }
         let t = now();
         let before = st.clone();
         let s = Settings::read(paths).unwrap_or_default();
@@ -690,6 +814,14 @@ pub fn watch_loop(paths: &Paths, watch: &Arc<Watch>, hooks: &impl WatchHooks, cm
                 last_full = t;
                 let out = watch_cycle(paths, &mut ssh, &mut st)?;
                 fixed(out, &mut st, &mut ssh);
+            } else if let Some(bad) = watch.breaker(t) {
+                watch.forgive(&bad);
+                let out = break_fix(paths, &mut ssh, &bad)?;
+                if let Some(o) = &out {
+                    say(o);
+                    event(paths, "replace", o);
+                }
+                fixed(out, &mut st, &mut ssh);
             } else if bad_since.is_some_and(|b| t - b >= 60.0) && t - last_fix > 300.0 && t >= hold {
                 let state = watch.lock().pia.state.clone();
                 say(&format!("PIA still \"{state}\" after a minute; checking the nodes now"));
@@ -701,6 +833,17 @@ pub fn watch_loop(paths: &Paths, watch: &Arc<Watch>, hooks: &impl WatchHooks, cm
                     event(paths, "restart", "PC tunnel restarted because PIA could not reconnect");
                     tray_recheck(paths, &mut ssh, &mut st);
                 }
+            } else if core_mode(paths)
+                && !stopped(paths)
+                && watch.lock().pia.state == "Disconnected"
+                && crate::node_manager::pending_deploy(paths) == Some(true)
+            {
+                // a node set waits for the PC tunnel (another PC's change, a speed swap) and PIA is off: the restart
+                // costs nothing now
+                say("PIA is not connected: the PC tunnel takes the waiting node set now");
+                core_restart(paths);
+                event(paths, "restart", "PC tunnel took the waiting node set while PIA was not connected");
+                tray_recheck(paths, &mut ssh, &mut st);
             } else if hooks.window_open() {
                 last_full = t; // the window does the checks while it is open
             } else if t - last_full > every {
@@ -724,6 +867,7 @@ pub fn watch_loop(paths: &Paths, watch: &Arc<Watch>, hooks: &impl WatchHooks, cm
                 st.last = Some(("bad".into(), format!("error: {e}").chars().take(80).collect(), clock()));
             }
         }
+        drop(turn);
         tray_adopt(paths, &mut st, &before);
         show(paths, watch, hooks, &st);
         memory_trim();

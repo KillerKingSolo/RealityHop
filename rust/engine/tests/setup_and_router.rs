@@ -102,6 +102,12 @@ fn a_problem_report_takes_out_personal_data_and_keeps_five() {
         std::path::MAIN_SEPARATOR
     );
     std::fs::write(paths.logs.join("watch.log"), log).unwrap();
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64;
+    let h = serde_json::json!({"pings": {}, "events": [
+        [now - 60, "drop", "PIA reconnecting"],
+        [now - 50, "replace", "Replaced vless-2 (45.144.112.55 -> 169.40.42.89) (under 100 Mbps)."],
+    ]});
+    engine::data_files::jsave(&paths.history, &h, None).unwrap();
     for _ in 0..6 {
         engine::problem_report_file::make(&paths, &mut Unused).unwrap();
         std::thread::sleep(std::time::Duration::from_millis(1100)); // one report per second: the name has the time
@@ -112,6 +118,10 @@ fn a_problem_report_takes_out_personal_data_and_keeps_five() {
     assert!(text.starts_with("Reality Hop problem report\n"));
     assert!(text.contains("\nSetup\n-----\n") && text.contains("Router features  off"));
     assert!(text.contains("watch   2026-11-18 10:00:01  rh-core: could not start"), "{text}");
+    assert!(text.contains("PC tunnel        rh-core missing"), "{text}");
+    assert!(text.contains("2 events: PIA dropped 1, nodes replaced 1"), "{text}");
+    assert!(text.contains("replace  Replaced vless-2 (ip-1 -> ip-2)"), "{text}");
+    assert!(!text.contains("45.144.112.55") && !text.contains("169.40.42.89"), "an address is left in");
     if user.chars().count() > 2 {
         assert!(!text.contains(&user), "the user name is taken out");
     }

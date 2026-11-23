@@ -6,7 +6,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc;
+use std::sync::{Mutex, MutexGuard, TryLockError, mpsc};
 use std::time::{Duration, Instant};
 
 /// Set by cancel(): every run stops and new runs refuse to start, until reset_cancel().
@@ -41,6 +41,38 @@ impl std::fmt::Display for RunError {
 }
 
 impl std::error::Error for RunError {}
+
+static WORK: Mutex<()> = Mutex::new(());
+
+/// The work turn: the window's action and the watcher's check never run together, so they never change the nodes,
+/// the configs or the tunnel at the same time. A cancel() is meant for the holder: it is cleared when the next holder
+/// starts and when the holder lets go.
+pub struct Work(#[allow(dead_code)] MutexGuard<'static, ()>);
+
+impl Drop for Work {
+    // Clear a cancel before the next holder starts (the guard is released after this)
+    fn drop(&mut self) {
+        reset_cancel();
+    }
+}
+
+// Wait for the work turn
+pub fn work() -> Work {
+    let g = WORK.lock().unwrap_or_else(|e| e.into_inner());
+    reset_cancel();
+    Work(g)
+}
+
+// The work turn when nobody holds it
+pub fn try_work() -> Option<Work> {
+    let g = match WORK.try_lock() {
+        Ok(g) => g,
+        Err(TryLockError::Poisoned(e)) => e.into_inner(),
+        Err(TryLockError::WouldBlock) => return None,
+    };
+    reset_cancel();
+    Some(Work(g))
+}
 
 // Stop every running program and refuse new ones (the window's Cancel button)
 pub fn cancel() {
@@ -124,6 +156,7 @@ pub fn run<S: AsRef<OsStr>>(
     }
     let start = Instant::now();
     let program = || Path::new(&cmd[0]).file_name().unwrap_or_default().to_string_lossy().into_owned();
+    let mut step = 5;
     let status = loop {
         if let Ok(Some(s)) = child.try_wait() {
             break s;
@@ -136,7 +169,7 @@ pub fn run<S: AsRef<OsStr>>(
             }
             return Err(RunError::TimedOut { program: program(), secs: timeout.as_secs() });
         }
-        std::thread::sleep(Duration::from_millis(25));
+        nap(&child, &mut step);
     };
     // A program it started in the background can hold the pipes open after it exits: wait for them only within the
     // time limit (at least a second, for output still in flight)
@@ -154,5 +187,22 @@ pub fn run<S: AsRef<OsStr>>(
     match (stdout, stderr) {
         (Some(stdout), Some(stderr)) => Ok(Output { code: status.code(), stdout, stderr }),
         _ => Err(RunError::TimedOut { program: program(), secs: timeout.as_secs() }),
+    }
+}
+
+// Wait until the program ends or the next look at cancel and the time limit is due (100 ms at most). Windows waits on
+// the process itself: no wake-ups while it runs, and back the moment it ends. Elsewhere a pause from 5 ms up to 100 ms
+fn nap(child: &std::process::Child, step: &mut u64) {
+    #[cfg(windows)]
+    {
+        use std::os::windows::io::AsRawHandle;
+        let _ = step;
+        unsafe { windows_sys::Win32::System::Threading::WaitForSingleObject(child.as_raw_handle(), 100) };
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = child;
+        std::thread::sleep(Duration::from_millis(*step));
+        *step = (*step * 2).min(100);
     }
 }

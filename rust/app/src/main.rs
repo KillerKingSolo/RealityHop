@@ -353,6 +353,27 @@ pub(crate) fn runs_watcher() -> bool {
     !cfg!(debug_assertions) || std::env::var_os("REALITYHOP_DEV_WATCH").is_some()
 }
 
+// Start the background watcher: at launch, and again after Start or Settings switched it on (Stop ended it). It holds
+// the watcher's port; while a watcher still runs, the new one gives up after 20 s and the running one carries on.
+// Never in a development build (runs_watcher) or in the installer copy from the Downloads folder
+pub(crate) fn start_watcher(app: &AppHandle, logon: bool) {
+    let exe = std::env::current_exe().unwrap_or_default();
+    if !runs_watcher() || (!cfg!(debug_assertions) && app_install::needs_install(&exe)) {
+        return;
+    }
+    let ctx = app.state::<Ctx>();
+    ctx.watch.resume();
+    let (h, paths, watch, cmd) = (app.clone(), ctx.paths.clone(), Arc::clone(&ctx.watch), ctx.cmd.clone());
+    std::thread::spawn(move || {
+        let Some(_lock) = engine::watcher::watch_lock() else {
+            engine::activity_log::say("the watcher is already running");
+            return;
+        };
+        let hooks = Hooks { app: h, exe };
+        engine::watcher::watch_loop(&paths, &watch, &hooks, &cmd, logon);
+    });
+}
+
 // Wait up to 30 s until the previous process has let go of the watcher's port (a restart after an update)
 fn wait_for_previous() {
     for _ in 0..60 {
@@ -477,15 +498,7 @@ fn main() -> std::process::ExitCode {
                 let _ = app.notification().builder().title(engine::NAME).body(text).show();
             }
             if runs_watcher() && !installer {
-                let (h, paths, watch_exe) = (app.handle().clone(), paths.clone(), exe.clone());
-                std::thread::spawn(move || {
-                    let Some(_lock) = engine::watcher::watch_lock() else {
-                        engine::activity_log::say("the watcher is already running");
-                        return;
-                    };
-                    let hooks = Hooks { app: h, exe: watch_exe };
-                    engine::watcher::watch_loop(&paths, &watch, &hooks, &cmd, logon);
-                });
+                start_watcher(app.handle(), logon);
                 if app_install::installed_here(&exe) {
                     let exe = exe.clone();
                     std::thread::spawn(move || {

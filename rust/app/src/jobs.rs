@@ -8,6 +8,7 @@ use engine::paths::Paths;
 use engine::translations::tr;
 use serde_json::{Value, json};
 use std::cell::Cell;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
@@ -26,6 +27,8 @@ pub struct Ctx {
 }
 
 static APP: OnceLock<AppHandle> = OnceLock::new();
+// Cancel pressed while the action still waits for the watcher's check: it is dropped when its turn comes
+static DROP_WAITING: AtomicBool = AtomicBool::new(false);
 // Where the data went when the setup installed this copy: the logs and last.json follow it
 static MOVED: Mutex<Option<Paths>> = Mutex::new(None);
 
@@ -84,15 +87,32 @@ pub fn work(app: &AppHandle, job: Job) {
             return;
         }
         w.busy = true;
-        w.started = Some(Instant::now());
+        w.started = None; // set once it has the work turn: waiting for the watcher does not count
         w.current = Some(job.clone());
+        DROP_WAITING.store(false, Ordering::SeqCst);
     }
-    engine::process::reset_cancel();
     changed(app);
     let h = app.clone();
     std::thread::spawn(move || {
         WINDOW_JOB.with(|c| c.set(true));
         let ctx = h.state::<Ctx>();
+        let turn = engine::process::try_work().unwrap_or_else(|| {
+            say("waiting for the background check to finish...");
+            engine::process::work()
+        });
+        let dropped = {
+            let mut w = ctx.win.lock().unwrap_or_else(|e| e.into_inner());
+            let d = DROP_WAITING.swap(false, Ordering::SeqCst);
+            if !d {
+                w.started = Some(Instant::now());
+            }
+            d
+        };
+        if dropped {
+            say("cancelled");
+            drop(turn);
+            return done(&h);
+        }
         let t = Instant::now();
         match run(&h, &ctx, &job) {
             Ok(()) if engine::process::cancelled() => say("cancelled"),
@@ -104,6 +124,7 @@ pub fn work(app: &AppHandle, job: Job) {
                 w.status_state = "bad".into();
             }
         }
+        drop(turn);
         done(&h);
     });
 }
@@ -153,12 +174,19 @@ pub fn cancel(app: &AppHandle) {
     let mut w = ctx.win.lock().unwrap_or_else(|e| e.into_inner());
     if w.busy {
         let n = std::mem::take(&mut w.jobs).len();
+        // still waiting for the watcher's check: it never starts, and the check runs on
+        let waiting = w.started.is_none();
+        if waiting {
+            DROP_WAITING.store(true, Ordering::SeqCst);
+        }
         drop(w);
         say("cancelling the current action...");
         if n > 0 {
             say(&format!("dropped {n} queued action(s)"));
         }
-        engine::process::cancel();
+        if !waiting {
+            engine::process::cancel();
+        }
     }
 }
 
@@ -217,9 +245,12 @@ fn now() -> f64 {
 fn run(app: &AppHandle, ctx: &Ctx, job: &Job) -> Result<(), String> {
     let wk = Worker { paths: &ctx.paths, win: &ctx.win };
     let arg = |k: &str| job.args.get(k).cloned().unwrap_or(Value::Null);
-    let watch = Arc::clone(&ctx.watch);
+    let (watch, h) = (Arc::clone(&ctx.watch), app.clone());
+    // Start and Settings switch the background watcher in this process too, not only at logon
     let watcher = move |on: bool| {
-        if !on {
+        if on {
+            crate::start_watcher(&h, false);
+        } else {
             watch.stop();
         }
     };

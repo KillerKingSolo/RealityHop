@@ -925,10 +925,23 @@ fn speed_test_plan() {
 // restart is left out (no rh-core there). nodes.txt carries today's date, so its date is set to the fixture's.
 #[test]
 fn router_sync() {
+    sync_cases("sync", engine::node_manager::router_sync);
+}
+
+// The watcher and the window follow the router through follow_router: with no rh-core it does no speed test, so it
+// must give the same result as router_sync
+#[test]
+fn follow_router_without_core_is_router_sync() {
+    sync_cases("follow", engine::watcher::follow_router);
+}
+
+type SyncFn = fn(&engine::paths::Paths, &mut Replay) -> Result<Option<String>, String>;
+
+fn sync_cases(tag: &str, f: SyncFn) {
     use engine::data_files::{jsave, read_text};
     let date = regex::Regex::new(r"tested \d{4}-\d{2}-\d{2} ").unwrap();
     check("router_sync", |a| {
-        let d = std::env::temp_dir().join(format!("rh-parity-sync-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("rh-parity-{tag}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         let paths = engine::paths::Paths::new(&d);
         jsave(&paths.settings, &json!({"router": 1, "devices": a[3]}), Some(1)).unwrap();
@@ -937,7 +950,7 @@ fn router_sync() {
         jsave(&paths.this_pc, &a[1], None).unwrap();
         jsave(&paths.vault, &a[2], Some(1)).unwrap();
         let mut r = Replay::new(&json!([a[0], ""]));
-        let out = match engine::node_manager::router_sync(&paths, &mut r) {
+        let out = match f(&paths, &mut r) {
             Ok(s) => json!(s),
             Err(e) => json!({"error": "RuntimeError", "message": e}),
         };

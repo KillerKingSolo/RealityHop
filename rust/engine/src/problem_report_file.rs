@@ -87,6 +87,94 @@ fn platform() -> String {
     }
 }
 
+// The PC tunnel now: running, its control API, the node it uses, a node set waiting for a restart, PIA's state. Asks
+// the local tunnel and the PIA app only, and only when this data folder has its own rh-core
+fn pc_state(paths: &Paths) -> String {
+    use crate::pc_tunnel::{core_mode, core_running};
+    if settings::router_only(paths) {
+        return "none (router only)".into();
+    }
+    if !core_mode(paths) {
+        return "rh-core missing".into();
+    }
+    if !core_running(paths) {
+        return "not running".into();
+    }
+    let api = crate::clash_api::ControlApi::pc(paths).ok();
+    let px: Option<Value> =
+        api.and_then(|a| a.get("/proxies", Duration::from_secs(3)).ok()).and_then(|t| serde_json::from_str(&t).ok());
+    let mut out = match px.as_ref().and_then(|v| v["proxies"]["auto"]["now"].as_str()) {
+        Some(now) => format!("running, using {now}"),
+        None => "running, control API not answering".into(),
+    };
+    if crate::node_manager::pending_deploy(paths) == Some(true) {
+        out += ", a new node set waits for a restart";
+    }
+    if std::path::Path::new(crate::pia_split_tunnel::PIACTL).exists() {
+        let st = crate::watcher::pia_state();
+        out += &format!("; PIA {}", if st.is_empty() { "not answering".into() } else { st.to_lowercase() });
+    }
+    out
+}
+
+// The last 48 hours from history.json: how often each thing happened, then the latest events, oldest first
+fn activity(paths: &Paths) -> Vec<String> {
+    let h = crate::history::load(&paths.history);
+    let events: Vec<&Value> = h["events"].as_array().map(|e| e.iter().collect()).unwrap_or_default();
+    if events.is_empty() {
+        return Vec::new();
+    }
+    let names = [
+        ("drop", "PIA dropped"),
+        ("back", "PIA back"),
+        ("restart", "tunnel restarts"),
+        ("replace", "nodes replaced"),
+        ("heal", "followed the router"),
+        ("rescue", "rescues"),
+        ("error", "errors"),
+    ];
+    let count = |k: &str| events.iter().filter(|e| e[1] == k).count();
+    let counts: Vec<String> =
+        names.iter().map(|(k, n)| (count(k), n)).filter(|(c, _)| *c > 0).map(|(c, n)| format!("{n} {c}")).collect();
+    let mut out = vec![format!("{} events: {}", events.len(), counts.join(", ")), String::new()];
+    for e in &events[events.len().saturating_sub(60)..] {
+        let at = crate::local_time::at(e[0].as_f64().unwrap_or(0.0) as i64).format("%m-%d %H:%M:%S");
+        out.push(format!("{at}  {:<8} {}", e[1].as_str().unwrap_or_default(), e[2].as_str().unwrap_or_default()));
+    }
+    out
+}
+
+// Each node in use: where it is and how its tunnel pings went over 48 hours (median, worst, lost), from history.json
+fn node_health(paths: &Paths) -> Vec<String> {
+    let Ok(nodes) = crate::singbox_config::nodes_of(&paths.pc_cfg) else { return Vec::new() };
+    let h = crate::history::load(&paths.history);
+    let vault = crate::vault::load(paths);
+    nodes
+        .iter()
+        .map(|(tag, n)| {
+            let pings: Vec<Option<f64>> =
+                h["pings"][&n.server].as_array().map(|l| l.iter().map(|p| p[1].as_f64()).collect()).unwrap_or_default();
+            let mut ok: Vec<f64> = pings.iter().flatten().copied().collect();
+            ok.sort_by(f64::total_cmp);
+            let lost = pings.len() - ok.len();
+            let stats = if pings.is_empty() {
+                "no pings recorded".to_string()
+            } else if ok.is_empty() {
+                format!("{} checks, all lost", pings.len())
+            } else {
+                format!(
+                    "{} checks, median {:.0} ms, worst {:.0} ms, lost {lost}",
+                    pings.len(),
+                    ok[ok.len() / 2],
+                    ok[ok.len() - 1]
+                )
+            };
+            let place = vault.get(&n.server).and_then(|v| v["where"].as_str()).unwrap_or("?");
+            format!("{tag:<7} {}  {place}  {stats}", n.server)
+        })
+        .collect()
+}
+
 // Plain facts about the setup as (label, value); nothing personal, and the scrubber runs over it too (report.summary)
 pub fn summary(paths: &Paths, ssh: &mut impl Ssh) -> Vec<(String, String)> {
     let s = Settings::read(paths).unwrap_or_default();
@@ -127,10 +215,11 @@ pub fn summary(paths: &Paths, ssh: &mut impl Ssh) -> Vec<(String, String)> {
         (
             "Settings".to_string(),
             format!(
-                "check every {} min, slow above {} ms, switch margin {} ms, {} candidates per scan, auto-update {}",
+                "check every {} min, slow above {} ms, switch margin {} ms, speed floor {} Mbps, {} candidates per scan, auto-update {}",
                 s.check_min,
                 s.slow_ms,
                 s.tolerance_ms,
+                s.min_mbps,
                 s.top,
                 on(s.auto_update != 0)
             ),
@@ -147,6 +236,16 @@ pub fn summary(paths: &Paths, ssh: &mut impl Ssh) -> Vec<(String, String)> {
         ),
         ("Router features".to_string(), router),
     ];
+    rows.push(("PC tunnel".to_string(), pc_state(paths)));
+    let tmp = std::fs::read_dir(&paths.data)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter(|e| e.file_name().to_string_lossy().ends_with(".tmp"))
+        .count();
+    if tmp > 0 {
+        rows.push(("Leftover files".to_string(), format!("{tmp} unfinished write(s) (.tmp) in the data folder")));
+    }
     if s.router != 0 {
         rows.push((
             "Router".to_string(),
@@ -189,6 +288,10 @@ pub fn make(paths: &Paths, ssh: &mut impl Ssh) -> Result<(PathBuf, String), Stri
         ),
     ];
     out.extend(section("Setup", rows.iter().map(|(k, v)| format!("{k:<w$}  {v}")).collect()));
+    let nodes: Vec<String> = node_health(paths).iter().map(|l| sc.scrub(l)).collect();
+    out.extend(section("Nodes in use (tunnel pings over 48 hours)", nodes));
+    let acts: Vec<String> = activity(paths).iter().map(|l| sc.scrub(l)).collect();
+    out.extend(section("Activity (last 48 hours, newest last)", acts));
     let last40 = problems[problems.len().saturating_sub(40)..].to_vec();
     out.extend(section("Problems found in the window and watcher logs (newest last)", last40));
     out.extend(section(&format!("Watcher log (watch.log, last {LINES} lines)"), logs["watch"].clone()));

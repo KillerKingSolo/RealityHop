@@ -118,3 +118,15 @@ fn all_dead_writes_no_tunnel_fails() {
     clash_api::tunnel_fails_note(&p, &ns, NOW);
     assert!(!p.tunnel_fails.exists());
 }
+
+#[test]
+fn a_node_that_breaks_pia_stays_out_even_when_it_passes() {
+    let p = temp_data("breaks");
+    clash_api::pia_break_note(&p, "198.51.100.7", NOW - 60.0);
+    // it works in the tunnel again: that clears tunnel-fails.json, not the break
+    let mut ns = nodes(&["198.51.100.7"]);
+    ns[0]["pc_ms"] = json!(50);
+    clash_api::tunnel_fails_note(&p, &ns, NOW);
+    assert!(clash_api::tunnel_fails(&p, NOW).contains_key("198.51.100.7"));
+    assert!(!clash_api::tunnel_fails(&p, NOW + 12.0 * 3600.0).contains_key("198.51.100.7"), "kept past 12 hours");
+}

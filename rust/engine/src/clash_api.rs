@@ -93,6 +93,20 @@ impl ControlApi {
     }
 }
 
+// The traffic through the PC tunnel now, in KB/s over 10 s, from sing-box's running byte totals (/connections). Asks
+// only the local API; sends nothing out. None when the API does not answer
+pub fn tunnel_rate(paths: &Paths) -> Option<f64> {
+    let api = ControlApi::pc(paths).ok()?;
+    let total = || -> Option<f64> {
+        let v: Value = serde_json::from_str(&api.get("/connections", Duration::from_secs(3)).ok()?).ok()?;
+        Some(v.get("downloadTotal")?.as_f64()? + v.get("uploadTotal")?.as_f64()?)
+    };
+    let (a, t) = (total()?, Instant::now());
+    std::thread::sleep(Duration::from_secs(10));
+    let b = total()?;
+    Some((b - a).max(0.0) / 1000.0 / t.elapsed().as_secs_f64())
+}
+
 /// What check_pc found besides each node's pc_ms and pc_why.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PcCheck {
@@ -189,12 +203,38 @@ pub fn tunnel_fails_note(paths: &Paths, nodes: &[Value], now: f64) {
     let _ = jsave(&paths.tunnel_fails, &Value::Object(kept), None);
 }
 
-// server -> time it last failed in the PC tunnel, within FAIL_HOURS (engine.tunnel_fails)
+// server -> time it last failed in the PC tunnel or broke PIA's connection, within FAIL_HOURS (engine.tunnel_fails)
 pub fn tunnel_fails(paths: &Paths, now: f64) -> Map<String, Value> {
     jload(&paths.tunnel_fails)
         .into_iter()
+        .chain(jload(&paths.pia_breaks))
         .filter(|(_, t)| t.is_number() && t.as_f64().is_some_and(|t| now - t < FAIL_HOURS * 3600.0))
         .collect()
+}
+
+// A node that broke PIA's connection again and again: out of the spares for FAIL_HOURS. Kept apart from
+// tunnel-fails.json, since it passes the short tests that clear a node from there
+pub fn pia_break_note(paths: &Paths, server: &str, now: f64) {
+    let mut f = jload(&paths.pia_breaks);
+    f.insert(server.to_string(), Value::from(now));
+    let kept: Map<String, Value> =
+        f.into_iter().filter(|(_, t)| t.as_f64().is_some_and(|t| now - t < FAIL_HOURS * 3600.0)).collect();
+    let _ = jsave(&paths.pia_breaks, &Value::Object(kept), None);
+}
+
+// The node the PC tunnel sends traffic through now (its address), from the local control API. None when the API does
+// not answer or the tunnel still runs an older set than pc-config.json
+pub fn tunnel_node(paths: &Paths) -> Option<String> {
+    let api = ControlApi::pc(paths).ok()?;
+    let v: Value = serde_json::from_str(&api.get("/proxies", Duration::from_secs(3)).ok()?).ok()?;
+    let px = v.get("proxies")?.as_object()?;
+    let list = crate::singbox_config::nodes_of(&paths.pc_cfg).ok()?;
+    let mark = crate::singbox_config::set_mark(list.iter().map(|(_, n)| n.server.as_str()));
+    if !px.contains_key(&mark) {
+        return None;
+    }
+    let tag = px.get("auto")?.get("now")?.as_str()?;
+    list.into_iter().find(|(t, _)| t == tag).map(|(_, n)| n.server)
 }
 
 // The PC tunnel's exit address, from api.ipify.org through the tunnel's SOCKS port (engine.pc_exit)

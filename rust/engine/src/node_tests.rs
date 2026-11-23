@@ -106,20 +106,48 @@ pub fn free_base(k: usize) -> Result<u16, String> {
         .ok_or_else(|| "no free local ports for the node test".into())
 }
 
-// A copy of rh-core named rh-test for the node tests: the tunnel checks look for rh-core by name, and stopping the
-// tunnel must not stop a running test. Refreshed whenever rh-core changes; rh-core itself when the copy fails
-// (engine.test_exe)
+// rh-core under the name rh-test for the node tests: the tunnel checks look for rh-core by name, and stopping the
+// tunnel must not stop a running test. A hard link, so the large program is on disk once; a copy where a link does
+// not work. Made again whenever rh-core changes; rh-core itself when neither works (engine.test_exe)
 pub fn test_exe(paths: &Paths) -> PathBuf {
     let t = paths.data.join(format!("rh-test{EXE}"));
-    let stale = match (std::fs::metadata(&t), std::fs::metadata(&paths.core)) {
-        (_, Err(_)) => return paths.core.clone(),
-        (Err(_), _) => true,
-        (Ok(a), Ok(b)) => a.len() != b.len() || a.modified().ok() < b.modified().ok(),
-    };
-    if stale && (std::fs::create_dir_all(&paths.data).is_err() || std::fs::copy(&paths.core, &t).is_err()) {
-        return paths.core.clone();
+    let Ok(b) = std::fs::metadata(&paths.core) else { return paths.core.clone() };
+    let fresh = std::fs::metadata(&t).is_ok_and(|a| a.len() == b.len() && a.modified().ok() >= b.modified().ok());
+    if fresh && same_file(&t, &paths.core) {
+        return t;
     }
-    t
+    if std::fs::remove_file(&t).is_err() && fresh {
+        return t; // a current copy that runs now cannot go; it is linked next time
+    }
+    let _ = std::fs::create_dir_all(&paths.data);
+    if std::fs::hard_link(&paths.core, &t).is_ok() || std::fs::copy(&paths.core, &t).is_ok() {
+        return t;
+    }
+    paths.core.clone()
+}
+
+// Whether two paths are the same file on disk (hard links of one file)
+fn same_file(a: &std::path::Path, b: &std::path::Path) -> bool {
+    #[cfg(windows)]
+    {
+        use std::os::windows::io::AsRawHandle;
+        use windows_sys::Win32::Storage::FileSystem::{BY_HANDLE_FILE_INFORMATION, GetFileInformationByHandle};
+        let id = |p: &std::path::Path| -> Option<(u32, u32, u32)> {
+            let f = std::fs::File::open(p).ok()?;
+            let mut i: BY_HANDLE_FILE_INFORMATION = unsafe { std::mem::zeroed() };
+            let ok = unsafe { GetFileInformationByHandle(f.as_raw_handle(), &mut i) } != 0;
+            ok.then_some((i.dwVolumeSerialNumber, i.nFileIndexHigh, i.nFileIndexLow))
+        };
+        id(a).is_some_and(|x| id(b) == Some(x))
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        match (std::fs::metadata(a), std::fs::metadata(b)) {
+            (Ok(x), Ok(y)) => x.dev() == y.dev() && x.ino() == y.ino(),
+            _ => false,
+        }
+    }
 }
 
 // curl through the SOCKS port of a test instance, then the rest of the arguments

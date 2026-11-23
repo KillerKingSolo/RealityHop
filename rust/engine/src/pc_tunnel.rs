@@ -115,6 +115,7 @@ pub fn boot_task_here(paths: &Paths) -> bool {
 // Stop every rh-core: the boot task's copy (only the task can stop it) and our own; wait until 2080 is free, 10 s at
 // most (engine.core_stop)
 pub fn core_stop(paths: &Paths) -> bool {
+    RESTARTED.store(now() as u64, std::sync::atomic::Ordering::SeqCst);
     let t = Instant::now();
     dbg(|| format!("stop: before {}", rh_procs()));
     if cfg!(windows) && boot_task_here(paths) {
@@ -268,6 +269,14 @@ fn pia(paths: &Paths, extra: &[String]) {
     }
 }
 
+// When this process last restarted or stopped the PC tunnel (seconds since 1970)
+static RESTARTED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+// Whether this process restarted or stopped the PC tunnel within the last secs: a PIA drop then is its own doing
+pub fn restarted_within(secs: f64) -> bool {
+    now() - (RESTARTED.load(std::sync::atomic::Ordering::SeqCst) as f64) < secs
+}
+
 // Restart the PC tunnel on pc-config.json, no UAC. If the task-started copy does not come up, a direct start is the
 // fallback, so the tunnel is never left down (engine.core_restart)
 pub fn core_restart(paths: &Paths) -> bool {
@@ -275,6 +284,7 @@ pub fn core_restart(paths: &Paths) -> bool {
         say("router-only mode: no tunnel on this PC");
         return true;
     }
+    RESTARTED.store(now() as u64, std::sync::atomic::Ordering::SeqCst);
     let t0 = Instant::now();
     dbg(|| format!("restart requested; stopped: {}, running: {}", settings::stopped(paths), core_running(paths)));
     // make before break: the new nodes join PIA's list next to the old ones, which carry the VPN until the restart

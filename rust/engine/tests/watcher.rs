@@ -54,6 +54,45 @@ fn a_tray_request_wakes_the_loop_and_quit_ends_it() {
 }
 
 #[test]
+fn a_node_that_carried_three_drops_in_an_hour_is_the_breaker() {
+    let w = Watch::new();
+    let t = 1_000_000.0;
+    w.blame("a", t);
+    w.blame("b", t + 100.0);
+    w.blame("a", t + 400.0);
+    assert_eq!(w.breaker(t + 500.0), None, "two drops");
+    w.blame("a", t + 800.0);
+    assert_eq!(w.breaker(t + 900.0).as_deref(), Some("a"));
+    assert_eq!(w.breaker(t + 3700.0), None, "the first drop is over an hour old");
+    w.blame("a", t + 3800.0);
+    assert_eq!(w.breaker(t + 3900.0).as_deref(), Some("a"));
+    w.forgive("a");
+    assert_eq!(w.breaker(t + 3900.0), None, "forgiven once replaced");
+}
+
+#[test]
+fn the_speed_check_waits_for_a_quiet_line_but_not_past_a_day() {
+    use engine::watcher::{IDLE_KBPS, speed_check_go};
+    let hour = 3600.0;
+    assert!(speed_check_go(Some(0.5), 0.0), "a quiet line");
+    assert!(speed_check_go(None, 0.0), "the traffic is unknown: as before");
+    assert!(!speed_check_go(Some(IDLE_KBPS), 0.0), "a game or a call");
+    assert!(!speed_check_go(Some(900.0), 23.0 * hour), "a download, waited 23 hours");
+    assert!(speed_check_go(Some(900.0), 25.0 * hour), "waited over a day: it runs");
+}
+
+#[test]
+fn start_after_stop_lets_the_loop_run_again() {
+    let w = Watch::new();
+    w.stop();
+    assert!(!w.sleep(5.0), "stopped");
+    w.resume();
+    let t = Instant::now();
+    assert!(w.sleep(0.3), "Start lets it run again");
+    assert!(t.elapsed() >= Duration::from_millis(250), "it slept, not a leftover wake-up");
+}
+
+#[test]
 fn the_tooltip_says_what_the_tray_shows() {
     let st =
         WatchState { last: Some(("warn".into(), "5 of 6 nodes working".into(), "12:34".into())), ..Default::default() };

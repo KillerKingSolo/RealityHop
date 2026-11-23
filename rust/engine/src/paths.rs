@@ -22,6 +22,8 @@ pub struct Paths {
     pub vault: PathBuf,
     /// Nodes that just failed in the running PC tunnel.
     pub tunnel_fails: PathBuf,
+    /// Nodes that broke PIA's connection again and again (pass the short tests, fail long connections).
+    pub pia_breaks: PathBuf,
     pub logs: PathBuf,
     pub core_log: PathBuf,
     pub tray_icons: PathBuf,
@@ -54,6 +56,7 @@ impl Paths {
             feed_cache: d("feed-cache.txt"),
             vault: d("vault.json"),
             tunnel_fails: d("tunnel-fails.json"),
+            pia_breaks: d("pia-breaks.json"),
             tray_icons: d("tray-icons"),
             router_key: d("router_ed25519"),
             known_hosts: d("known_hosts"),

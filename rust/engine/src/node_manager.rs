@@ -190,12 +190,36 @@ pub fn pc_push(paths: &Paths) -> bool {
     crate::pc_tunnel::core_restart(paths)
 }
 
+// A node set that is not urgent for the PC tunnel: another PC's (or the router's self-repair's) choice, or a faster
+// node for a slow one. A restart drops a VPN connected through the tunnel, and the nodes it runs still work: while PIA
+// is connected the new set waits, and the PC tunnel takes it the moment PIA is not connected, at its next restart for
+// another reason, or when PIA cannot reconnect. Without PIA, or with the tunnel down, at once
+fn pc_push_when_free(paths: &Paths) {
+    use crate::pc_tunnel::{core_mode, core_running};
+    if core_mode(paths) && core_running(paths) && crate::watcher::pia_connected() {
+        say(
+            "PIA is connected through the PC tunnel: it keeps its working nodes for now and takes the new set when PIA is not connected or at its next restart",
+        );
+        return;
+    }
+    pc_push(paths);
+}
+
 // Deploy both configs: to the router (push) and to the PC tunnel (pc_push). A router that cannot be reached does not
 // stop the PC tunnel restart. (router ok, router answer) (engine.deploy_files)
 pub fn deploy_files(paths: &Paths, ssh: &mut impl Ssh) -> (bool, String) {
+    deploy_files_how(paths, ssh, true)
+}
+
+// deploy_files; pc_now false: the PC tunnel takes the set when a restart costs nothing (pc_push_when_free)
+fn deploy_files_how(paths: &Paths, ssh: &mut impl Ssh, pc_now: bool) -> (bool, String) {
     let out = push(paths, ssh).unwrap_or_else(|e| format!("router not updated: {e}"));
     say(&out);
-    pc_push(paths);
+    if pc_now {
+        pc_push(paths);
+    } else {
+        pc_push_when_free(paths);
+    }
     let ok = out.contains("sing-box service: running") || pc_only(paths);
     PUSHED.store(ok, Ordering::SeqCst);
     (ok, out)
@@ -214,10 +238,21 @@ pub fn pending_deploy(paths: &Paths) -> Option<bool> {
 // Write the node set everywhere, push it to the router, restart the PC tunnel on it. True when the router took it
 // (engine.deploy)
 pub fn deploy(paths: &Paths, ssh: &mut impl Ssh, best: &[Value], tested: Option<&[Value]>) -> Result<bool, String> {
+    deploy_how(paths, ssh, best, tested, true)
+}
+
+// deploy; pc_now false: the PC tunnel takes the set when a restart costs nothing (pc_push_when_free)
+fn deploy_how(
+    paths: &Paths,
+    ssh: &mut impl Ssh,
+    best: &[Value],
+    tested: Option<&[Value]>,
+    pc_now: bool,
+) -> Result<bool, String> {
     write_configs(paths, best)?;
     write_txt(paths, tested.unwrap_or(best), best)?;
     say(&format!("wrote {} nodes to both configs; deploying...", best.len()));
-    Ok(deploy_files(paths, ssh).0)
+    Ok(deploy_files_how(paths, ssh, pc_now).0)
 }
 
 // The 443 ping: from this PC; when nothing at all answers (this PC is offline), from the router. In router-only mode
@@ -396,7 +431,8 @@ pub fn replace(
     let in_set: HashSet<String> = servers(&cur).into_iter().collect();
     let mut all = cur.clone();
     all.extend(tested.into_iter().filter(|t| !in_set.contains(&field(t, "server"))));
-    deploy(paths, ssh, &cur, Some(&all))?;
+    // fast_only is the speed swap: the slow nodes still work, so the PC tunnel switches when a restart costs nothing
+    deploy_how(paths, ssh, &cur, Some(&all), !fast_only)?;
     Ok(swaps)
 }
 
@@ -637,7 +673,7 @@ pub fn router_sync(paths: &Paths, ssh: &mut impl Ssh) -> Result<Option<String>, 
     if servers(&nodes) == before {
         return Ok(None);
     }
-    pc_push(paths);
+    pc_push_when_free(paths);
     let who = if heal.is_empty() {
         "Another PC changed the router's nodes"
     } else {

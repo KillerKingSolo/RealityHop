@@ -52,6 +52,24 @@ fn the_test_copy_follows_rh_core() {
 }
 
 #[test]
+fn the_test_copy_is_a_link_not_a_second_file() {
+    use std::io::Write;
+    let d = data("link");
+    let paths = Paths::new(&d);
+    std::fs::create_dir_all(&paths.pc_dir).unwrap();
+    std::fs::write(&paths.core, b"build").unwrap();
+    // a copy from before: current, but a file of its own
+    let t = d.join(format!("rh-test{EXE}"));
+    std::fs::write(&t, b"build").unwrap();
+    assert_eq!(test_exe(&paths), t);
+    // one file on disk: a change to rh-core shows in rh-test at once
+    std::fs::OpenOptions::new().append(true).open(&paths.core).unwrap().write_all(b" 2").unwrap();
+    assert_eq!(std::fs::read(&t).unwrap(), b"build 2", "rh-test is not a link of rh-core");
+    assert_eq!(test_exe(&paths), t, "the link stays");
+    let _ = std::fs::remove_dir_all(&d);
+}
+
+#[test]
 fn local_test_refuses_without_rh_core_and_passes_no_nodes() {
     let d = data("refuse");
     let paths = Paths::new(&d);

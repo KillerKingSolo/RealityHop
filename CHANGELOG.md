@@ -4,6 +4,20 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 2.1.0 (2026-11-23)
+
+**Why update:** far fewer PIA drops, most of all with two PCs on one router, and no speed test while you game.
+
+- Fixed: when another PC changed the router's nodes, this PC restarted its tunnel at once and PIA dropped. It now keeps its working nodes while PIA is connected and takes the new set when PIA is not connected or at its next restart.
+- Fixed: a node that breaks long connections passed every check and dropped PIA every few minutes. A node in use at 3 PIA drops within an hour is now replaced at once and kept out for 12 hours.
+- Fixed: Start after Stop, or turning the background watcher back on in Settings, did not restart the watcher until Reality Hop was reopened.
+- Fixed: PIA's state feed kept running after the watcher stopped.
+- Fixed: the window and the watcher could change the nodes and the tunnel at the same time, and the window's Cancel could stop the watcher's work. They now take turns, and Cancel stops only the window's action.
+- Changed: the 6-hourly speed check waits while traffic goes through the tunnel (a game, a call, a download), for up to a day. Swapping a slow node that still works no longer restarts the tunnel while PIA is connected.
+- Changed: nodes taken from the router are no longer download-tested on the spot.
+- Changed: anonymous problem reports add the PC tunnel and PIA state, each node's pings over 48 hours, and a 48-hour activity history. Everything personal is still taken out.
+- Changed: rh-test.exe is a hard link to rh-core.exe instead of a second 79 MB copy, and waiting for a program uses less CPU on Windows.
+
 ## 2.0.7 (2026-11-21)
 
 **Why update:** Check for updates in Settings now shows the update window when there is an update.
