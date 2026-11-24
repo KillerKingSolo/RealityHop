@@ -533,5 +533,13 @@
  "Reality Hop is updated to {ver}": "Reality Hop 已更新到 {ver}",
  "What's new since your last version:": "自你上一版本以来的新内容：",
  "Reality Hop was updated to {ver}. Open it to see what is new.": "Reality Hop 已更新到 {ver}。打开它查看新内容。",
- "Star on GitHub": "在 GitHub 上点星"
+ "Star on GitHub": "在 GitHub 上点星",
+ "Clear": "清除",
+ "Clear the chart?": "清除图表？",
+ "HOST": "主机商",
+ "This removes the events of the last 24 hours from the chart and from problem reports. Older events and node pings stay.": "这会从图表和问题报告中删除过去 24 小时的事件。更早的事件和节点 ping 数据会保留。",
+ "Check the node speeds every (hours; each check can use up to 50 MB per node)": "每隔多久检查节点速度（小时；每次检查每个节点最多可用 50 MB）",
+ "PIA down {s} s, longest {m} s": "PIA 中断 {s} 秒，最长 {m} 秒",
+ "after {n} s": "{n} 秒后",
+ "Working, but slow (over {ms} ms)": "可用，但较慢（超过 {ms} 毫秒）"
 }

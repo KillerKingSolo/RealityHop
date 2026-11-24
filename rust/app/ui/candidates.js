@@ -1,7 +1,8 @@
 // The Candidates dialog: node-list candidates that could replace yours. Click one, Ctrl+click more: the click order
 // numbers them vless-1, vless-2, ... (Candidates)
 'use strict';
-const CAND_HEAD = [['num', ''], ['server', 'SERVER'], ['front', 'FRONT'], ['where', 'LOCATION'], ['tcp', '443 PING'],
+const CAND_HEAD = [['num', ''], ['server', 'SERVER'], ['front', 'FRONT'], ['where', 'LOCATION'], ['host', 'HOST'],
+  ['tcp', '443 PING'],
   ['tunnel', 'TUNNEL'], ['result', 'STATUS']];
 let cand = null;   // { view, order, ctx, table, status, pick } while the dialog is open
 
@@ -69,12 +70,13 @@ async function drawCandidates() {
   for (const r of v.rows) {
     const n = cand.order.indexOf(r.server);
     const tr = el('tr', r.state + (n >= 0 ? ' sel' : ''));
-    for (const x of [n >= 0 ? String(n + 1) : '', r.server, r.front, r.where, r.tcp, r.tunnel, r.result]) tr.append(el('td', '', x));
+    for (const x of [n >= 0 ? String(n + 1) : '', r.server, r.front, r.where, r.host, r.tcp, r.tunnel, r.result]) tr.append(el('td', '', x));
     tr.onclick = e => { e.stopPropagation(); pick(r.server, e.ctrlKey || e.metaKey); };
     tr.oncontextmenu = e => { e.preventDefault(); e.stopPropagation(); cand.ctx = r.server; candMenu(e); };
     body.append(tr);
   }
   t.replaceChildren(cols, thead, body);
+  await candFit();
   cand.pick.textContent = cand.order.length ? cand.order.map((s, i) => `vless-${i + 1} ← ${s}`).join('   ') : await T('No candidates picked');
 }
 
@@ -144,3 +146,10 @@ async function putBest() {
 }
 
 window.addEventListener('DOMContentLoaded', () => listen('changed', drawCandidates));
+
+// The Candidates table's column widths, as on the main page; STATUS keeps room for a working candidate's result
+async function candFit() {
+  if (!cand || !cand.table) return;
+  fitTables([cand.table], CAND_HEAD, await T('Works, {ms} ms in the test, exit {ip}', { ms: '9999', ip: '255.255.255.255' }));
+}
+window.addEventListener('resize', () => { candFit(); });

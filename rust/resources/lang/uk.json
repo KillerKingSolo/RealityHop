@@ -533,5 +533,13 @@
  "Reality Hop is updated to {ver}": "Reality Hop оновлено до {ver}",
  "What's new since your last version:": "Що нового від вашої попередньої версії:",
  "Reality Hop was updated to {ver}. Open it to see what is new.": "Reality Hop оновлено до {ver}. Відкрийте його, щоб побачити, що нового.",
- "Star on GitHub": "Зірка на GitHub"
+ "Star on GitHub": "Зірка на GitHub",
+ "Clear": "Очистити",
+ "Clear the chart?": "Очистити графік?",
+ "HOST": "ХОСТИНГ",
+ "This removes the events of the last 24 hours from the chart and from problem reports. Older events and node pings stay.": "Це видалить події за останні 24 години з графіка та зі звітів про проблеми. Старіші події та пінги вузлів залишаться.",
+ "Check the node speeds every (hours; each check can use up to 50 MB per node)": "Перевіряти швидкість вузлів кожні (годин; кожна перевірка може використати до 50 МБ на вузол)",
+ "PIA down {s} s, longest {m} s": "PIA не працював {s} с, найдовше {m} с",
+ "after {n} s": "через {n} с",
+ "Working, but slow (over {ms} ms)": "Працює, але повільно (понад {ms} мс)"
 }

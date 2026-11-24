@@ -35,10 +35,14 @@ pub fn write_text(path: &Path, text: &str, nl: Newlines) -> io::Result<()> {
         std::fs::create_dir_all(dir)?;
     }
     let tmp = temp_path(path);
-    {
+    let wrote = (|| {
         let mut f = std::fs::File::create(&tmp)?;
         f.write_all(on_disk(text, nl).as_bytes())?;
-        f.sync_all()?;
+        f.sync_all()
+    })();
+    if let Err(e) = wrote {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(e);
     }
     for i in 0..20 {
         match std::fs::rename(&tmp, path) {
@@ -53,6 +57,25 @@ pub fn write_text(path: &Path, text: &str, nl: Newlines) -> io::Result<()> {
         }
     }
     unreachable!()
+}
+
+// Files in the data folder that nothing needs any more, removed at the app's start: unfinished writes (.tmp) of a
+// process that was stopped, the node test's rh-test, the router key console script, and 1.x's tray-window.json.
+// Only when 10 minutes old, so a write, a test or a console of a running copy is never cut off
+pub fn leftovers_remove(data: &Path) {
+    let names = ["rh-test.exe", "rh-test", "add-router-key.cmd", "add-router-key.command", "tray-window.json"];
+    for e in std::fs::read_dir(data).into_iter().flatten().flatten() {
+        let name = e.file_name().to_string_lossy().into_owned();
+        let old = e
+            .metadata()
+            .and_then(|m| m.modified())
+            .ok()
+            .and_then(|t| t.elapsed().ok())
+            .is_some_and(|a| a.as_secs() >= 600);
+        if old && e.path().is_file() && (name.ends_with(".tmp") || names.contains(&name.as_str())) {
+            let _ = std::fs::remove_file(e.path());
+        }
+    }
 }
 
 // Write JSON as engine.jsave does (json.dump with the given indent, atomically)

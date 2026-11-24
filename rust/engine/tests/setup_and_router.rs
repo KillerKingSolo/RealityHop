@@ -58,9 +58,26 @@ impl Ssh for Fake {
     }
 }
 
+// Whether the system's ssh-keygen can make a key here (Windows Sandbox has none that runs)
+fn keygen_works(d: &std::path::Path) -> bool {
+    std::fs::create_dir_all(d).unwrap();
+    let probe = d.join("probe");
+    let ok = std::process::Command::new(engine::process::system_tool("ssh-keygen"))
+        .args(["-q", "-t", "ed25519", "-N", "", "-f"])
+        .arg(&probe)
+        .output()
+        .is_ok_and(|o| o.status.success());
+    let _ = std::fs::remove_dir_all(d);
+    ok
+}
+
 #[test]
 fn the_router_key_is_made_once_and_removed_by_its_own_text() {
     let d = data("key");
+    if !keygen_works(&d.with_extension("probe")) {
+        eprintln!("skipped: no working ssh-keygen on this machine");
+        return;
+    }
     let paths = Paths::new(&d);
     let public = engine::router_actions::make_key(&paths).unwrap();
     assert!(public.starts_with("ssh-ed25519 ") && public.ends_with(" realityhop"), "{public}");
@@ -125,5 +142,22 @@ fn a_problem_report_takes_out_personal_data_and_keeps_five() {
     if user.chars().count() > 2 {
         assert!(!text.contains(&user), "the user name is taken out");
     }
+    let _ = std::fs::remove_dir_all(&d);
+}
+
+#[test]
+fn leftover_files_go_at_the_start_once_ten_minutes_old() {
+    let d = data("leftovers");
+    std::fs::create_dir_all(&d).unwrap();
+    let old = std::time::SystemTime::now() - std::time::Duration::from_secs(700);
+    for name in ["rh-test.exe", "history.json.1-ThreadId2.tmp", "tray-window.json", "add-router-key.cmd", "nodes.txt"] {
+        std::fs::File::create(d.join(name)).unwrap().set_modified(old).unwrap();
+    }
+    std::fs::write(d.join("last.json.3-ThreadId4.tmp"), b"a write of a running copy").unwrap();
+    engine::data_files::leftovers_remove(&d);
+    let mut left: Vec<String> =
+        std::fs::read_dir(&d).unwrap().map(|e| e.unwrap().file_name().to_string_lossy().into_owned()).collect();
+    left.sort();
+    assert_eq!(left, ["last.json.3-ThreadId4.tmp", "nodes.txt"]);
     let _ = std::fs::remove_dir_all(&d);
 }

@@ -533,5 +533,13 @@
  "Reality Hop is updated to {ver}": "Reality Hop se actualizó a {ver}",
  "What's new since your last version:": "Novedades desde tu última versión:",
  "Reality Hop was updated to {ver}. Open it to see what is new.": "Reality Hop se actualizó a {ver}. Ábrelo para ver las novedades.",
- "Star on GitHub": "Dar una estrella en GitHub"
+ "Star on GitHub": "Dar una estrella en GitHub",
+ "Clear": "Borrar",
+ "Clear the chart?": "¿Borrar el gráfico?",
+ "HOST": "PROVEEDOR",
+ "This removes the events of the last 24 hours from the chart and from problem reports. Older events and node pings stay.": "Esto quita los eventos de las últimas 24 horas del gráfico y de los informes de problemas. Los eventos anteriores y los pings de los nodos se mantienen.",
+ "Check the node speeds every (hours; each check can use up to 50 MB per node)": "Comprobar la velocidad de los nodos cada (horas; cada comprobación puede usar hasta 50 MB por nodo)",
+ "PIA down {s} s, longest {m} s": "PIA caída {s} s, la más larga {m} s",
+ "after {n} s": "tras {n} s",
+ "Working, but slow (over {ms} ms)": "Funciona, pero lento (más de {ms} ms)"
 }

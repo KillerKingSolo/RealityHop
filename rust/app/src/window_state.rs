@@ -723,6 +723,12 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
     let pc_srv = server("pc", w.pcs.as_ref().and_then(|p| p.get("now")));
     let r_now = w.router.as_ref().and_then(|r| r.0.get("now").cloned()).or_else(|| w.router_now.clone());
     let r_srv = server("phone", r_now.as_ref());
+    let vault = engine::vault::load(paths);
+    // the hosting company: the node's own, else the vault's
+    let host = |n: &Value| {
+        let v = vault.get(&f(n, "server")).map(|v| f(v, "isp")).unwrap_or_default();
+        [f(n, "isp"), v].into_iter().find(|h| !h.is_empty() && h != "?").unwrap_or_else(|| "?".into())
+    };
     let mut lists = Vec::new();
     for (key, label, file) in mode.lists() {
         let rows: Vec<Value> = w
@@ -739,6 +745,16 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
                     };
                     tun = pc.filter(|p| has(p, "pc_why")).and_then(|p| p.get("pc_ms").cloned());
                 }
+                // a working node over the slow limit is orange, as in the tray ring, which judges by the PC tunnel (by
+                // the router in router-only mode)
+                let slow = state == "ok"
+                    && (key == "pc" || mode.ronly)
+                    && tun.as_ref().and_then(Value::as_f64).is_some_and(|m| m > s.slow_ms as f64);
+                let (state, text) = if slow {
+                    ("warn", tr("Working, but slow (over {ms} ms)", &[("ms", s.slow_ms.to_string())]))
+                } else {
+                    (state, text)
+                };
                 let mut active = Vec::new();
                 if pc_srv.as_deref() == Some(f(n, "server").as_str()) {
                     active.push(tr("PC", &[]));
@@ -759,7 +775,7 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
                 };
                 json!({
                     "tag": f(n, "tag"), "server": f(n, "server"), "front": brand(&f(n, "sni")),
-                    "where": if has(n, "where") { f(n, "where") } else { "?".into() },
+                    "where": if has(n, "where") { f(n, "where") } else { "?".into() }, "host": host(n),
                     "tcp": ms(n.get("tcp_ms"), &tr("None", &[])), "tunnel": ms(tun.as_ref(), "-"),
                     "state": if state == "bad" && !has(n, "tcp_ms") { "broken" } else { state },
                     "text": format!("{mark}{text}{using}"),
@@ -906,6 +922,7 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
         "check_min": s.check_min, "auto_on": w.auto_on, "auto_fix": w.auto_fix, "next_auto": w.next_auto,
         "status": {"text": w.status_text, "state": w.status_state, "pill": tr(pill, &[])},
         "tiles": tiles, "lists": lists, "events": events, "now": now(),
+        "down": engine::history::drop_lengths(&events),
         "busy": w.busy, "update": w.update.as_ref().map(|u| u.latest.ver.clone()),
         "main": mode.main(),
     })

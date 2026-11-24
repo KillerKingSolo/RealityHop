@@ -205,7 +205,10 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
         out = Some(format!("{}.", replaced(&replace(paths, ssh, &slots, None, false, false)?)));
     }
     let s = Settings::read(paths).unwrap_or_default();
-    if out.is_none() && s.min_mbps != 0 && paths.core.exists() && !router_only(paths) && now() - st.speed_t > SIX_HOURS
+    if out.is_none() && s.min_mbps != 0 && paths.core.exists() && !router_only(paths)
+        // once per periodic check, or less often when Settings say so: a check asked for or a PIA problem soon
+        // after does not test again
+        && now() - st.speed_t > ((s.check_min * 60).max(s.speed_hours * 3600)) as f64 * 0.9
     {
         let rate = crate::clash_api::tunnel_rate(paths);
         if st.speed_wait == 0.0 {
@@ -246,7 +249,7 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
 
 // Follow the router's nodes when another PC or the router's self-repair changed them (router_sync), logged and kept in
 // the history. No download test here: while PIA is connected the PC tunnel keeps its own working nodes, and the
-// 6-hourly speed check judges the new ones. A sentence when the nodes changed
+// speed check of the next periodic check judges the new ones. A sentence when the nodes changed
 pub fn follow_router(paths: &Paths, ssh: &mut impl Ssh) -> Result<Option<String>, String> {
     let Some(healed) = router_sync(paths, ssh)? else { return Ok(None) };
     say(&healed);
@@ -254,8 +257,9 @@ pub fn follow_router(paths: &Paths, ssh: &mut impl Ssh) -> Result<Option<String>
     Ok(Some(healed))
 }
 
-// The 6-hourly speed check fills the line for a few seconds. It waits while something uses the PC tunnel (traffic
-// over IDLE_KBPS: a game, a call, a download), but not longer than a day. rate: the traffic now, None when unknown
+// The speed check runs with each periodic check, so a node that throttles later is caught. It fills the line for a
+// few seconds, so it waits while something uses the PC tunnel (traffic over IDLE_KBPS: a game, a call, a download),
+// but not longer than a day. rate: the traffic now, None when unknown
 pub fn speed_check_go(rate_kbps: Option<f64>, waited: f64) -> bool {
     rate_kbps.is_none_or(|r| r < IDLE_KBPS) || waited > DAY
 }
@@ -562,14 +566,18 @@ impl Watch {
         };
         // the node that carried PIA when it lost its connection; not a disconnect by hand or a settings change, and
         // not a drop Reality Hop caused by restarting the tunnel
-        if wake
-            && state == "Reconnecting"
-            && !crate::pc_tunnel::restarted_within(60.0)
-            && let Some(node) = crate::clash_api::tunnel_node(paths)
-        {
+        // a drop of PIA's own, not a disconnect by hand or one a tunnel restart caused
+        let own = wake && state == "Reconnecting" && !crate::pc_tunnel::restarted_within(60.0);
+        if own && let Some(node) = crate::clash_api::tunnel_node(paths) {
             self.blame(&node, t);
         }
         dbg(|| format!("PIA {} -> {state}", if prev.is_empty() { "?" } else { &prev }));
+        // the tunnel's group tests its nodes only every 10 minutes: a node that still connects but stopped passing
+        // traffic would keep PIA's retries until then. Test them all now, so PIA's next try goes through a working one
+        if wake && core_mode(paths) && !stopped(paths) {
+            let p = paths.clone();
+            std::thread::spawn(move || steer(&p, own));
+        }
         if wake {
             say(&format!("PIA dropped ({state})"));
             self.wake();
@@ -623,7 +631,7 @@ impl Watch {
 pub fn tray_tip(st: &WatchState, drops: usize, core: bool) -> (String, String) {
     let (state, text, at) =
         st.last.clone().unwrap_or_else(|| ("unk".into(), tr("Not checked yet", &[]), String::new()));
-    let mut tip = format!("Reality Hop  ·  {text}");
+    let mut tip = format!("Reality Hop {}  ·  {text}", crate::VERSION);
     if !at.is_empty() {
         tip += &format!("  ·  {at}");
     }
@@ -633,8 +641,15 @@ pub fn tray_tip(st: &WatchState, drops: usize, core: bool) -> (String, String) {
     if !core {
         tip += &format!("  ·  {}", tr("rh-core missing", &[]));
     }
+    // Windows shows at most 127 characters in a tray tooltip and drops the rest silently
+    if tip.chars().count() > TIP_MAX {
+        tip = tip.chars().take(TIP_MAX - 1).collect::<String>().trim_end().to_string() + "…";
+    }
     (state, tip)
 }
+
+/// The longest tray tooltip Windows shows.
+pub const TIP_MAX: usize = 127;
 
 // The last tray state, from tray.json, so the icon is not grey while the first check runs
 pub fn tray_load(paths: &Paths) -> WatchState {
@@ -882,5 +897,39 @@ pub fn watch_loop(paths: &Paths, watch: &Arc<Watch>, hooks: &impl WatchHooks, cm
             pia_feed_stop();
             return;
         }
+    }
+}
+
+/// How long the tunnel holds another node after the one in use broke PIA's connection but still passes the quick test.
+pub const HOLD: Duration = Duration::from_secs(600);
+
+/// Which hold is the latest: an older one that ends after a newer one started must not end the newer one.
+static HOLDS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+// After a PIA drop: test every node at once, so PIA's next try goes through a working one instead of waiting for the
+// group's 10-minute test. own: PIA lost the connection itself; when the test keeps the same node (it answers the quick
+// test but broke PIA), the tunnel holds the next best node for HOLD, then goes back to automatic
+fn steer(p: &Paths, own: bool) {
+    use std::sync::atomic::Ordering;
+    let mine = HOLDS.fetch_add(1, Ordering::SeqCst) + 1;
+    crate::clash_api::pick(p, "auto"); // a new drop ends any hold
+    let tag = |p: &Paths| crate::clash_api::proxies(p).as_ref().and_then(crate::clash_api::now_tag);
+    let before = tag(p);
+    crate::pc_tunnel::regroup_within(p, 3000);
+    let after = tag(p);
+    if after.is_some() && after != before {
+        say("PIA drop: the nodes were tested at once and the PC tunnel moved to a working one");
+        return;
+    }
+    let Some(bad) = after.filter(|_| own) else { return };
+    let Some(alt) = crate::clash_api::proxies(p).and_then(|px| crate::clash_api::best_other(&px, &bad)) else { return };
+    if !crate::clash_api::pick(p, &alt) {
+        return; // the tunnel runs a config from before 2.1.1: no selector until its next start
+    }
+    say(&format!("PIA drop: {bad} still passes the quick test; the PC tunnel uses {alt} for 10 minutes"));
+    std::thread::sleep(HOLD);
+    if HOLDS.load(Ordering::SeqCst) == mine && tag(p).as_deref() == Some(alt.as_str()) {
+        crate::clash_api::pick(p, "auto");
+        say(&format!("the 10-minute hold on {alt} ended; the PC tunnel picks its node automatically again"));
     }
 }

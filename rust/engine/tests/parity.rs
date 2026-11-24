@@ -244,6 +244,7 @@ fn settings_load() {
     check_fixed("settings_load", load, |a, py, _| {
         let defaults = serde_json::to_value(Settings::default()).unwrap();
         let mut want = py.clone();
+        want[0]["speed_hours"] = defaults["speed_hours"].clone(); // a setting 1.x does not have
         for (k, v) in a[0].as_object()? {
             if v.is_null() && defaults[k].is_string() {
                 want[0][k] = defaults[k].clone();
@@ -655,18 +656,35 @@ fn changes() {
 
 #[test]
 fn geolocate() {
-    check("geolocate", |a| {
-        let mut nodes = objs(&a[0]);
-        let answer = s(a, 2).to_string();
-        let mut calls = Vec::new();
-        node_location::geolocate(&mut nodes, a[1].as_object().unwrap(), a[3] != true, |args, body| {
-            let mut cmd = vec![json!("curl.exe")];
-            cmd.extend(args.iter().map(|x| json!(x)));
-            calls.push(json!({"cmd": cmd, "stdin": body, "timeout": 30}));
-            Some(answer)
-        });
-        json!([nodes, calls])
-    });
+    // fix: an ISP name is kept up to 60 characters; 1.x cut it at 22
+    let fix: Fix = |_, py, got| {
+        let mut want = py.clone();
+        let mut changed = false;
+        for (w, g) in want[0].as_array_mut()?.iter_mut().zip(got[0].as_array()?) {
+            let (old, new) = (w["isp"].as_str().unwrap_or_default(), g["isp"].as_str().unwrap_or_default());
+            if old.chars().count() == 22 && new.len() > old.len() && new.starts_with(old) && new.chars().count() <= 60 {
+                w["isp"] = json!(new);
+                changed = true;
+            }
+        }
+        changed.then_some(want)
+    };
+    check_fixed(
+        "geolocate",
+        |a| {
+            let mut nodes = objs(&a[0]);
+            let answer = s(a, 2).to_string();
+            let mut calls = Vec::new();
+            node_location::geolocate(&mut nodes, a[1].as_object().unwrap(), a[3] != true, |args, body| {
+                let mut cmd = vec![json!("curl.exe")];
+                cmd.extend(args.iter().map(|x| json!(x)));
+                calls.push(json!({"cmd": cmd, "stdin": body, "timeout": 30}));
+                Some(answer)
+            });
+            json!([nodes, calls])
+        },
+        fix,
+    );
 }
 
 #[test]
@@ -798,17 +816,34 @@ fn disk_text(p: &std::path::Path) -> String {
 
 #[test]
 fn settings_save() {
-    check("settings_save", |a| {
-        let p = temp_data("settings-save");
-        engine::data_files::jsave(&p.settings, &a[0], Some(1)).unwrap();
-        engine::data_files::jsave(&p.pc_cfg, &a[2], Some(2)).unwrap();
-        engine::data_files::jsave(&p.router_cfg, &a[3], Some(2)).unwrap();
-        engine::data_files::jsave(&p.this_pc, &json!({}), None).unwrap();
-        let d = Settings::save(&p, a[1].as_object().unwrap()).unwrap();
-        let out = json!([d, disk_text(&p.settings), disk_text(&p.pc_cfg), disk_text(&p.router_cfg)]);
-        let _ = std::fs::remove_dir_all(&p.data);
-        out
+    // the new speed_hours setting is added at the end of settings.json; everything else as 1.x
+    check_fixed("settings_save", settings_save_one, |_, py, _| {
+        let mut want = py.clone();
+        want[0]["speed_hours"] = json!(1);
+        let text = py[1].as_str()?;
+        want[1] = json!(format!(
+            "{},
+ \"speed_hours\": 1
+}}",
+            text.trim_end().strip_suffix(
+                "
+}"
+            )?
+        ));
+        Some(want)
     });
+}
+
+fn settings_save_one(a: &[Value]) -> Value {
+    let p = temp_data("settings-save");
+    engine::data_files::jsave(&p.settings, &a[0], Some(1)).unwrap();
+    engine::data_files::jsave(&p.pc_cfg, &a[2], Some(2)).unwrap();
+    engine::data_files::jsave(&p.router_cfg, &a[3], Some(2)).unwrap();
+    engine::data_files::jsave(&p.this_pc, &json!({}), None).unwrap();
+    let d = Settings::save(&p, a[1].as_object().unwrap()).unwrap();
+    let out = json!([d, disk_text(&p.settings), disk_text(&p.pc_cfg), disk_text(&p.router_cfg)]);
+    let _ = std::fs::remove_dir_all(&p.data);
+    out
 }
 
 #[test]

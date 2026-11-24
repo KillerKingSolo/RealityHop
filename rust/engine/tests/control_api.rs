@@ -130,3 +130,67 @@ fn a_node_that_breaks_pia_stays_out_even_when_it_passes() {
     assert!(clash_api::tunnel_fails(&p, NOW).contains_key("198.51.100.7"));
     assert!(!clash_api::tunnel_fails(&p, NOW + 12.0 * 3600.0).contains_key("198.51.100.7"), "kept past 12 hours");
 }
+
+#[test]
+fn the_selector_goes_in_front_of_auto_once_and_follows_the_node_set() {
+    use engine::singbox_config::{PICK, pick_add};
+    let mut c = serde_json::json!({"outbounds": [
+        {"type": "vless", "tag": "vless-1"}, {"type": "vless", "tag": "vless-2"},
+        {"type": "urltest", "tag": "auto", "outbounds": ["vless-1", "vless-2"]}, {"type": "direct", "tag": "direct"}],
+        "route": {"final": "auto"}});
+    assert!(pick_add(&mut c));
+    assert_eq!(
+        c["outbounds"][3],
+        serde_json::json!({"type": "selector", "tag": PICK,
+        "outbounds": ["auto", "vless-1", "vless-2"], "default": "auto"})
+    );
+    assert_eq!(c["route"]["final"], PICK);
+    assert!(!pick_add(&mut c), "only once");
+    let n = |s: &str| engine::node::Node {
+        server: s.into(),
+        uuid: "u".into(),
+        pbk: "k".into(),
+        sid: "s".into(),
+        sni: "example.com".into(),
+        fp: "chrome".into(),
+    };
+    let (pc, _) = engine::singbox_config::write_configs(&c, &serde_json::json!({"outbounds": []}), &[n("1.1.1.1")]);
+    let pick = pc["outbounds"].as_array().unwrap().iter().find(|o| o["tag"] == PICK).unwrap().clone();
+    assert_eq!(pick["outbounds"], serde_json::json!(["auto", "vless-1"]), "a new set reaches the selector too");
+}
+
+#[test]
+fn the_node_in_use_follows_a_hold_and_the_best_other_skips_the_bad_one() {
+    use engine::clash_api::{best_other, now_tag};
+    let px = |pick: &str| {
+        serde_json::json!({
+            "auto": {"now": "vless-1", "all": ["vless-1", "vless-2", "vless-3"]},
+            "pick": {"now": pick},
+            "vless-1": {"history": [{"delay": 50}]},
+            "vless-2": {"history": [{"delay": 0}]},
+            "vless-3": {"history": [{"delay": 90}]},
+        })
+        .as_object()
+        .unwrap()
+        .clone()
+    };
+    assert_eq!(now_tag(&px("auto")).as_deref(), Some("vless-1"));
+    assert_eq!(now_tag(&px("vless-3")).as_deref(), Some("vless-3"));
+    assert_eq!(best_other(&px("auto"), "vless-1").as_deref(), Some("vless-3"), "vless-2 failed its last test");
+}
+
+#[test]
+fn drop_lengths_pair_each_drop_with_its_return() {
+    let e = serde_json::json!([
+        [100, "drop", "PIA reconnecting"],
+        [104, "back", "PIA connected"],
+        [200, "drop", "PIA disconnected"],
+        [900, "back", "PIA connected"],
+        [1000, "drop", "PIA reconnecting"],
+        [1000 + 7200, "back", "PIA connected"],
+        [9000, "drop", "PIA connecting"],
+        [9012, "back", "PIA connected"],
+        [9500, "drop", "PIA reconnecting"]
+    ]);
+    assert_eq!(engine::history::drop_lengths(e.as_array().unwrap()), [4.0, 12.0]);
+}

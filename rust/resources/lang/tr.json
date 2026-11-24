@@ -533,5 +533,13 @@
  "Reality Hop is updated to {ver}": "Reality Hop {ver} sürümüne güncellendi",
  "What's new since your last version:": "Son sürümünüzden bu yana yenilikler:",
  "Reality Hop was updated to {ver}. Open it to see what is new.": "Reality Hop {ver} sürümüne güncellendi. Yenilikleri görmek için açın.",
- "Star on GitHub": "GitHub'da yıldız ver"
+ "Star on GitHub": "GitHub'da yıldız ver",
+ "Clear": "Temizle",
+ "Clear the chart?": "Grafik temizlensin mi?",
+ "HOST": "SAĞLAYICI",
+ "This removes the events of the last 24 hours from the chart and from problem reports. Older events and node pings stay.": "Bu, son 24 saatin olaylarını grafikten ve sorun raporlarından siler. Daha eski olaylar ve düğüm ping değerleri kalır.",
+ "Check the node speeds every (hours; each check can use up to 50 MB per node)": "Düğüm hızlarını şu aralıkla denetle (saat; her denetim düğüm başına 50 MB'a kadar kullanabilir)",
+ "PIA down {s} s, longest {m} s": "PIA kesintisi {s} sn, en uzun {m} sn",
+ "after {n} s": "{n} sn sonra",
+ "Working, but slow (over {ms} ms)": "Çalışıyor ama yavaş ({ms} ms üzeri)"
 }

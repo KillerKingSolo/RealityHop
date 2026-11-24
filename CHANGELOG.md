@@ -4,6 +4,20 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 2.1.1 (2026-11-24)
+
+**Why update:** PIA comes back faster after a drop, slow nodes are caught within the hour, and the window shows more and matches the tray.
+
+- Fixed: after a PIA drop the tunnel kept the same node for up to 10 minutes even when it had stopped passing traffic. Every node is now tested at once on a drop, and a node that broke PIA but still passes the quick test is set aside for 10 minutes.
+- Fixed: a node that slowed down after it was picked was caught only by the 6-hourly speed check. The speed check now runs with each periodic check (Settings: every 1 to 24 hours), still waiting while you game or download.
+- Fixed: the tray showed a slow node in orange while the window showed it green. The window now marks it "Working, but slow", and the window icon and sidebar dot follow the tray.
+- Fixed: hosting company names were cut at 22 characters. They are kept up to 60 and cut names are looked up again.
+- Fixed: unfinished writes (.tmp) and other leftover files stayed in the install folder. They are removed at start, and rh-test.exe is removed after each node test.
+- Fixed: the tray tooltip could lose its end past the 127 characters Windows shows.
+- Changed: the node tables and Candidates show the hosting company (HOST) and size their columns to their content, keeping room for STATUS.
+- Changed: the Last 24 hours chart has a Clear button, a legend entry for PIA Back, PIA downtime totals and tooltips on each event. Problem reports add PIA downtime.
+- Changed: the tray tooltip shows the version.
+
 ## 2.1.0 (2026-11-23)
 
 **Why update:** far fewer PIA drops, most of all with two PCs on one router, and no speed test while you game.

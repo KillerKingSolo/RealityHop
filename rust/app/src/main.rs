@@ -102,7 +102,16 @@ pub(crate) fn show_tray(app: &AppHandle, state: &str, tip: &str, segs: &[String]
             let _ = t.set_icon(Some(Image::new_owned(tray_icon::draw(&state, &segs), s, s)));
             let _ = t.set_tooltip(Some(&tip));
         }
+        window_icon(&h);
     });
+}
+
+// The window's title-bar and taskbar icon: the tray's ring, so both show the same state
+fn window_icon(app: &AppHandle) {
+    let Some(w) = app.get_webview_window("main") else { return };
+    let (state, _, segs) = app.state::<Tray>().0.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    let s = tray_icon::SIZE;
+    let _ = w.set_icon(Image::new_owned(tray_icon::draw(&state, &segs), s, s));
 }
 
 // Open the window, or bring it to the front; page: "" or the part to show first ("setup", "uninstall")
@@ -135,6 +144,7 @@ fn open_window(app: &AppHandle, page: &str) {
         .theme(Some(tauri::Theme::Dark))
         .background_color(tauri::window::Color(12, 12, 14, 255)) // app.css --bg: no white while WebView2 starts
         .build();
+    window_icon(app);
 }
 
 // Once, when the window first draws: grow it by what its content overflows (CSS px), so nothing scrolls. It stays on
@@ -222,6 +232,15 @@ fn set_auto(app: AppHandle, ctx: State<Ctx>, on: bool, fix: bool, minutes: Optio
         c.insert("check_min".into(), json!(m.clamp(15, 1440)));
         engine::settings::Settings::save(&ctx.paths, &c).map_err(|e| e.to_string())?;
     }
+    jobs::changed(&app);
+    Ok(())
+}
+
+// Clear the events of the last 24 hours chart
+#[tauri::command]
+fn history_clear(app: AppHandle, ctx: State<Ctx>) -> Result<(), String> {
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0.0, |d| d.as_secs_f64());
+    engine::history::clear_day(&ctx.paths.history, now)?;
     jobs::changed(&app);
     Ok(())
 }
@@ -412,6 +431,9 @@ fn main() -> std::process::ExitCode {
             engine::macos_system::start_fix(&paths, &exe);
         }
     }
+    engine::data_files::leftovers_remove(&paths.data);
+    engine::singbox_config::pick_migrate(&paths);
+    engine::clash_api::pick(&paths, "auto"); // a hold left by a copy that was stopped ends
     let watch = Watch::new();
     let mut win = Win::new();
     window_state::load_last(&paths, &mut win);
@@ -437,6 +459,7 @@ fn main() -> std::process::ExitCode {
             act,
             cancel,
             set_auto,
+            history_clear,
             open_folder,
             open_url,
             text,

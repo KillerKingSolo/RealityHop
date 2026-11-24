@@ -48,7 +48,8 @@ const TIPS = {
 };
 const EVENTS = { drop: ['#ff4d4f', 'PIA Dropped'], back: ['#5fd38d', 'PIA Back'], replace: ['#f5a524', 'Node Replaced'],
   rescue: ['#b57cff', 'Rescue'], restart: ['#5b9cff', 'Tunnel Restart'], heal: ['#f5a524', 'Router Repaired'], error: ['#ff4d4f', 'error'] };
-const HEAD = [['slot', 'SLOT'], ['server', 'SERVER'], ['front', 'FRONT'], ['where', 'LOCATION'], ['tcp', '443 PING'],
+const HEAD = [['slot', 'SLOT'], ['server', 'SERVER'], ['front', 'FRONT'], ['where', 'LOCATION'], ['host', 'HOST'],
+  ['tcp', '443 PING'],
   ['tunnel', 'TUNNEL'], ['verdict', 'STATUS']];
 const tcache = new Map();
 
@@ -68,7 +69,7 @@ function el(tag, cls, text) {
 }
 
 // ---- hover help, shown after half a second (Tip)
-let tipJob = null;
+let tipJob = null, histPts = [];
 function tipFor(e, english) {
   e.addEventListener('mouseenter', () => {
     clearTimeout(tipJob);
@@ -217,6 +218,8 @@ async function render(s) {
   $('bootOn').checked = s.boot_on;
   $('nextAuto').textContent = s.next_auto;
   // header
+  // the sidebar dot shows the tray's state, as the window icon does
+  document.querySelector('.brand .dot').className = 'dot c-' + ((s.tray && s.tray.state) || 'unk');
   const pill = $('pill');
   pill.className = 'pill ' + s.status.state;
   pill.textContent = s.status.pill;
@@ -275,7 +278,7 @@ async function drawLists() {
     const body = el('tbody');
     for (const r of l.rows) {
       const tr = el('tr', r.state + (sel && sel.key === l.key && sel.tag === r.tag ? ' sel' : ''));
-      for (const v of [r.tag, r.server, r.front, r.where, r.tcp, r.tunnel, r.text]) tr.append(el('td', '', v));
+      for (const v of [r.tag, r.server, r.front, r.where, r.host, r.tcp, r.tunnel, r.text]) tr.append(el('td', '', v));
       tr.onclick = e => { e.stopPropagation(); sel = { key: l.key, tag: r.tag }; drawLists(); };
       tr.oncontextmenu = e => { e.preventDefault(); e.stopPropagation(); sel = { key: l.key, tag: r.tag }; drawLists(); popup(e); };
       tr.ondblclick = () => details(l.key, r.tag);
@@ -285,6 +288,46 @@ async function drawLists() {
     c.append(h, t);
     return c;
   }));
+  await fitCols();
+}
+
+// The node tables' column widths (fitTables)
+async function fitCols() {
+  const sample = '●  ' + await T('Working') + '   ·   ' + await T('In use by {who}', { who: await T('PC') + ' & ' + await T('Router') });
+  fitTables([...$('lists').querySelectorAll('table')], HEAD, sample);
+}
+
+// Column widths from the longest text in each column, the same in every table given. The last column (STATUS) keeps
+// room for sample and a little more; when the window is too narrow the text columns (server, front, location, host)
+// shrink first, widest first, down to 70 px (ellipsis), never STATUS
+function fitTables(tables, head, sample) {
+  const td = tables[0] && tables[0].querySelector('tbody td'), th = tables[0] && tables[0].querySelector('th');
+  if (!td || !tables[0].clientWidth) return;
+  const g = (fitTables.c ||= document.createElement('canvas')).getContext('2d');
+  const width = (s, font) => { g.font = font; return g.measureText(s).width; };
+  // the shorthand font can come back empty in WebView2; build it from its parts
+  const fontOf = e => { const c = getComputedStyle(e); return `${c.fontStyle} ${c.fontWeight} ${c.fontSize} ${c.fontFamily}`; };
+  const tdFont = fontOf(td), thFont = fontOf(th), pad = 16 + 8;
+  const n = head.length;
+  const want = head.map(() => 0);
+  for (const t of tables) {
+    t.querySelectorAll('th').forEach((x, i) => { want[i] = Math.max(want[i], width(x.textContent, thFont) + pad); });
+    for (const r of t.querySelectorAll('tbody tr'))
+      r.querySelectorAll('td').forEach((x, i) => { want[i] = Math.max(want[i], width(x.textContent, tdFont) + pad); });
+  }
+  const statusMin = width(sample, tdFont) + pad + 24;
+  const avail = tables[0].clientWidth;
+  const w = want.slice(0, n - 1);
+  const soft = ['server', 'front', 'where', 'host'].map(k => head.findIndex(([h]) => h === k)).filter(i => i >= 0);
+  let over = w.reduce((a, b) => a + b, 0) + statusMin - avail;
+  while (over > 0.5) {
+    const i = soft.filter(i => w[i] > 70).sort((a, b) => w[b] - w[a])[0];
+    if (i === undefined) break;
+    const next = Math.max(70, ...soft.filter(j => j !== i && w[j] < w[i]).map(j => w[j]));
+    const cut = Math.min(over, w[i] - next || w[i] - 70);
+    w[i] -= cut; over -= cut;
+  }
+  for (const t of tables) t.querySelectorAll('col').forEach((c, i) => { c.style.width = i < n - 1 ? Math.ceil(w[i]) + 'px' : ''; });
 }
 
 // The right-click menu of a node (popup)
@@ -310,8 +353,8 @@ async function drawHistory() {
   if (!legend.dataset.done) {
     legend.dataset.done = '1';
     const kids = [];
-    for (const k of ['drop', 'replace', 'restart', 'rescue']) {
-      const d = el('span', 'd', '●');
+    for (const k of ['drop', 'back', 'replace', 'restart', 'rescue']) {
+      const d = el('span', k === 'back' ? 'd bar' : 'd', k === 'back' ? '|' : '●');
       d.style.color = EVENTS[k][0];
       kids.push(d, el('span', 'n', await T(EVENTS[k][1])));
     }
@@ -333,8 +376,12 @@ async function drawHistory() {
     g.fillText(hr === 0 ? await T('Now') : await T('-{n}h', { n: hr }), x, h - 1);
   }
   const counts = {};
-  for (const [t, kind] of snap.events) {
+  histPts = [];
+  let dropAt = null;
+  for (const [t, kind, text] of snap.events) {
     const col = (EVENTS[kind] || ['#8d8d97'])[0], x = R - (now - t) / span * (R - L), y = kind === 'drop' || kind === 'back' ? 14 : 6;
+    histPts.push({ x, y, t, kind, text: text || '', after: kind === 'back' && dropAt !== null ? Math.round(t - dropAt) : null });
+    if (kind === 'drop') dropAt = t; else if (kind === 'back') dropAt = null;
     g.strokeStyle = g.fillStyle = col;
     if (kind === 'back') { g.beginPath(); g.moveTo(x, y - 3); g.lineTo(x, y + 3); g.stroke(); }
     else { g.beginPath(); g.arc(x, y, 3, 0, 2 * Math.PI); g.fill(); }
@@ -343,7 +390,28 @@ async function drawHistory() {
   const parts = [];
   for (const [k, e] of [['PIA Drops {n}', 'drop'], ['Replacements {n}', 'replace'], ['Restarts {n}', 'restart'], ['Rescues {n}', 'rescue']])
     parts.push(await T(k, { n: counts[e] || 0 }));
+  const down = snap.down || [];
+  if (down.length) parts.push(await T('PIA down {s} s, longest {m} s', { s: Math.round(down.reduce((a, b) => a + b, 0)), m: Math.round(Math.max(...down)) }));
   $('histInfo').textContent = parts.join('   ·   ');
+}
+
+// The chart's tooltip: the event nearest the pointer, its time and what happened
+async function histTip(e) {
+  const t = $('tip'), r = $('hist').getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  let best = null;
+  for (const p of histPts) {
+    const d = Math.hypot(p.x - x, p.y - y);
+    if (d < 8 && (!best || d < best.d)) best = { ...p, d };
+  }
+  if (!best) { t.hidden = true; return; }
+  const at = new Date(best.t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  let line = at + '  ' + await T((EVENTS[best.kind] || [, best.kind])[1]);
+  if (best.after !== null) line += '  ' + await T('after {n} s', { n: best.after });
+  else if (best.kind !== 'drop' && best.kind !== 'back' && best.text) line += '\n' + best.text;
+  t.textContent = line;
+  t.hidden = false;
+  t.style.left = Math.min(e.clientX + 12, innerWidth - t.offsetWidth - 8) + 'px';
+  t.style.top = (r.bottom + 4 + t.offsetHeight > innerHeight - 8 ? r.top - t.offsetHeight - 4 : r.bottom + 4) + 'px';
 }
 
 // One activity line, with its time (drain); Rust sends it with a capital first letter (cap_first)
@@ -371,6 +439,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   $('restartBtn').onclick = () => act(snap.mode.ronly ? 'test_router' : 'restart_pc');
   $('powerBtn').onclick = power;
   $('cancelBtn').onclick = () => invoke('cancel');
+  $('histClear').onclick = async () => {
+    if (await yesNo('Clear the chart?', await T('This removes the events of the last 24 hours from the chart and from problem reports. Older events and node pings stay.')))
+      await invoke('history_clear');
+  };
   // Ctrl+A (Cmd+A) in the activity log selects only the log
   $('log').addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') { e.preventDefault(); getSelection().selectAllChildren($('log')); }
@@ -390,7 +462,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     $('menu').hidden = true;
     if (!e.target.closest('.nav') && sel) { sel = null; drawLists(); }
   });
-  window.addEventListener('resize', () => snap && drawHistory());
+  window.addEventListener('resize', () => { if (snap) { drawHistory(); fitCols(); } });
+  $('hist').addEventListener('mousemove', histTip);
+  $('hist').addEventListener('mouseleave', () => { $('tip').hidden = true; });
   await listen('log', e => logLine(e.payload.at, e.payload.line));
   await listen('changed', refresh);
   await listen('tray', refresh);

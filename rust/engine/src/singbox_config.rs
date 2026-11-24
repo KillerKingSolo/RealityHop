@@ -106,9 +106,40 @@ fn rest_with_groups(outs: &[Value], tags: &[Value], keep: impl Fn(&Value) -> boo
     for o in &mut rest {
         if o["type"] == "urltest" {
             o["outbounds"] = Value::Array(tags.to_vec());
+        } else if o["type"] == "selector" && o["tag"] == PICK {
+            o["outbounds"] = Value::Array([Value::from("auto")].into_iter().chain(tags.iter().cloned()).collect());
         }
     }
     rest
+}
+
+/// The selector the PC tunnel routes through: on "auto" (the lowest-ping working node) except for a few minutes after
+/// a PIA drop, when it can hold another node so PIA does not go back to the one that broke its connection.
+pub const PICK: &str = "pick";
+
+// Put the selector "pick" in front of the group "auto" and route through it (PC configs from before 2.1.1). True when
+// the config changed; it takes effect at the tunnel's next start
+pub fn pick_add(c: &mut Value) -> bool {
+    let Some(outs) = c["outbounds"].as_array_mut() else { return false };
+    if outs.iter().any(|o| o["tag"] == PICK) || !outs.iter().any(|o| o["tag"] == "auto" && o["type"] == "urltest") {
+        return false;
+    }
+    let tags: Vec<Value> = outs.iter().filter(|o| o["type"] == "vless").map(|o| o["tag"].clone()).collect();
+    let at = outs.iter().position(|o| o["tag"] == "auto").map_or(outs.len(), |i| i + 1);
+    let all: Vec<Value> = [Value::from("auto")].into_iter().chain(tags).collect();
+    outs.insert(at, json!({"type": "selector", "tag": PICK, "outbounds": all, "default": "auto"}));
+    if c["route"]["final"] == "auto" {
+        c["route"]["final"] = Value::from(PICK);
+    }
+    true
+}
+
+// pick_add on pc-config.json; nothing when it is missing or already has the selector
+pub fn pick_migrate(paths: &crate::paths::Paths) {
+    let Ok(mut c) = crate::data_files::read_json(&paths.pc_cfg) else { return };
+    if pick_add(&mut c) {
+        let _ = crate::data_files::jsave(&paths.pc_cfg, &c, Some(2));
+    }
 }
 
 // Put a node set into both configs (engine.write_configs): the vless outbounds first, then the rest, and on the PC

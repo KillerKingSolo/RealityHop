@@ -91,7 +91,8 @@ async function openSettings() {
   const FIELDS = [['check_min', 'Check the nodes every (minutes)', 15, 1440, 15],
     ['slow_ms', 'A working node counts as slow above (ms)', 50, 5000, 25],
     ['tolerance_ms', 'Switch to a faster node when it is faster by (ms)', 0, 1000, 5],
-    ['top', 'Candidates tested per scan', 10, 120, 10]];
+    ['top', 'Candidates tested per scan', 10, 120, 10],
+    ['speed_hours', 'Check the node speeds every (hours; each check can use up to 50 MB per node)', 1, 24, 1]];
   const nums = {}, form = el('div', 'form');
   for (const [k, label, lo, hi, step] of FIELDS) {
     const i = el('input'); i.type = 'number'; i.min = lo; i.max = hi; i.step = step; i.value = v[k];

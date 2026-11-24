@@ -533,5 +533,13 @@
  "Reality Hop is updated to {ver}": "تم تحديث Reality Hop إلى {ver}",
  "What's new since your last version:": "الجديد منذ إصدارك السابق:",
  "Reality Hop was updated to {ver}. Open it to see what is new.": "تم تحديث Reality Hop إلى {ver}. افتحه لترى الجديد.",
- "Star on GitHub": "امنحه نجمة على GitHub"
+ "Star on GitHub": "امنحه نجمة على GitHub",
+ "Clear": "مسح",
+ "Clear the chart?": "مسح المخطط؟",
+ "HOST": "المضيف",
+ "This removes the events of the last 24 hours from the chart and from problem reports. Older events and node pings stay.": "يحذف هذا أحداث آخر 24 ساعة من المخطط ومن تقارير المشكلات. تبقى الأحداث الأقدم وقياسات زمن استجابة العقد.",
+ "Check the node speeds every (hours; each check can use up to 50 MB per node)": "افحص سرعات العقد كل (ساعات؛ قد يستخدم كل فحص حتى 50 ميغابايت لكل عقدة)",
+ "PIA down {s} s, longest {m} s": "توقف PIA {s} ث، الأطول {m} ث",
+ "after {n} s": "بعد {n} ث",
+ "Working, but slow (over {ms} ms)": "يعمل، لكنه بطيء (أكثر من {ms} مللي ثانية)"
 }

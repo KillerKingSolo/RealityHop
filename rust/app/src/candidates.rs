@@ -333,6 +333,12 @@ impl Worker<'_> {
 // The dialog's rows and message, in the person's language (render)
 pub fn view(paths: &engine::paths::Paths, w: &crate::window_state::Win) -> Value {
     let mode = Mode::of(paths);
+    let vault = engine::vault::load(paths);
+    // the hosting company: the node's own, else the vault's
+    let host = |n: &Value| {
+        let v = vault.get(&f(n, "server")).map(|v| f(v, "isp")).unwrap_or_default();
+        [f(n, "isp"), v].into_iter().find(|h| !h.is_empty() && h != "?").unwrap_or_else(|| "?".into())
+    };
     let rows: Vec<Value> = w
         .cand
         .nodes
@@ -354,8 +360,8 @@ pub fn view(paths: &engine::paths::Paths, w: &crate::window_state::Win) -> Value
                 ("warn", tr("Answers on 443; not tunnel-tested", &[]))
             };
             json!({
-                "server": f(n, "server"), "front": f(n, "sni"),
-                "where": if has(n, "where") { f(n, "where") } else { "?".into() },
+                "server": f(n, "server"), "front": crate::window_state::brand(&f(n, "sni")),
+                "where": if has(n, "where") { f(n, "where") } else { "?".into() }, "host": host(n),
                 "tcp": ms(n.get("tcp_ms"), &tr("No answer", &[])), "tunnel": ms(n.get("ms"), ""),
                 "result": res, "state": state, "ok": is(n, true),
             })

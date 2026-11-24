@@ -70,11 +70,28 @@ impl ControlApi {
 
     // GET a path; no proxy (engine.pc_get). HTTP/1.0, so Go's server answers without chunks and then closes.
     pub fn get(&self, path: &str, timeout: Duration) -> Result<String, ApiError> {
+        self.request("GET", path, "", timeout)
+    }
+
+    // PUT a JSON body to a path
+    pub fn put(&self, path: &str, body: &str, timeout: Duration) -> Result<String, ApiError> {
+        self.request("PUT", path, body, timeout)
+    }
+
+    // One request to the local API
+    fn request(&self, method: &str, path: &str, body: &str, timeout: Duration) -> Result<String, ApiError> {
         let mut s = TcpStream::connect_timeout(&self.addr, timeout)?;
         s.set_read_timeout(Some(timeout))?;
         s.set_write_timeout(Some(timeout))?;
-        let req =
-            format!("GET {path} HTTP/1.0\r\nHost: {}\r\nAuthorization: Bearer {}\r\n\r\n", self.addr, self.secret);
+        let head = if body.is_empty() {
+            String::new()
+        } else {
+            format!("Content-Type: application/json\r\nContent-Length: {}\r\n", body.len())
+        };
+        let req = format!(
+            "{method} {path} HTTP/1.0\r\nHost: {}\r\nAuthorization: Bearer {}\r\n{head}\r\n{body}",
+            self.addr, self.secret
+        );
         s.write_all(req.as_bytes())?;
         let mut b = Vec::new();
         s.read_to_end(&mut b)?;
@@ -156,7 +173,7 @@ pub fn check_pc_with(
         nodes.iter_mut().for_each(|n| set_pc(n, None, Value::from("api down")));
         return Ok(None);
     };
-    let using = px.get("auto").and_then(|a| a.get("now")).filter(|v| !v.is_null()).cloned();
+    let using = now_tag(&px).map(Value::from);
     let mark = crate::singbox_config::set_mark(nodes.iter().map(|n| n["server"].as_str().unwrap_or_default()));
     if !px.contains_key(&mark) {
         nodes.iter_mut().for_each(|n| set_pc(n, None, Value::Null));
@@ -233,8 +250,43 @@ pub fn tunnel_node(paths: &Paths) -> Option<String> {
     if !px.contains_key(&mark) {
         return None;
     }
-    let tag = px.get("auto")?.get("now")?.as_str()?;
-    list.into_iter().find(|(t, _)| t == tag).map(|(_, n)| n.server)
+    let tag = now_tag(px)?;
+    list.into_iter().find(|(t, _)| *t == tag).map(|(_, n)| n.server)
+}
+
+// The node tag traffic goes through, from /proxies: the selector's hold, else the group's choice
+pub fn now_tag(px: &Map<String, Value>) -> Option<String> {
+    let held = px.get(crate::singbox_config::PICK).and_then(|p| p["now"].as_str()).filter(|t| *t != "auto");
+    held.or_else(|| px.get("auto")?.get("now")?.as_str()).map(str::to_string)
+}
+
+// The proxies the PC tunnel's API lists
+pub fn proxies(paths: &Paths) -> Option<Map<String, Value>> {
+    let api = ControlApi::pc(paths).ok()?;
+    let v: Value = serde_json::from_str(&api.get("/proxies", Duration::from_secs(3)).ok()?).ok()?;
+    v.get("proxies")?.as_object().cloned()
+}
+
+// Point the selector at a node tag, or at "auto" to end a hold. False without the selector (the tunnel runs a
+// config from before 2.1.1) or when the API refuses
+pub fn pick(paths: &Paths, tag: &str) -> bool {
+    let Ok(api) = ControlApi::pc(paths) else { return false };
+    let body = serde_json::json!({ "name": tag }).to_string();
+    api.put(&format!("/proxies/{}", crate::singbox_config::PICK), &body, Duration::from_secs(3)).is_ok()
+}
+
+// The lowest-ping working node of the group other than skip, from its latest tests
+pub fn best_other(px: &Map<String, Value>, skip: &str) -> Option<String> {
+    let all = px.get("auto")?.get("all")?.as_array()?;
+    all.iter()
+        .filter_map(Value::as_str)
+        .filter(|t| *t != skip)
+        .filter_map(|t| {
+            let d = px.get(t)?.get("history")?.as_array()?.last()?.get("delay")?.as_i64()?;
+            (d > 0).then(|| (d, t.to_string()))
+        })
+        .min()
+        .map(|(_, t)| t)
 }
 
 // The PC tunnel's exit address, from api.ipify.org through the tunnel's SOCKS port (engine.pc_exit)

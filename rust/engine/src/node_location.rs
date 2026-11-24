@@ -22,9 +22,18 @@ fn clean(v: Option<&Value>, k: usize) -> String {
     if s.is_empty() { "?".into() } else { s }
 }
 
-// A node's where, if it is known (not missing, empty or "?")
+/// The longest ISP name kept. 1.x kept 22 characters; a name cut there is looked up again.
+const ISP_MAX: usize = 60;
+const ISP_OLD_MAX: usize = 22;
+
+/// Nodes whose 22-character ISP name was looked up again in this run: a name that is that long is not asked twice.
+static RECHECKED: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+
+// A node's where, if it is known (not missing, empty or "?"), with an ISP name that 1.x did not cut short
 fn known(n: &Value) -> bool {
-    n.get("where").and_then(Value::as_str).is_some_and(|w| !w.is_empty() && w != "?")
+    let cut = n.get("isp").and_then(Value::as_str).is_some_and(|i| i.chars().count() == ISP_OLD_MAX)
+        && !RECHECKED.lock().unwrap_or_else(|e| e.into_inner()).iter().any(|s| n["server"] == s.as_str());
+    n.get("where").and_then(Value::as_str).is_some_and(|w| !w.is_empty() && w != "?") && !cut
 }
 
 // Fill in where and isp on every node (engine.geolocate): from the vault first, then one ip-api batch for the rest.
@@ -49,6 +58,10 @@ pub fn geolocate(
     if todo.is_empty() {
         return;
     }
+    RECHECKED
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .extend(todo.iter().map(|&i| nodes[i]["server"].as_str().unwrap_or_default().to_string()));
     let body = format!(
         "[{}]",
         todo.iter()
@@ -82,6 +95,6 @@ pub fn geolocate(
         };
         let m = nodes[i].as_object_mut().unwrap();
         m.insert("where".into(), place.into());
-        m.insert("isp".into(), clean(g.get("isp"), 22).into());
+        m.insert("isp".into(), clean(g.get("isp"), ISP_MAX).into());
     }
 }

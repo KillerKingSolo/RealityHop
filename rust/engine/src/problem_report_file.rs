@@ -103,7 +103,8 @@ fn pc_state(paths: &Paths) -> String {
     let api = crate::clash_api::ControlApi::pc(paths).ok();
     let px: Option<Value> =
         api.and_then(|a| a.get("/proxies", Duration::from_secs(3)).ok()).and_then(|t| serde_json::from_str(&t).ok());
-    let mut out = match px.as_ref().and_then(|v| v["proxies"]["auto"]["now"].as_str()) {
+    let now = px.as_ref().and_then(|v| v["proxies"].as_object()).and_then(crate::clash_api::now_tag);
+    let mut out = match now {
         Some(now) => format!("running, using {now}"),
         None => "running, control API not answering".into(),
     };
@@ -136,7 +137,20 @@ fn activity(paths: &Paths) -> Vec<String> {
     let count = |k: &str| events.iter().filter(|e| e[1] == k).count();
     let counts: Vec<String> =
         names.iter().map(|(k, n)| (count(k), n)).filter(|(c, _)| *c > 0).map(|(c, n)| format!("{n} {c}")).collect();
-    let mut out = vec![format!("{} events: {}", events.len(), counts.join(", ")), String::new()];
+    let mut out = vec![format!("{} events: {}", events.len(), counts.join(", "))];
+    let mut down = crate::history::drop_lengths(h["events"].as_array().map_or(&[][..], |v| v.as_slice()));
+    if !down.is_empty() {
+        down.sort_by(f64::total_cmp);
+        let total: f64 = down.iter().sum();
+        out.push(format!(
+            "PIA downtime: {:.0} s over {} drops; median {:.0} s, longest {:.0} s",
+            total,
+            down.len(),
+            down[down.len() / 2],
+            down[down.len() - 1]
+        ));
+    }
+    out.push(String::new());
     for e in &events[events.len().saturating_sub(60)..] {
         let at = crate::local_time::at(e[0].as_f64().unwrap_or(0.0) as i64).format("%m-%d %H:%M:%S");
         out.push(format!("{at}  {:<8} {}", e[1].as_str().unwrap_or_default(), e[2].as_str().unwrap_or_default()));

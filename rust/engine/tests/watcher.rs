@@ -98,9 +98,10 @@ fn the_tooltip_says_what_the_tray_shows() {
         WatchState { last: Some(("warn".into(), "5 of 6 nodes working".into(), "12:34".into())), ..Default::default() };
     let (state, tip) = tray_tip(&st, 2, true);
     assert_eq!(state, "warn");
-    assert_eq!(tip, "Reality Hop  ·  5 of 6 nodes working  ·  12:34  ·  PIA dropped 2x in the last hour");
+    let v = engine::VERSION;
+    assert_eq!(tip, format!("Reality Hop {v}  ·  5 of 6 nodes working  ·  12:34  ·  PIA dropped 2x in the last hour"));
     let (state, tip) = tray_tip(&WatchState::default(), 0, false);
-    assert_eq!((state.as_str(), tip.as_str()), ("unk", "Reality Hop  ·  Not checked yet  ·  rh-core missing"));
+    assert_eq!((state, tip), ("unk".into(), format!("Reality Hop {v}  ·  Not checked yet  ·  rh-core missing")));
 }
 
 #[test]
@@ -155,4 +156,28 @@ fn a_stopped_watcher_checks_nothing() {
     assert_eq!(watch_cycle(&paths, &mut NoRouter, &mut st).unwrap(), None);
     assert_eq!(st, WatchState::default());
     let _ = std::fs::remove_dir_all(&d);
+}
+
+#[test]
+fn clear_removes_the_last_24_hours_and_keeps_older_events_and_pings() {
+    let d = data("clear");
+    let paths = Paths::new(&d);
+    let now = 2_000_000_000.0;
+    engine::history::record(&paths.history, &[], Some(("replace", "older")), now - 30.0 * 3600.0);
+    engine::history::record(&paths.history, &[("1.2.3.4".into(), Some(80))], Some(("drop", "PIA reconnecting")), now);
+    engine::history::clear_day(&paths.history, now + 60.0).unwrap();
+    let h = engine::history::load(&paths.history);
+    let kinds: Vec<&str> = h["events"].as_array().unwrap().iter().map(|e| e[1].as_str().unwrap()).collect();
+    assert_eq!(kinds, ["replace"], "only the event older than 24 hours stays");
+    assert_eq!(h["pings"]["1.2.3.4"].as_array().unwrap().len(), 1);
+    let _ = std::fs::remove_dir_all(&d);
+}
+
+#[test]
+fn a_long_tooltip_is_cut_to_what_windows_shows() {
+    let long = "x".repeat(200);
+    let st = WatchState { last: Some(("warn".into(), long, "12:34".into())), ..Default::default() };
+    let (_, tip) = tray_tip(&st, 3, false);
+    assert_eq!(tip.chars().count(), engine::watcher::TIP_MAX);
+    assert!(tip.ends_with('…'));
 }

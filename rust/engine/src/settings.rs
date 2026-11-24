@@ -31,6 +31,8 @@ pub struct Settings {
     pub min_mbps: i64,
     pub lang: String,
     pub dns: String,
+    /// The download speed check runs at most this often (hours); 2.1.1 on, not in 1.x
+    pub speed_hours: i64,
 }
 
 impl Default for Settings {
@@ -55,6 +57,7 @@ impl Default for Settings {
             min_mbps: 100,
             lang: String::new(),
             dns: String::new(),
+            speed_hours: 1,
         }
     }
 }
@@ -123,6 +126,7 @@ impl Settings {
             min_mbps: int("min_mbps", d.min_mbps, 0, 1000),
             lang: text("lang", &d.lang),
             dns: text("dns", &d.dns),
+            speed_hours: int("speed_hours", d.speed_hours, 1, 24),
         };
         if !host_ok(&s.router_host) {
             s.router_host = d.router_host;

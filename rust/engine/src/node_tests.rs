@@ -108,7 +108,7 @@ pub fn free_base(k: usize) -> Result<u16, String> {
 
 // rh-core under the name rh-test for the node tests: the tunnel checks look for rh-core by name, and stopping the
 // tunnel must not stop a running test. A hard link, so the large program is on disk once; a copy where a link does
-// not work. Made again whenever rh-core changes; rh-core itself when neither works (engine.test_exe)
+// not work. Made again whenever rh-core changes and removed after each test; rh-core itself when neither works
 pub fn test_exe(paths: &Paths) -> PathBuf {
     let t = paths.data.join(format!("rh-test{EXE}"));
     let Ok(b) = std::fs::metadata(&paths.core) else { return paths.core.clone() };
@@ -332,7 +332,8 @@ fn local_test_on(paths: &Paths, nodes: &mut [Value], speed: bool, base: usize) -
     }
     let cfg_path = d.path().join("c.json");
     std::fs::write(&cfg_path, crate::python_json::dumps(&cfg, None)).map_err(|e| e.to_string())?;
-    let mut c = std::process::Command::new(test_exe(paths));
+    let exe = test_exe(paths);
+    let mut c = std::process::Command::new(&exe);
     c.args(["run".as_ref(), "-c".as_ref(), cfg_path.as_os_str()]);
     c.stdin(std::process::Stdio::null()).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null());
     #[cfg(windows)]
@@ -392,6 +393,9 @@ fn local_test_on(paths: &Paths, nodes: &mut [Value], speed: bool, base: usize) -
         drop(p);
         Ok(())
     })();
+    if exe != paths.core {
+        let _ = std::fs::remove_file(&exe); // the test instance has stopped; the link is made again next time
+    }
     r?;
     let log = std::fs::read(&log_path).map(|b| String::from_utf8_lossy(&b).into_owned()).unwrap_or_default();
     for (i, n) in nodes.iter_mut().enumerate() {

@@ -98,6 +98,8 @@ h1 { font: 20pt var(--uib); margin: 0; }
 .hist { margin-top: 12px; padding: 10px 16px; }
 .hist-top { display: flex; align-items: center; flex-wrap: wrap; gap: 0 4px; }
 #legend span.d { margin-left: 14px; margin-right: 2px; font-size: 9pt; }
+#legend span.d.bar { font-weight: 700; }
+#histClear { margin-left: 10px; padding: 2px 8px; font-size: 8pt; }
 #legend span.n { color: var(--muted); font-size: 8pt; }
 #hist { width: 100%; height: 40px; display: block; margin-top: 4px; }
 
@@ -116,8 +118,6 @@ tbody td:first-child { border-radius: var(--r-ctl) 0 0 var(--r-ctl); } tbody td:
 tr.ok td { color: var(--row-ok); } tr.warn td { color: var(--row-warn); } tr.bad td { color: var(--row-bad); } tr.unk td { color: var(--muted); }
 tr.broken > td { background: var(--broken-bg) !important; } tr.broken td { color: var(--row-broken); }
 tr.sel > td { background: var(--sel) !important; } tr.sel td { color: var(--fg); }
-col.c-slot { width: 70px; } col.c-server { width: 135px; } col.c-front { width: 115px; } col.c-where { width: 190px; }
-col.c-tcp { width: 90px; } col.c-tunnel { width: 95px; }
 
 /* activity */
 .log-head { display: flex; align-items: center; margin: 14px 0 4px; flex: none; }
@@ -131,7 +131,7 @@ col.c-tcp { width: 90px; } col.c-tunnel { width: 95px; }
 .menu div { padding: 6px 12px; cursor: pointer; border-radius: var(--r-ctl); }
 .menu div:hover { background: var(--sel); }
 .tip { position: fixed; z-index: 20; max-width: 340px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: 6px 10px;
-  font-size: 9pt; pointer-events: none; }
+  font-size: 9pt; pointer-events: none; white-space: pre-line; }
 .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, .55); display: flex; align-items: center; justify-content: center; z-index: 30; }
 .dialog { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: 20px 24px; max-width: 560px; }
 .dialog h2 { font: 13pt var(--uib); margin: 0 0 12px; }
@@ -142,8 +142,6 @@ col.c-tcp { width: 90px; } col.c-tunnel { width: 95px; }
 .dialog.wide.xwide { width: min(1180px, 96vw); height: 92vh; display: flex; flex-direction: column; }
 .cand-list { flex: 1; overflow-y: auto; padding: 0 !important; min-height: 160px; }
 .cand-list thead th { position: sticky; top: 0; background: var(--card); }
-col.k-num { width: 44px; } col.k-server { width: 130px; } col.k-front { width: 150px; } col.k-where { width: 190px; }
-col.k-tcp { width: 100px; } col.k-tunnel { width: 90px; }
 .report { flex: 1; overflow: auto; padding: 8px 12px !important; min-height: 160px; }
 .report pre { margin: 0; font: 9pt Consolas, monospace; white-space: pre; user-select: text; }
 .foot-buttons .grow { flex: 1; } .foot-buttons > span { align-self: center; }

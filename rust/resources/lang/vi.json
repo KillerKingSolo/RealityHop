@@ -533,5 +533,13 @@
  "Reality Hop is updated to {ver}": "Reality Hop đã được cập nhật lên {ver}",
  "What's new since your last version:": "Có gì mới kể từ phiên bản trước của bạn:",
  "Reality Hop was updated to {ver}. Open it to see what is new.": "Reality Hop đã được cập nhật lên {ver}. Mở nó để xem có gì mới.",
- "Star on GitHub": "Tặng sao trên GitHub"
+ "Star on GitHub": "Tặng sao trên GitHub",
+ "Clear": "Xóa",
+ "Clear the chart?": "Xóa biểu đồ?",
+ "HOST": "NHÀ CUNG CẤP",
+ "This removes the events of the last 24 hours from the chart and from problem reports. Older events and node pings stay.": "Thao tác này xóa các sự kiện trong 24 giờ qua khỏi biểu đồ và khỏi báo cáo sự cố. Các sự kiện cũ hơn và ping của các nút vẫn được giữ.",
+ "Check the node speeds every (hours; each check can use up to 50 MB per node)": "Kiểm tra tốc độ các nút mỗi (giờ; mỗi lần kiểm tra có thể dùng tới 50 MB cho mỗi nút)",
+ "PIA down {s} s, longest {m} s": "PIA mất kết nối {s} giây, lâu nhất {m} giây",
+ "after {n} s": "sau {n} giây",
+ "Working, but slow (over {ms} ms)": "Đang hoạt động nhưng chậm (trên {ms} ms)"
 }

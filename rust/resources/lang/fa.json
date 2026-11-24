@@ -533,5 +533,13 @@
  "Reality Hop is updated to {ver}": "Reality Hop به {ver} به‌روز شد",
  "What's new since your last version:": "تازه‌ها از نسخهٔ قبلی شما:",
  "Reality Hop was updated to {ver}. Open it to see what is new.": "Reality Hop به {ver} به‌روز شد. آن را باز کنید تا تازه‌ها را ببینید.",
- "Star on GitHub": "ستاره در گیت‌هاب"
+ "Star on GitHub": "ستاره در گیت‌هاب",
+ "Clear": "پاک کردن",
+ "Clear the chart?": "نمودار پاک شود؟",
+ "HOST": "میزبان",
+ "This removes the events of the last 24 hours from the chart and from problem reports. Older events and node pings stay.": "این کار رویدادهای ۲۴ ساعت گذشته را از نمودار و از گزارش‌های مشکل حذف می‌کند. رویدادهای قدیمی‌تر و پینگ گره‌ها می‌مانند.",
+ "Check the node speeds every (hours; each check can use up to 50 MB per node)": "بررسی سرعت گره‌ها هر (ساعت؛ هر بررسی ممکن است تا ۵۰ مگابایت برای هر گره مصرف کند)",
+ "PIA down {s} s, longest {m} s": "قطعی PIA {s} ث، طولانی‌ترین {m} ث",
+ "after {n} s": "پس از {n} ث",
+ "Working, but slow (over {ms} ms)": "کار می‌کند، اما کند است (بیش از {ms} میلی‌ثانیه)"
 }

@@ -285,6 +285,7 @@ pub fn core_restart(paths: &Paths) -> bool {
         return true;
     }
     RESTARTED.store(now() as u64, std::sync::atomic::Ordering::SeqCst);
+    crate::singbox_config::pick_migrate(paths);
     let t0 = Instant::now();
     dbg(|| format!("restart requested; stopped: {}, running: {}", settings::stopped(paths), core_running(paths)));
     // make before break: the new nodes join PIA's list next to the old ones, which carry the VPN until the restart
@@ -358,9 +359,14 @@ pub fn core_log_trim(paths: &Paths) {
 
 // Ask the PC tunnel to re-test its group now, so the lowest-ping node takes over without a restart (engine.regroup)
 pub fn regroup(paths: &Paths) {
+    regroup_within(paths, 5000);
+}
+
+// regroup with each node's test cut off after ms: a stalled node counts as failed sooner
+pub fn regroup_within(paths: &Paths, ms: u64) {
     if let Ok(api) = ControlApi::pc(paths) {
-        let _ = api
-            .get(&format!("/group/auto/delay?url={}&timeout=5000", crate::router::TEST_URL), Duration::from_secs(20));
+        let path = format!("/group/auto/delay?url={}&timeout={ms}", crate::router::TEST_URL);
+        let _ = api.get(&path, Duration::from_millis(ms + 15000));
     }
 }
 
