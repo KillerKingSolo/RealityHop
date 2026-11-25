@@ -285,3 +285,50 @@ fn a_router_pin_shows_as_the_node_in_use() {
 {"type":"URLTest","now":"vless-3"}"#;
     assert_eq!(router::router_now(&mut Reply(old), "s"), Some(json!("vless-3")));
 }
+
+#[test]
+fn a_pin_survives_a_pia_drop_with_no_network() {
+    use engine::watcher::pin_judge;
+    use std::time::Duration;
+    let z = Duration::ZERO;
+    // no node answers in any try (PIA reconnecting): the pin stays
+    assert_eq!(pin_judge(3, z, || false, || false), None);
+    // the network comes back on the third try and the pinned node passes
+    let mut n = 0;
+    assert_eq!(
+        pin_judge(
+            6,
+            z,
+            || {
+                n += 1;
+                n >= 3
+            },
+            || false
+        ),
+        Some(true)
+    );
+    // the pinned node fails while another node passes: the pin ends
+    assert_eq!(pin_judge(6, z, || false, || true), Some(false));
+}
+
+#[test]
+fn the_node_list_comes_from_the_outputs_branch() {
+    assert!(node_feed::FEEDS[0].contains("/FastNodes/outputs/"));
+    let m = node_feed::mirrors(node_feed::FEEDS[0]);
+    assert_eq!(m[0], "https://cdn.jsdelivr.net/gh/rtwo2/FastNodes@outputs/sub/verified_tls.txt");
+    assert_eq!(m[1], "https://fastly.jsdelivr.net/gh/rtwo2/FastNodes@outputs/sub/verified_tls.txt");
+}
+
+#[test]
+fn cloudflare_moves_to_its_malware_blocking_servers() {
+    use engine::singbox_config::dns_apply;
+    let mut c = json!({"dns": {"final": "cloudflare", "servers": [{"tag": "cloudflare", "type": "https", "server": "1.1.1.1"}]},
+        "inbounds": [{"override_address": "1.1.1.1"}]});
+    assert!(dns_apply(&mut c, "cloudflare"));
+    assert_eq!(c["dns"]["servers"][0]["server"], "1.1.1.2");
+    assert_eq!(c["inbounds"][0]["override_address"], "1.1.1.2");
+    assert!(!dns_apply(&mut c, "cloudflare")); // done once
+    let mut r = json!({"dns": {"final": "cloudflare", "servers": [{"tag": "cloudflare", "address": "https://1.1.1.1/dns-query"}]}});
+    assert!(dns_apply(&mut r, "cloudflare"));
+    assert_eq!(r["dns"]["servers"][0]["address"], "https://1.1.1.2/dns-query");
+}

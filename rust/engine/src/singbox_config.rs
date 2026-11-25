@@ -209,8 +209,7 @@ fn dns_ip(name: &str) -> Option<&'static str> {
 pub fn dns_apply(c: &mut Value, want: &str) -> bool {
     let Some(ip) = dns_ip(want) else { return false };
     let Some(old) = c["dns"]["final"].as_str().map(str::to_string) else { return false };
-    let Some(old_ip) = dns_ip(&old) else { return false };
-    if old == want {
+    if dns_ip(&old).is_none() {
         return false;
     }
     let Some(srv) = c["dns"]["servers"].as_array_mut().and_then(|s| s.iter_mut().find(|x| x["tag"] == old.as_str()))
@@ -218,6 +217,18 @@ pub fn dns_apply(c: &mut Value, want: &str) -> bool {
         return false;
     };
     let srv = srv.as_object_mut().unwrap();
+    // the address in use. Cloudflare was 1.1.1.1 before 2.1.2; now 1.1.1.2, which also blocks malware
+    let old_ip = srv
+        .get("server")
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .or_else(|| {
+            srv.get("address").and_then(Value::as_str).and_then(|a| python_compat::urlsplit(a).ok()?.hostname())
+        })
+        .unwrap_or_default();
+    if old == want && !(want == "cloudflare" && old_ip == "1.1.1.1") {
+        return false;
+    }
     srv.insert("tag".into(), want.into());
     if srv.contains_key("server") {
         srv.insert("server".into(), ip.into());
@@ -230,7 +241,7 @@ pub fn dns_apply(c: &mut Value, want: &str) -> bool {
         c["route"]["default_domain_resolver"] = want.into();
     }
     for i in c["inbounds"].as_array_mut().into_iter().flatten() {
-        if i["override_address"] == old_ip {
+        if i["override_address"] == old_ip.as_str() {
             i["override_address"] = ip.into();
         }
     }

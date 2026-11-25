@@ -16,8 +16,8 @@
     "https://raw.githubusercontent.com/a/b/c/d/e/f.txt"
    ],
    "out": [
-    "https://cdn.jsdelivr.net/gh/a/b@main/d/e/f.txt",
-    "https://fastly.jsdelivr.net/gh/a/b@main/d/e/f.txt"
+    "https://cdn.jsdelivr.net/gh/a/b@c/d/e/f.txt",
+    "https://fastly.jsdelivr.net/gh/a/b@c/d/e/f.txt"
    ]
   },
   {

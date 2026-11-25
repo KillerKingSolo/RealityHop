@@ -986,6 +986,8 @@ pub fn settle(paths: &Paths, res: &Results, dead: &[String]) {
                 }
                 return;
             }
+            // no node works at all: the network is down, not the pinned node
+            Some(_) if !res.iter().any(|(x, _)| works(x)) => return,
             t => {
                 set_pin(paths, "pc", None);
                 say(&format!(
@@ -1032,6 +1034,45 @@ fn server_of(paths: &Paths, tag: &str) -> Option<String> {
     list.into_iter().find(|(t, _)| t == tag).map(|(_, n)| n.server)
 }
 
+/// How many times, and how far apart, a PIA drop tests a pinned node while no node answers at all.
+pub const PIN_TRIES: u32 = 6;
+pub const PIN_GAP: Duration = Duration::from_secs(10);
+
+// The pinned node after a PIA drop: Some(true) it passes, Some(false) it fails while another node passes (or it is
+// no longer in a slot), None no node answered in any try
+fn pin_verdict(p: &Paths, server: &str, tries: u32, gap: Duration) -> Option<bool> {
+    let Some(tag) = crate::clash_api::tag_of(&p.pc_cfg, server) else { return Some(false) };
+    let api = crate::clash_api::ControlApi::pc(p).ok()?;
+    pin_judge(
+        tries,
+        gap,
+        || api.delay(&tag).is_ok_and(|(ms, _)| ms.is_some()),
+        || crate::clash_api::best_pass(&crate::pc_tunnel::regroup_within(p, 3000), &tag).is_some(),
+    )
+}
+
+/// The pin rule on its own (pin_verdict): each try, the pinned node passing keeps the pin, and another node passing
+/// while it fails ends it; when nothing passes, the next try waits `gap`. None after `tries` tries with no answer.
+pub fn pin_judge(
+    tries: u32,
+    gap: Duration,
+    mut pin_ok: impl FnMut() -> bool,
+    mut other_ok: impl FnMut() -> bool,
+) -> Option<bool> {
+    for i in 0..tries {
+        if i > 0 {
+            std::thread::sleep(gap);
+        }
+        if pin_ok() {
+            return Some(true);
+        }
+        if other_ok() {
+            return Some(false);
+        }
+    }
+    None
+}
+
 // After a PIA drop: test every node at once, so PIA's next try goes through a working one instead of waiting for the
 // group's next test. own: PIA lost the connection itself; carrier: the node its connection went through. When the
 // group keeps that node (it answers the quick test but broke PIA), the tunnel holds the best node that passed this
@@ -1039,17 +1080,26 @@ fn server_of(paths: &Paths, tag: &str) -> Option<String> {
 fn steer(p: &Paths, own: bool, carrier: Option<String>) {
     use std::sync::atomic::Ordering;
     let mine = HOLDS.fetch_add(1, Ordering::SeqCst) + 1;
-    // a pinned node stays while it passes a test of its own; one that fails ends the pin
+    // a pinned node stays while it passes a test of its own. It fails only when another node passes the same test:
+    // while PIA reconnects there is no network and every test fails, which says nothing about the pinned node
     if let Some(server) = crate::clash_api::pin_of(p, "pc") {
-        let tag = crate::clash_api::tag_of(&p.pc_cfg, &server);
-        let api = crate::clash_api::ControlApi::pc(p).ok();
-        let ok = tag.as_ref().zip(api).is_some_and(|(t, a)| a.delay(t).is_ok_and(|(ms, _)| ms.is_some()));
-        if ok {
-            say(&format!("PIA drop: the pinned node {server} still passes; the PC tunnel stays on it"));
-            return;
+        match pin_verdict(p, &server, PIN_TRIES, PIN_GAP) {
+            Some(true) => {
+                say(&format!("PIA drop: the pinned node {server} still passes; the PC tunnel stays on it"));
+                return;
+            }
+            None => {
+                say(&format!("PIA drop: no node answers yet; the PC tunnel stays on the pinned node {server}"));
+                return;
+            }
+            Some(false) => {
+                crate::clash_api::set_pin(p, "pc", None);
+                say(&format!(
+                    "PIA drop: the pinned node {server} failed while other nodes pass; the PC tunnel picks its node \
+                     automatically again"
+                ));
+            }
         }
-        crate::clash_api::set_pin(p, "pc", None);
-        say(&format!("PIA drop: the pinned node {server} failed; the PC tunnel picks its node automatically again"));
     }
     crate::clash_api::pick(p, "auto"); // a new drop ends any hold
     let tag = |p: &Paths| crate::clash_api::proxies(p).as_ref().and_then(crate::clash_api::now_tag);

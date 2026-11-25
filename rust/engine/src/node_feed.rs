@@ -4,10 +4,11 @@ use crate::node::Node;
 use crate::{python_compat, validate};
 use std::collections::HashSet;
 
-pub const FEEDS: [&str; 1] = ["https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt"];
-/// The same file on CDN mirrors, for when GitHub is blocked; {0} = owner/repo, {1} = path.
+/// The lists are published on the source's "outputs" branch.
+pub const FEEDS: [&str; 1] = ["https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt"];
+/// The same file on CDN mirrors, for when GitHub is blocked; {0} = owner/repo, {1} = path, {2} = branch.
 pub const MIRRORS: [&str; 2] =
-    ["https://cdn.jsdelivr.net/gh/{0}@main/{1}", "https://fastly.jsdelivr.net/gh/{0}@main/{1}"];
+    ["https://cdn.jsdelivr.net/gh/{0}@{2}/{1}", "https://fastly.jsdelivr.net/gh/{0}@{2}/{1}"];
 /// uTLS fingerprints a node may ask for; anything else becomes chrome.
 pub const FPS: [&str; 10] =
     ["chrome", "firefox", "safari", "ios", "android", "edge", "360", "qq", "random", "randomized"];
@@ -43,7 +44,8 @@ pub fn mirrors(u: &str) -> Vec<String> {
     let p: Vec<&str> = path.split('/').collect();
     let repo = p.get(1..3.min(p.len())).unwrap_or(&[]).join("/");
     let file = p.get(4..).unwrap_or(&[]).join("/");
-    MIRRORS.iter().map(|m| m.replace("{0}", &repo).replace("{1}", &file)).collect()
+    let branch = p.get(3).filter(|b| !b.is_empty()).copied().unwrap_or("main");
+    MIRRORS.iter().map(|m| m.replace("{0}", &repo).replace("{1}", &file).replace("{2}", branch)).collect()
 }
 
 // A line worth keeping from a download

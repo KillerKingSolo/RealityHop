@@ -129,7 +129,7 @@ Settings → Protocols：Protocol **OpenVPN**，Transport **TCP**，Remote Port 
 
 ## 节点从哪里来
 
-- **节点列表：** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes) 的文件 [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt)。Reality Hop 只保留端口 443 上、使用知名伪装站点的 VLESS + REALITY + XTLS-Vision 节点。然后自己测试；不信任列表自带的验证。
+- **节点列表：** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes) 的文件 [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt)。Reality Hop 只保留端口 443 上、使用知名伪装站点的 VLESS + REALITY + XTLS-Vision 节点。然后自己测试；不信任列表自带的验证。
 - **隧道引擎：** [SagerNet/sing-box](https://github.com/SagerNet/sing-box)，从其官方 GitHub 发布下载。稳定版是最新的正式版；测试版是所有版本中最新的，包括 alpha 和 beta。会校验 SHA-256，新版本必须接受配置后才会替换旧版本。在你的电脑上，它以 `rh-core.exe` 运行。
 - **路由器引擎：** Reality Hop 为 arm64 路由器自建的 sing-box，从官方源代码构建，去掉了路由器用不到的部分（18 MB，GL.iNet 的 1.9.7 软件包为 27 MB）。除非在设置中为路由器指定单独的渠道，否则它跟随电脑的渠道。Reality Hop 在更新路由器前会先询问，把旧版本保留在路由器的内存中，如果新版本无法启动就恢复旧版本。路由器的 Plug-ins 页面仍显示 GL.iNet 的 1.9.7 软件包；侧边栏显示实际运行的版本。构建和检查方式：[`router-core/`](../../router-core/README.md)（英文）。
 - **协议：** 带 REALITY 和 XTLS-Vision 的 VLESS，来自 [XTLS](https://github.com/XTLS)。

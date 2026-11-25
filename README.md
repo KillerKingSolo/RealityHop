@@ -170,7 +170,7 @@ OpenVPN config file, use `proto tcp`, the server's port `443`, and add `socks-pr
 ## Where the nodes come from
 
 - **Node list:** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), file
-  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt). Reality Hop
+  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt). Reality Hop
   keeps only VLESS + REALITY + XTLS-Vision nodes on port 443 that use a well-known front site. It then tests them
   itself; the list's own verification is not trusted.
 - **Tunnel engine:** [SagerNet/sing-box](https://github.com/SagerNet/sing-box), downloaded from its official GitHub

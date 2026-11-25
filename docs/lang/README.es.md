@@ -179,7 +179,7 @@ Aplicaciones → Aplicaciones instaladas → Reality Hop y Ajustes → Desinstal
 ## De dónde vienen los nodos
 
 - **Lista de nodos:** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), archivo
-  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt). Reality Hop
+  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt). Reality Hop
   solo conserva nodos VLESS + REALITY + XTLS-Vision en el puerto 443 que usan un sitio de fachada conocido. Luego los
   prueba él mismo; no se fía de la verificación de la lista.
 - **Motor del túnel:** [SagerNet/sing-box](https://github.com/SagerNet/sing-box), descargado de sus versiones oficiales

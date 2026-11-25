@@ -179,7 +179,7 @@ uygulamalar → Reality Hop ve Reality Hop'un kendi Ayarlar → Kaldır seçene�
 ## Düğümler nereden geliyor
 
 - **Düğüm listesi:** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), dosya
-  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt). Reality Hop
+  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt). Reality Hop
   yalnızca 443 portunda, bilinen bir ön site kullanan VLESS + REALITY + XTLS-Vision düğümlerini tutar. Sonra onları
   kendisi test eder; listenin kendi doğrulamasına güvenmez.
 - **Tünel motoru:** [SagerNet/sing-box](https://github.com/SagerNet/sing-box), resmi GitHub sürümlerinden indirilir.

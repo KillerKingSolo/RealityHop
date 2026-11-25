@@ -170,7 +170,7 @@ Settings → Protocols: Protocol **OpenVPN**، Transport **TCP**، Remote Port *
 ## من أين تأتي العقد
 
 - **قائمة العقد:** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes)، الملف
-  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt). يحتفظ
+  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt). يحتفظ
   Reality Hop فقط بعقد VLESS + REALITY + XTLS-Vision على المنفذ 443 التي تستخدم موقع واجهة معروفًا. ثم يختبرها بنفسه؛
   ولا يثق بتحقق القائمة نفسها.
 - **محرك النفق:** [SagerNet/sing-box](https://github.com/SagerNet/sing-box)، يُنزَّل من إصداراته الرسمية على GitHub.

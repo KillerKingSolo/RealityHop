@@ -52,7 +52,20 @@ switch is on, and turning both kill switches off is the fallback.
 
 **Mac: one DNS app at a time.** A DNS app or profile such as NextDNS sends every lookup through its own proxy, and PIA
 blocks that while connected: the VPN connects but no website loads (names do not resolve; addresses do). Turn the DNS
-app off while PIA is on, or set PIA → Settings → Network → Name Servers to **Use Existing DNS** so PIA leaves DNS to it.
+app off while PIA is on, or set PIA → Settings → Network → DNS to **Use Existing DNS** so PIA leaves DNS to it.
+
+**Mac: PIA's own DNS (optional).** Reality Hop sets the name server inside the tunnel (Settings: Quad9, or Cloudflare
+in France). It does not change PIA's DNS. To use the same Quad9 servers for PIA itself:
+
+1. Open PIA → Settings → Network.
+2. Set **DNS** to **Custom**, then click **Edit**.
+3. Primary DNS: `9.9.9.9`. Secondary DNS: `149.112.112.112`. For Cloudflare (malware blocking): `1.1.1.2` and `1.0.0.2`.
+4. Keep **Allow LAN Traffic** on, so the router and other local devices stay reachable while the kill switch is on.
+
+PIA shows a yellow warning next to a custom DNS. This is PIA's general note about custom DNS, not an error. Skip this
+step when a DNS app is on: set **Use Existing DNS** instead, as above.
+
+![PIA Network settings with Quad9 as custom DNS](images/pia-mac-dns.png)
 
 **Why rh-core.exe must bypass the VPN:** rh-core.exe carries the VPN's own connection to the node. When all other apps
 use the VPN, PIA routes that connection back into the VPN, which is not up yet, and the VPN cannot connect. Only

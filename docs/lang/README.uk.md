@@ -177,7 +177,7 @@ Split Tunnel додайте `C:\Program Files\RealityHop\PC\rh-core.exe` і об
 ## Звідки беруться вузли
 
 - **Список вузлів:** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), файл
-  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt). Reality Hop
+  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt). Reality Hop
   залишає лише вузли VLESS + REALITY + XTLS-Vision на порту 443 з відомим сайтом-прикриттям. Потім сам їх перевіряє;
   перевірці самого списку він не довіряє.
 - **Рушій тунелю:** [SagerNet/sing-box](https://github.com/SagerNet/sing-box), завантажується з офіційних релізів на

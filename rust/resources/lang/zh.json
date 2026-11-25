@@ -525,7 +525,7 @@
  "macOS 15 or newer, Intel or Apple silicon.": "macOS 15 或更高版本，Intel 或 Apple 芯片。",
  "another DNS app (such as NextDNS) is on: with PIA connected no name resolves (turn it off, or PIA → Settings → Network → Name Servers: Use Existing DNS)": "另一个 DNS 应用（例如 NextDNS）正在运行：PIA 连接时任何域名都无法解析（关闭它，或在 PIA → Settings → Network → Name Servers 选择 Use Existing DNS）",
  "Do you live in France?": "你住在法国吗？",
- "Reality Hop looks up website names with Quad9 (9.9.9.9). After a Paris court order, Quad9 stops serving France on 24 November 2026. In France, Reality Hop uses Cloudflare (1.1.1.1) instead.": "Reality Hop 使用 Quad9 (9.9.9.9) 查询网站名称。根据巴黎法院的命令，Quad9 将于 2026 年 11 月 24 日停止为法国提供服务。在法国，Reality Hop 改用 Cloudflare (1.1.1.1)。",
+ "Reality Hop looks up website names with Quad9 (9.9.9.9). After a Paris court order, Quad9 stops serving France on 24 November 2026. In France, Reality Hop uses Cloudflare (1.1.1.2) instead.": "Reality Hop 使用 Quad9 (9.9.9.9) 查询网站名称。根据巴黎法院的命令，Quad9 将于 2026 年 11 月 24 日停止为法国提供服务。在法国，Reality Hop 改用 Cloudflare (1.1.1.1)。",
  "Yes, use Cloudflare": "是，使用 Cloudflare",
  "No, keep Quad9": "否，保留 Quad9",
  "If Reality Hop helps you, please give it a star. It is free and takes one click. Stars show me that people are using it, help others find it, and keep me motivated to fix problems and add new features.": "如果 Reality Hop 对你有帮助，请给它一颗星。免费，只需点一下。星标让我知道有人在用它，帮助更多人找到它，也激励我修复问题、添加新功能。",

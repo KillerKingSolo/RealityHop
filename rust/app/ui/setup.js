@@ -158,7 +158,7 @@ const PAGES = {
   // In France, Cloudflare instead of Quad9 as the name server (ask_france)
   async france() {
     await h(await T('Do you live in France?'));
-    p(await T('Reality Hop looks up website names with Quad9 (9.9.9.9). After a Paris court order, Quad9 stops serving France on 24 November 2026. In France, Reality Hop uses Cloudflare (1.1.1.1) instead.'), true);
+    p(await T('Reality Hop looks up website names with Quad9 (9.9.9.9). After a Paris court order, Quad9 stops serving France on 24 November 2026. In France, Reality Hop uses Cloudflare (1.1.1.2) instead.'), true);
     const pick = async dns => { await invoke('wz_france', { dns }); info.ask_france = false; show(info.start); };
     await buttons([[await T('No, keep Quad9'), () => pick('quad9'), true], [await T('Yes, use Cloudflare'), () => pick('cloudflare')]]);
   },

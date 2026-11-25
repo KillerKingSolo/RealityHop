@@ -13,7 +13,7 @@
     "vless://a\nvless://b\n",
     [
      {
-      "cmd": "curl -s -m 40 'https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt' | grep '^vless://' | grep reality | grep vision",
+      "cmd": "curl -s -m 40 'https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt' | grep '^vless://' | grep reality | grep vision",
       "stdin": null,
       "timeout": 240
      }
@@ -34,7 +34,7 @@
     },
     [
      {
-      "cmd": "curl -s -m 40 'https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt' | grep '^vless://' | grep reality | grep vision",
+      "cmd": "curl -s -m 40 'https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt' | grep '^vless://' | grep reality | grep vision",
       "stdin": null,
       "timeout": 240
      }

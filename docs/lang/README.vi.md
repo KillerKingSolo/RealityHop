@@ -169,7 +169,7 @@ cài → Reality Hop, và Cài đặt → Gỡ cài đặt ngay trong Reality Ho
 ## Các nút đến từ đâu
 
 - **Danh sách nút:** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), file
-  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt). Reality Hop
+  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt). Reality Hop
   chỉ giữ các nút VLESS + REALITY + XTLS-Vision trên cổng 443 dùng một trang ngụy trang nổi tiếng. Sau đó nó tự kiểm
   tra; nó không tin vào việc xác minh của chính danh sách.
 - **Công cụ đường hầm:** [SagerNet/sing-box](https://github.com/SagerNet/sing-box), tải từ bản phát hành chính thức

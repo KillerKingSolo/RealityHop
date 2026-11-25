@@ -8,7 +8,7 @@ use serde_json::{Map, Value};
 /// The language codes Reality Hop speaks (i18n.CODES).
 pub const LANG_CODES: [&str; 9] = ["en", "es", "zh", "ru", "uk", "fa", "ar", "tr", "vi"];
 /// The name servers the configs can use (Settings 'dns').
-pub const DNS_IPS: [(&str, &str); 2] = [("quad9", "9.9.9.9"), ("cloudflare", "1.1.1.1")];
+pub const DNS_IPS: [(&str, &str); 2] = [("quad9", "9.9.9.9"), ("cloudflare", "1.1.1.2")];
 
 /// Every setting, in engine.DEFAULTS order (settings.json is written in this order).
 #[derive(Debug, Clone, PartialEq, Serialize)]

@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
 
 /// Public DNS resolvers say nothing about anyone.
-const KEEP_IPS: [&str; 5] = ["0.0.0.0", "9.9.9.9", "149.112.112.112", "1.1.1.1", "8.8.8.8"];
+const KEEP_IPS: [&str; 7] = ["0.0.0.0", "9.9.9.9", "149.112.112.112", "1.1.1.1", "1.1.1.2", "1.0.0.2", "8.8.8.8"];
 /// The sites Reality Hop itself uses (plus the fronts).
 const KEEP_HOSTS: [&str; 10] = [
     "api.ipify.org",

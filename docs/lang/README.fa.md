@@ -174,7 +174,7 @@ Installed apps → Reality Hop و تنظیمات → حذف برنامه در خ
 ## گره‌ها از کجا می‌آیند
 
 - **فهرست گره‌ها:** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes)، فایل
-  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/verified_tls.txt). Reality Hop
+  [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt). Reality Hop
   فقط گره‌های VLESS + REALITY + XTLS-Vision روی پورت 443 را نگه می‌دارد که از یک سایت پوششی شناخته‌شده استفاده
   می‌کنند. سپس خودش آن‌ها را آزمایش می‌کند؛ به تأیید خود فهرست اعتماد نمی‌کند.
 - **موتور تونل:** [SagerNet/sing-box](https://github.com/SagerNet/sing-box)، دانلودشده از نسخه‌های رسمی آن در
