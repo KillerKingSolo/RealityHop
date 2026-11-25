@@ -4,6 +4,25 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 2.1.3 (2026-11-25)
+
+**Why update:** the node list downloads again, the Mac tunnel stays up through PIA changes, and scans find real working nodes faster.
+
+- Fixed: the node list returned 404 because its source moved it to a new branch. Reality Hop reads the new address.
+- Fixed: on macOS the PC tunnel closed every connection each time PIA changed the routes.
+- Fixed: on a Mac behind PIA the 443 ping answered in about 1 ms and meant nothing. It now times the server's reply to a TLS hello.
+- Fixed: a scan during a network fault kept good nodes out of later tests. Failures that can pass later expire after 1 hour. Nodes with the wrong certificate stay out.
+- Fixed: a burst of PIA drops started a blame and a node test for each drop. One of each now runs per burst, and no node swaps or speed checks run until PIA is steady.
+- Fixed: a pinned node was dropped when PIA reconnected.
+- Fixed: Reality Hop's leftover test addresses stayed on PIA's bypass list.
+- Fixed: the window had a white scrollbar corner.
+- Changed: nodes working is counted out of all 6 slots ("5 / 6", not "5 / 5"). An empty slot shows red in the tray ring.
+- Changed: nodes are retested every minute, with a lasting-connection test and a minimum-speed test. Steering follows the PIA server actually in use. The log has a line per connection.
+- Changed: faster node tests, fastest nodes tested first, and a fairer speed test. Scans go past the first batch and refill to 6 nodes.
+- Changed: drag PC or Router onto a node to pin it. The window shows a pinned node as the one in use. Candidates has Test 50 more and a 200ms+ label.
+- Changed: in France, Reality Hop looks up names with Cloudflare (1.1.1.2), since Quad9 stops serving France.
+- Changed: Mac sidebar icons match Windows. The docs add Mac install screenshots and PIA DNS settings.
+
 ## 2.1.1 (2026-11-24)
 
 **Why update:** PIA comes back faster after a drop, slow nodes are caught within the hour, and the window shows more and matches the tray.

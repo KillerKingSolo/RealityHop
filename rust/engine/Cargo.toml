@@ -15,7 +15,7 @@ name = "engine"
 serde.workspace = true
 serde_json.workspace = true
 md-5 = "=0.11.0"
-sha2 = "=0.11.1"
+sha2 = "=0.11.2"
 regex = "=1.13.2"
 fancy-regex = "=0.20.2"
 ureq = { version = "=3.5.2", default-features = false, features = ["rustls"] }
