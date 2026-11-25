@@ -179,6 +179,35 @@ fn programs(paths: &Paths) -> Vec<String> {
     }
 }
 
+// The node addresses on PIA's bypass list that are Reality Hop's: the ones it remembers adding, and any other single
+// address that is a known node (node list, nodes.txt, vault). Two processes testing at once, or a lost this-pc.json,
+// used to leave test addresses behind as if they were the user's; the list grew by up to 50 with each test
+pub fn owned_ips(bypass: &[Value], remembered: &[String], known: &std::collections::HashSet<String>) -> Vec<String> {
+    let mut out: Vec<String> = remembered.to_vec();
+    for r in bypass {
+        if let Some(ip) = r.get("subnet").and_then(Value::as_str).and_then(|s| s.strip_suffix("/32"))
+            && known.contains(ip)
+            && !out.iter().any(|o| o == ip)
+        {
+            out.push(ip.to_string());
+        }
+    }
+    out
+}
+
+// Every node address Reality Hop knows of, offline: the saved node list, nodes.txt and the vault
+fn known_nodes(paths: &Paths) -> std::collections::HashSet<String> {
+    let mut k: std::collections::HashSet<String> = std::collections::HashSet::new();
+    if let Ok(raw) = crate::data_files::read_text(&paths.feed_cache) {
+        k.extend(crate::node_feed::parse(&raw).into_iter().map(|n| n.server));
+    }
+    let txt = crate::data_files::read_text(&paths.nodes_txt).unwrap_or_default();
+    k.extend(crate::node_tables::known_where(&txt).into_iter().map(|(s, _)| s));
+    k.extend(crate::node_tables::known_failed(&txt));
+    k.extend(crate::data_files::jload(&paths.vault).keys().cloned());
+    k
+}
+
 // Keep Reality Hop on PIA's Split Tunnel list, through piactl's applysettings, which PIA marks unstable. False when
 // PIA is not installed or the change failed (Check PIA then warns) (engine.pia_bypass)
 pub fn pia_bypass(paths: &Paths, extra: &[String], in_use: bool) -> bool {
@@ -186,8 +215,13 @@ pub fn pia_bypass(paths: &Paths, extra: &[String], in_use: bool) -> bool {
         return false;
     }
     let Ok(Value::Object(st)) = crate::data_files::read_json(std::path::Path::new(PIA_SETTINGS)) else { return false };
-    let me = crate::settings::this_pc(paths);
+    let mut me = crate::settings::this_pc(paths);
     let mac = !cfg!(windows);
+    if mac {
+        let cur = st.get("bypassSubnets").and_then(Value::as_array).cloned().unwrap_or_default();
+        let owned = owned_ips(&cur, &strings(me.get("pia_ips")), &known_nodes(paths));
+        me.insert("pia_ips".into(), json!(owned));
+    }
     let nodes: Vec<String> = if mac && in_use {
         crate::singbox_config::nodes_of(&paths.pc_cfg).unwrap_or_default().into_iter().map(|(_, n)| n.server).collect()
     } else {

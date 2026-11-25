@@ -82,3 +82,21 @@ fn null_text_settings_keep_their_default() {
         (d.router_host, d.router_key, d.singbox, d.dns, d.devices)
     );
 }
+
+#[test]
+fn test_addresses_left_on_pias_bypass_list_are_taken_off_again() {
+    use engine::pia_split_tunnel::{bypass_plan, owned_ips};
+    let r = |ip: &str| json!({"subnet": format!("{ip}/32"), "mode": "exclude"});
+    // the user's own DNS, a test address that was left behind, and the node in use
+    let cur = vec![r("9.9.9.9"), r("1.2.3.4"), r("5.6.7.8")];
+    let known: std::collections::HashSet<String> = ["1.2.3.4", "5.6.7.8"].iter().map(|s| s.to_string()).collect();
+    let owned = owned_ips(&cur, &[], &known);
+    assert_eq!(owned, ["1.2.3.4", "5.6.7.8"], "this-pc.json had forgotten them");
+    let st = json!({"bypassSubnets": cur, "splitTunnelRules": []}).as_object().cloned().unwrap();
+    let me = json!({"pia_ips": owned}).as_object().cloned().unwrap();
+    let plan = bypass_plan(&st, &me, true, &["5.6.7.8".to_string()], &[], &[], true);
+    let left: Vec<&str> =
+        plan.change["bypassSubnets"].as_array().unwrap().iter().map(|r| r["subnet"].as_str().unwrap()).collect();
+    assert_eq!(left, ["9.9.9.9/32", "5.6.7.8/32"], "the user's rule stays, the leftover goes");
+    assert_eq!(plan.ips, ["5.6.7.8"]);
+}
