@@ -513,6 +513,11 @@ struct Pia {
     blame: Vec<(f64, String)>,
 }
 
+/// The node tag that carries PIA's connection since it last connected, and a count of PIA's state changes, so a
+/// late lookup does not outlive the connection it was for.
+static CARRIER: Mutex<Option<String>> = Mutex::new(None);
+static PIA_CHANGES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 #[derive(Default)]
 struct Inner {
     want: Vec<String>,
@@ -576,7 +581,7 @@ impl Watch {
     // PIA's connection state changed (one feed line)
     pub fn on_pia(&self, paths: &Paths, state: &str) {
         let t = now();
-        let (prev, wake, first) = {
+        let (prev, wake, first, carrier) = {
             let mut g = self.lock();
             let prev = std::mem::replace(&mut g.pia.state, state.to_string());
             if state == "Connected" || state == "Disconnected" {
@@ -585,6 +590,10 @@ impl Watch {
                 g.pia.bad_since = Some(t); // PIA passes through several "connecting" states; count from the first
             }
             let dropped = prev == "Connected" && state != "Connected";
+            if prev != state {
+                PIA_CHANGES.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            }
+            let carrier = if dropped { CARRIER.lock().unwrap_or_else(|e| e.into_inner()).take() } else { None };
             // PIA often blips twice in a row, or every few seconds for minutes after a network change: one burst
             let first = dropped && pia_calm_for(t) > BURST;
             if dropped {
@@ -594,26 +603,40 @@ impl Watch {
                 g.pia.drops.push(t);
                 event(paths, "drop", &format!("PIA {}", state.to_lowercase()));
             }
-            (prev, dropped, first)
+            (prev, dropped, first, carrier)
         };
-        // the node that carried PIA when it lost its connection; not a disconnect by hand or a settings change, and
-        // not a drop Reality Hop caused by restarting the tunnel
         // a drop of PIA's own, not a disconnect by hand or one a tunnel restart caused
         let own = wake && state == "Reconnecting" && !crate::pc_tunnel::restarted_within(60.0);
-        // only the first drop of a burst: in a storm every node in turn carries a blip, which says nothing about it
+        // only the first drop of a burst: in a storm every node in turn carries a blip, which says nothing about it.
+        // The node is the one PIA's connection went through, else the one the tunnel uses now
+        let node =
+            carrier.as_deref().and_then(|tag| server_of(paths, tag)).or_else(|| crate::clash_api::tunnel_node(paths));
         if own
             && first
-            && let Some(node) = crate::clash_api::tunnel_node(paths)
+            && let Some(node) = node
         {
             self.blame(&node, t);
         }
         dbg(|| format!("PIA {} -> {state}", if prev.is_empty() { "?" } else { &prev }));
-        // the tunnel's group tests its nodes only every 10 minutes: a node that still connects but stopped passing
-        // traffic would keep PIA's retries until then. Test them all now, so PIA's next try goes through a working one
-        // once per burst: switching nodes at every blip of a storm changes the address PIA sees and keeps it going
+        // the tunnel's group tests its nodes only every minute: test them all now, so PIA's next try goes through a
+        // working one. Once per burst: switching nodes at every blip of a storm changes the address PIA sees
         if first && core_mode(paths) && !stopped(paths) {
             let p = paths.clone();
-            std::thread::spawn(move || steer(&p, own));
+            std::thread::spawn(move || steer(&p, own, carrier));
+        }
+        // note which node carries PIA's new connection, once it is up
+        if state == "Connected" && prev != "Connected" && core_mode(paths) {
+            let p = paths.clone();
+            let mine = PIA_CHANGES.load(std::sync::atomic::Ordering::SeqCst);
+            std::thread::spawn(move || {
+                std::thread::sleep(Duration::from_secs(2));
+                let tag = crate::clash_api::pia_carrier(&p);
+                dbg(|| format!("PIA's connection goes through {}", tag.as_deref().unwrap_or("?")));
+                let mut c = CARRIER.lock().unwrap_or_else(|e| e.into_inner());
+                if PIA_CHANGES.load(std::sync::atomic::Ordering::SeqCst) == mine {
+                    *c = tag;
+                }
+            });
         }
         if wake {
             say(&format!("PIA dropped ({state})"));
@@ -945,23 +968,30 @@ pub const HOLD: Duration = Duration::from_secs(600);
 /// Which hold is the latest: an older one that ends after a newer one started must not end the newer one.
 static HOLDS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
+// The address of a node tag in pc-config.json
+fn server_of(paths: &Paths, tag: &str) -> Option<String> {
+    let list = crate::singbox_config::nodes_of(&paths.pc_cfg).ok()?;
+    list.into_iter().find(|(t, _)| t == tag).map(|(_, n)| n.server)
+}
+
 // After a PIA drop: test every node at once, so PIA's next try goes through a working one instead of waiting for the
-// group's 10-minute test. own: PIA lost the connection itself; when the test keeps the same node (it answers the quick
-// test but broke PIA), the tunnel holds the next best node for HOLD, then goes back to automatic
-fn steer(p: &Paths, own: bool) {
+// group's next test. own: PIA lost the connection itself; carrier: the node its connection went through. When the
+// group keeps that node (it answers the quick test but broke PIA), the tunnel holds the best node that passed this
+// test for HOLD, then goes back to automatic
+fn steer(p: &Paths, own: bool, carrier: Option<String>) {
     use std::sync::atomic::Ordering;
     let mine = HOLDS.fetch_add(1, Ordering::SeqCst) + 1;
     crate::clash_api::pick(p, "auto"); // a new drop ends any hold
     let tag = |p: &Paths| crate::clash_api::proxies(p).as_ref().and_then(crate::clash_api::now_tag);
-    let before = tag(p);
-    crate::pc_tunnel::regroup_within(p, 3000);
+    let before = carrier.clone().or_else(|| tag(p));
+    let passes = crate::pc_tunnel::regroup_within(p, 3000);
     let after = tag(p);
     if after.is_some() && after != before {
         say("PIA drop: the nodes were tested at once and the PC tunnel moved to a working one");
         return;
     }
     let Some(bad) = after.filter(|_| own) else { return };
-    let Some(alt) = crate::clash_api::proxies(p).and_then(|px| crate::clash_api::best_other(&px, &bad)) else { return };
+    let Some(alt) = crate::clash_api::best_pass(&passes, &bad) else { return };
     if !crate::clash_api::pick(p, &alt) {
         return; // the tunnel runs a config from before 2.1.1: no selector until its next start
     }

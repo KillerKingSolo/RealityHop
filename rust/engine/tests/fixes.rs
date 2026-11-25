@@ -100,3 +100,77 @@ fn test_addresses_left_on_pias_bypass_list_are_taken_off_again() {
     assert_eq!(left, ["9.9.9.9/32", "5.6.7.8/32"], "the user's rule stays, the leftover goes");
     assert_eq!(plan.ips, ["5.6.7.8"]);
 }
+
+// A node that passes the quick test but cuts a lasting download fails the scan; an HTTP error says nothing about it
+#[test]
+fn a_node_that_cuts_a_lasting_connection_fails() {
+    use engine::node_tests::{hold_out, hold_result};
+    assert_eq!(hold_result(" 200 640000 10.002"), Some(None), "ran the full 10 s");
+    assert_eq!(hold_result(" 200 98000 2.8"), Some(Some(2.8)), "cut after 2.8 s");
+    assert_eq!(hold_result(" 000 0 1.0"), Some(Some(1.0)));
+    assert_eq!(hold_result(" 503 0 0.4"), None);
+    let mut nodes = vec![json!({"ok": true}), json!({"ok": true}), json!({"ok": false}), json!({"ok": true})];
+    hold_out(&mut nodes, |i| Ok([Some(None), Some(Some(3.0)), Some(Some(1.0)), None][i])).unwrap();
+    assert_eq!(nodes[0]["ok"], true);
+    assert_eq!(nodes[1]["ok"], false);
+    assert_eq!(nodes[1]["why"], "cut a lasting connection after 3 s");
+    assert!(nodes[2].get("why").is_none(), "a node that already failed is not tested");
+    assert_eq!(nodes[3]["ok"], true);
+}
+
+// A node under the hard minimum fails after a test of its own; 0 Mbps fails at once
+#[test]
+fn a_node_under_the_hard_minimum_fails_after_its_own_test() {
+    use engine::node_tests::slow_out;
+    let mut nodes = vec![
+        json!({"ok": true, "mbps": 30}),
+        json!({"ok": true, "mbps": 1}),
+        json!({"ok": true, "mbps": 2}),
+        json!({"ok": true, "mbps": 0}),
+        json!({"ok": true}),
+    ];
+    let asked = std::cell::RefCell::new(vec![]);
+    slow_out(&mut nodes, 5, |i| {
+        asked.borrow_mut().push(i);
+        Ok(Some(if i == 2 { 9 } else { 1 }))
+    })
+    .unwrap();
+    assert_eq!(*asked.borrow(), vec![1, 2], "only the slow ones that moved some data are tested again");
+    assert_eq!(nodes[0]["ok"], true);
+    assert_eq!(nodes[1]["ok"], false);
+    assert_eq!(nodes[1]["why"], "too slow: 1 Mbps (needs at least 5)");
+    assert_eq!((nodes[2]["ok"].clone(), nodes[2]["mbps"].clone()), (json!(true), json!(9)));
+    assert_eq!(nodes[3]["ok"], false);
+    assert_eq!(nodes[4]["ok"], true, "untested speed keeps the node");
+}
+
+// Older PC configs get the 1-minute re-test and the info log; values changed by hand stay
+#[test]
+fn older_pc_configs_retest_every_minute_and_log_each_connection() {
+    use engine::singbox_config::pc_tune;
+    let mut c = json!({"log": {"level": "warn"}, "outbounds": [{"type": "urltest", "tag": "auto", "interval": "10m"}]});
+    assert!(pc_tune(&mut c));
+    assert_eq!((c["log"]["level"].clone(), c["outbounds"][0]["interval"].clone()), (json!("info"), json!("1m")));
+    assert!(!pc_tune(&mut c), "already up to date");
+    let mut own =
+        json!({"log": {"level": "debug"}, "outbounds": [{"type": "urltest", "tag": "auto", "interval": "3m"}]});
+    assert!(!pc_tune(&mut own));
+    let t: serde_json::Value = serde_json::from_str(engine::setup_steps::PC_TEMPLATE).unwrap();
+    assert_eq!((t["log"]["level"].clone(), t["outbounds"][0]["interval"].clone()), (json!("info"), json!("1m")));
+}
+
+// PIA's connection is the oldest one through a node; a hold goes to the best node that passed this test
+#[test]
+fn the_node_carrying_pia_is_the_oldest_connection_and_the_hold_takes_a_fresh_pass() {
+    use engine::clash_api::{best_pass, carrier_of};
+    let conns = json!({"connections": [
+        {"start": "2026-11-25T11:09:22.5-08:00", "chains": ["vless-3", "auto", "pick"]},
+        {"start": "2026-11-25T11:09:20.12-08:00", "chains": ["vless-2", "auto", "pick"]},
+        {"start": "2026-11-25T11:09:19-08:00", "chains": ["direct"]},
+    ]});
+    assert_eq!(carrier_of(&conns).as_deref(), Some("vless-2"));
+    assert_eq!(carrier_of(&json!({"connections": []})), None);
+    let passes = json!({"vless-1": 120, "vless-2": 90, "vless-4": 300}).as_object().cloned().unwrap();
+    assert_eq!(best_pass(&passes, "vless-2").as_deref(), Some("vless-1"));
+    assert_eq!(best_pass(&Default::default(), "vless-2"), None);
+}

@@ -289,6 +289,35 @@ pub fn best_other(px: &Map<String, Value>, skip: &str) -> Option<String> {
         .map(|(_, t)| t)
 }
 
+// The node tag a connection goes through, from its chain in /connections
+fn node_tag(c: &Value) -> Option<&str> {
+    c["chains"].as_array()?.iter().filter_map(Value::as_str).find(|t| t.starts_with("vless-"))
+}
+
+// The node that carries PIA's VPN connection, from a /connections answer: the oldest open connection through a node.
+// PIA keeps one long connection through the SOCKS port; Reality Hop's own downloads are short
+pub fn carrier_of(conns: &Value) -> Option<String> {
+    let list = conns["connections"].as_array()?;
+    let start = |c: &Value| c["start"].as_str().unwrap_or("~").to_string(); // RFC 3339 in one zone: sorts as text
+    list.iter().filter(|c| node_tag(c).is_some()).min_by_key(|c| start(c)).and_then(node_tag).map(str::to_string)
+}
+
+// The node tag that carries PIA's VPN connection now; None when the API does not answer or nothing goes through
+pub fn pia_carrier(paths: &Paths) -> Option<String> {
+    let api = ControlApi::pc(paths).ok()?;
+    carrier_of(&serde_json::from_str(&api.get("/connections", Duration::from_secs(3)).ok()?).ok()?)
+}
+
+// The lowest-delay node of a group test's passes other than skip
+pub fn best_pass(passes: &Map<String, Value>, skip: &str) -> Option<String> {
+    passes
+        .iter()
+        .filter(|(t, _)| t.as_str() != skip && t.starts_with("vless-"))
+        .filter_map(|(t, d)| d.as_i64().filter(|d| *d > 0).map(|d| (d, t.clone())))
+        .min()
+        .map(|(_, t)| t)
+}
+
 // The PC tunnel's exit address, from api.ipify.org through the tunnel's SOCKS port (engine.pc_exit)
 pub fn pc_exit() -> Option<String> {
     exit_ip(2080)

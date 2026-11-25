@@ -134,10 +134,32 @@ pub fn pick_add(c: &mut Value) -> bool {
     true
 }
 
-// pick_add on pc-config.json; nothing when it is missing or already has the selector
+/// How often the PC tunnel's group re-tests its nodes: a node that stops passing traffic is dropped within a minute.
+pub const RETEST: &str = "1m";
+/// The PC tunnel's log level: "info" names the node each connection goes through, so a PIA drop can be traced to it.
+pub const PC_LOG: &str = "info";
+
+// The re-test interval and log level of PC configs from before 2.1.2; values changed by hand stay. True when it changed
+pub fn pc_tune(c: &mut Value) -> bool {
+    let mut changed = false;
+    for o in c["outbounds"].as_array_mut().into_iter().flatten() {
+        if o["type"] == "urltest" && o["tag"] == "auto" && o["interval"] == "10m" {
+            o["interval"] = RETEST.into();
+            changed = true;
+        }
+    }
+    if c["log"]["level"] == "warn" {
+        c["log"]["level"] = PC_LOG.into();
+        changed = true;
+    }
+    changed
+}
+
+// pick_add and pc_tune on pc-config.json; nothing when it is missing or already up to date. From the next tunnel start
 pub fn pick_migrate(paths: &crate::paths::Paths) {
     let Ok(mut c) = crate::data_files::read_json(&paths.pc_cfg) else { return };
-    if pick_add(&mut c) {
+    let added = pick_add(&mut c);
+    if pc_tune(&mut c) | added {
         let _ = crate::data_files::jsave(&paths.pc_cfg, &c, Some(2));
     }
 }

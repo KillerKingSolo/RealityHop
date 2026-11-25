@@ -270,6 +270,89 @@ pub fn speed_test(paths: &Paths, nodes: &mut [Value], base: usize, min_mbps: i64
     })
 }
 
+/// How long a node must keep one slow download going to pass: PIA's VPN runs over one connection that must last.
+pub const HOLD_SECS: u64 = 10;
+/// The least a node must download in HOLD_SECS at the 64 KB/s cap, allowing a few seconds for the handshake.
+const HOLD_BYTES: f64 = 200_000.0;
+/// The speed under which a node fails, whatever the floor: PIA's connection does not hold on 1 or 2 Mbps.
+pub const HARD_MIN_MBPS: i64 = 5;
+
+// The lasting-connection test through one test port: Some(None) when the download ran HOLD_SECS, Some(Some(secs))
+// when the node cut it after secs; None when the test file answered with an HTTP error (says nothing about the node)
+pub fn hold(port: usize) -> Result<Option<Option<f64>>, String> {
+    let secs = HOLD_SECS.to_string();
+    let null = if cfg!(windows) { "nul" } else { "/dev/null" };
+    let rest = [
+        "-o",
+        null,
+        "-m",
+        &secs,
+        "--limit-rate",
+        "64k",
+        "-w",
+        " %{http_code} %{size_download} %{time_total}",
+        SPEED_URL,
+    ];
+    let out =
+        run(&curl_via(port, &rest), None, Duration::from_secs(HOLD_SECS + 10), None).map_err(|e| e.to_string())?;
+    Ok(hold_result(&out.stdout))
+}
+
+// curl's ' %{http_code} %{size_download} %{time_total}' output of the lasting-connection test, as hold() returns it
+pub fn hold_result(stdout: &str) -> Option<Option<f64>> {
+    let w: Vec<&str> = stdout.split(crate::python_compat::is_space).filter(|w| !w.is_empty()).collect();
+    let [code, size, total] = w[w.len().saturating_sub(3)..] else { return Some(Some(0.0)) };
+    let (size, total) = (size.parse::<f64>().unwrap_or(0.0), total.parse::<f64>().unwrap_or(0.0));
+    match code {
+        "200" if size >= HOLD_BYTES && total >= HOLD_SECS as f64 - 0.5 => Some(None),
+        "200" | "000" => Some(Some(total)),
+        _ => None,
+    }
+}
+
+// Fail the working nodes that cut a lasting download; test(i) is hold() on node i. All at once, capped at 64 KB/s each
+pub fn hold_out(
+    nodes: &mut [Value],
+    test: impl Fn(usize) -> Result<Option<Option<f64>>, String> + Sync,
+) -> Result<(), String> {
+    let ok: Vec<usize> = (0..nodes.len()).filter(|&i| nodes[i].get("ok") == Some(&json!(true))).collect();
+    let got = pool(ok.len().max(1), ok.len(), |k| test(ok[k]));
+    for (&i, r) in ok.iter().zip(got) {
+        if let Some(Some(secs)) = r? {
+            set(&mut nodes[i], "ok", json!(false));
+            set(&mut nodes[i], "why", json!(format!("cut a lasting connection after {secs:.0} s")));
+        }
+    }
+    Ok(())
+}
+
+// Fail the working nodes under hard Mbps. One that was slow while sharing the line gets a test of its own first;
+// test(i) is that test on node i. None from it (HTTP error) keeps the node
+pub fn slow_out(
+    nodes: &mut [Value],
+    hard: i64,
+    test: impl Fn(usize) -> Result<Option<i64>, String>,
+) -> Result<(), String> {
+    for (i, n) in nodes.iter_mut().enumerate() {
+        let Some(mut m) = n.get("mbps").and_then(Value::as_i64) else { continue };
+        if n.get("ok") != Some(&json!(true)) || m >= hard {
+            continue;
+        }
+        if m > 0 {
+            match test(i)? {
+                Some(again) => m = m.max(again),
+                None => continue,
+            }
+            set(n, "mbps", m.into());
+        }
+        if m < hard {
+            set(n, "ok", json!(false));
+            set(n, "why", json!(format!("too slow: {m} Mbps (needs at least {hard})")));
+        }
+    }
+    Ok(())
+}
+
 // The test instance: killed when dropped, so an error or a cancel never leaves it running
 struct Instance(std::process::Child);
 
@@ -294,6 +377,7 @@ pub fn local_test(paths: &Paths, nodes: &mut [Value], speed: bool) -> Result<(),
     for n in nodes.iter_mut() {
         if let Some(m) = n.as_object_mut() {
             m.shift_remove("ok");
+            m.shift_remove("why");
         }
     }
     let base = usize::from(free_base(nodes.len())?);
@@ -386,9 +470,14 @@ fn local_test_on(paths: &Paths, nodes: &mut [Value], speed: bool, base: usize) -
         if let Some(e) = first_err {
             return Err(e);
         }
+        if speed {
+            hold_out(nodes, |i| hold(base + i))?;
+        }
         let min_mbps = Settings::read(paths).unwrap_or_default().min_mbps;
         if speed && min_mbps != 0 {
             speed_test(paths, nodes, base, min_mbps)?;
+            let fl = floor_now(paths, min_mbps, now());
+            slow_out(nodes, HARD_MIN_MBPS.min(fl / 2), |i| mbps(base + i, 4, true, fl))?;
         }
         drop(p);
         Ok(())
@@ -403,7 +492,9 @@ fn local_test_on(paths: &Paths, nodes: &mut [Value], speed: bool, base: usize) -
             set(n, "ok", json!(false));
             set(n, "exit", json!("-"));
             set(n, "ms", Value::Null);
-            set(n, "why", json!(router::why_failed(&log, &i.to_string())));
+            if n.get("why").is_none() {
+                set(n, "why", json!(router::why_failed(&log, &i.to_string())));
+            }
         }
         if let Some(m) = n.as_object_mut() {
             m.entry("where").or_insert("?".into());

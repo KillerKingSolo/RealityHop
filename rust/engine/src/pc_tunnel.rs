@@ -363,11 +363,12 @@ pub fn regroup(paths: &Paths) {
 }
 
 // regroup with each node's test cut off after ms: a stalled node counts as failed sooner
-pub fn regroup_within(paths: &Paths, ms: u64) {
-    if let Ok(api) = ControlApi::pc(paths) {
-        let path = format!("/group/auto/delay?url={}&timeout={ms}", crate::router::TEST_URL);
-        let _ = api.get(&path, Duration::from_millis(ms + 15000));
-    }
+// Returns the nodes that passed this test with their delay in ms; empty when the API did not answer
+pub fn regroup_within(paths: &Paths, ms: u64) -> serde_json::Map<String, serde_json::Value> {
+    let Ok(api) = ControlApi::pc(paths) else { return Default::default() };
+    let path = format!("/group/auto/delay?url={}&timeout={ms}", crate::router::TEST_URL);
+    let text = api.get(&path, Duration::from_millis(ms + 15000)).unwrap_or_default();
+    serde_json::from_str(&text).unwrap_or_default()
 }
 
 // The sing-box version rh-core is, from `rh-core version` (engine.core_version)
