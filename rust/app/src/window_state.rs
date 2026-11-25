@@ -868,14 +868,13 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
         tile("nodes", "NODES WORKING", "-".into(), "unk", String::new(), None)
     } else {
         let tested = good > 0 || bad > 0;
-        let value = if tested {
-            format!("{good} / {}", nodes.len())
-        } else {
-            tr("{n} reachable", &[("n", nodes.len().to_string())])
-        };
+        // out of all 6 slots: an empty slot counts as a dead node
+        let total = nodes.len().max(engine::node_manager::SLOTS);
+        let value =
+            if tested { format!("{good} / {total}") } else { tr("{n} reachable", &[("n", nodes.len().to_string())]) };
         let color = if bad == nodes.len() {
             "bad"
-        } else if bad > 0 || good == 0 {
+        } else if bad > 0 || good == 0 || (tested && good < total) {
             "warn"
         } else {
             "ok"

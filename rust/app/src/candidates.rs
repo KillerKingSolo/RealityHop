@@ -181,7 +181,10 @@ impl Worker<'_> {
         } else {
             let mut m = tr(
                 "PC tunnel: {ok} of {n} nodes work.",
-                &[("ok", (nodes.len() - dead.len()).to_string()), ("n", nodes.len().to_string())],
+                &[
+                    ("ok", (nodes.len() - dead.len()).to_string()),
+                    ("n", nodes.len().max(engine::node_manager::SLOTS).to_string()),
+                ],
             );
             if !dead.is_empty() {
                 m += &format!(" {}", tr("Not working: {tags}.", &[("tags", dead.join(", "))]));

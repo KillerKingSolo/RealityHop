@@ -12,20 +12,23 @@ pub struct TrayMark {
     pub segs: Vec<&'static str>,
 }
 
-// The tray state from test results (tag, ms or None); dead defaults to the nodes without a time (engine.tray_mark)
+// The tray state from test results (tag, ms or None); dead defaults to the nodes without a time. Counted out of all 6
+// slots: an empty slot counts as a dead node, so 5 nodes that work read "5 of 6", not "5 of 5" (engine.tray_mark)
 pub fn tray_mark(res: &[(String, Option<f64>)], dead: Option<&[String]>, slow_ms: f64) -> TrayMark {
     let dead: Vec<String> = match dead {
         Some(d) => d.to_vec(),
         None => res.iter().filter(|(_, ms)| ms.is_none()).map(|(t, _)| t.clone()).collect(),
     };
-    let state = if dead.len() == res.len() {
+    let total = res.len().max(crate::node_manager::SLOTS);
+    let working = res.len().saturating_sub(dead.len());
+    let state = if working == 0 {
         "bad"
-    } else if !dead.is_empty() {
+    } else if working < total {
         "warn"
     } else {
         "ok"
     };
-    let segs = res
+    let mut segs: Vec<&'static str> = res
         .iter()
         .map(|(t, ms)| {
             if dead.contains(t) {
@@ -37,5 +40,6 @@ pub fn tray_mark(res: &[(String, Option<f64>)], dead: Option<&[String]>, slow_ms
             }
         })
         .collect();
-    TrayMark { state, working: res.len().saturating_sub(dead.len()), total: res.len(), segs }
+    segs.resize(total, "bad");
+    TrayMark { state, working, total, segs }
 }

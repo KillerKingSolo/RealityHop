@@ -151,11 +151,13 @@ fn done(app: &AppHandle) {
 fn tray_follows(app: &AppHandle, paths: &Paths, w: &crate::window_state::Win) {
     let mode = crate::window_state::Mode::of(paths);
     let slow = engine::settings::Settings::read(paths).map_or(200, |s| s.slow_ms) as f64;
-    let segs = w.segs(&mode, slow);
+    let mut segs = w.segs(&mode, slow);
     if w.status_state == "unk" || segs.iter().all(|s| s == "unk") {
         return;
     }
     let ok = segs.iter().filter(|s| *s != "bad" && *s != "unk").count();
+    // out of all 6 slots: an empty slot shows as a dead segment
+    segs.resize(segs.len().max(engine::node_manager::SLOTS), "bad".into());
     let text = tr("{ok} of {n} nodes working", &[("ok", ok.to_string()), ("n", segs.len().to_string())]);
     let at = engine::local_time::now().format("%H:%M");
     let st = engine::watcher::WatchState { last: Some((w.status_state.clone(), text, at)), segs, ..Default::default() };

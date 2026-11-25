@@ -226,3 +226,15 @@ fn old_scan_failures_expire_except_wrong_certificates() {
     assert_eq!(known_failed_fresh(txt, 60), vec!["1.1.1.1", "2.2.2.2", "3.3.3.3"]);
     assert_eq!(known_failed_fresh(txt, FAIL_HOLD_SECS), vec!["1.1.1.1"]);
 }
+
+// Working nodes are counted out of all 6 slots: 5 nodes that all work read "5 of 6", with a dead ring segment
+#[test]
+fn working_nodes_are_counted_out_of_six_slots() {
+    use engine::tray_state::tray_mark;
+    let five: Vec<(String, Option<f64>)> = (1..=5).map(|i| (format!("vless-{i}"), Some(100.0))).collect();
+    let m = tray_mark(&five, None, 200.0);
+    assert_eq!((m.working, m.total, m.state), (5, 6, "warn"));
+    assert_eq!(m.segs, vec!["ok", "ok", "ok", "ok", "ok", "bad"]);
+    let six: Vec<(String, Option<f64>)> = (1..=6).map(|i| (format!("vless-{i}"), Some(100.0))).collect();
+    assert_eq!(tray_mark(&six, None, 200.0).state, "ok");
+}

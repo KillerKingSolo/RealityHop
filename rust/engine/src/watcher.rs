@@ -175,7 +175,7 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
     let mut dead = dead_of(&res);
     let tally = |res: &Results, dead: &[String]| {
         let list = if dead.is_empty() { String::new() } else { format!("; dead: {}", dead.join(", ")) };
-        format!("{} of {} nodes working{list}", res.len() - dead.len(), res.len())
+        format!("{} of {} nodes working{list}", res.len() - dead.len(), res.len().max(SLOTS))
     };
     say(&format!("{name} check: {}", tally(&res, &dead)));
     tray_mark(paths, st, &res, None);

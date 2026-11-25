@@ -14,12 +14,15 @@
    "out": {
     "last": [
      "warn",
-     "2 of 3 nodes working",
+     "2 of 6 nodes working",
      "12:34"
     ],
     "segs": [
      "ok",
      "warn",
+     "bad",
+     "bad",
+     "bad",
      "bad"
     ]
    }
@@ -34,13 +37,17 @@
    ],
    "out": {
     "last": [
-     "ok",
-     "2 of 2 nodes working",
+     "warn",
+     "2 of 6 nodes working",
      "12:34"
     ],
     "segs": [
      "ok",
-     "ok"
+     "ok",
+     "bad",
+     "bad",
+     "bad",
+     "bad"
     ]
    }
   },
@@ -55,10 +62,14 @@
    "out": {
     "last": [
      "bad",
-     "0 of 2 nodes working",
+     "0 of 6 nodes working",
      "12:34"
     ],
     "segs": [
+     "bad",
+     "bad",
+     "bad",
+     "bad",
      "bad",
      "bad"
     ]
@@ -77,11 +88,15 @@
    "out": {
     "last": [
      "warn",
-     "1 of 2 nodes working",
+     "1 of 6 nodes working",
      "12:34"
     ],
     "segs": [
      "ok",
+     "bad",
+     "bad",
+     "bad",
+     "bad",
      "bad"
     ]
    }
@@ -94,11 +109,19 @@
    "out": {
     "last": [
      "bad",
-     "0 of 0 nodes working",
+     "0 of 6 nodes working",
      "12:34"
     ],
-    "segs": []
+    "segs": [
+     "bad",
+     "bad",
+     "bad",
+     "bad",
+     "bad",
+     "bad"
+    ]
    }
   }
- ]
+ ],
+ "note": "Counted out of all 6 slots since 2.1.2: an empty slot counts as a dead node."
 }
