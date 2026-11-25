@@ -316,12 +316,9 @@ pub fn pc_status(paths: &Paths) -> Value {
     let service = engine::pc_tunnel::core_running(paths);
     let listening =
         std::net::TcpStream::connect_timeout(&([127, 0, 0, 1], 2080).into(), Duration::from_secs(1)).is_ok();
-    let (now, api) = match engine::clash_api::ControlApi::pc(paths)
-        .ok()
-        .and_then(|a| a.get("/proxies/auto", Duration::from_secs(4)).ok())
-        .and_then(|t| serde_json::from_str::<Value>(&t).ok())
-    {
-        Some(v) => (v.get("now").cloned().unwrap_or(Value::Null), true),
+    // the node traffic goes through: a pin or a hold on the selector first, else the group's pick
+    let (now, api) = match engine::clash_api::proxies(paths) {
+        Some(px) => (engine::clash_api::now_tag(&px).map_or(Value::Null, Value::from), true),
         None => (Value::Null, false),
     };
     json!({"service": service, "listening": listening, "api": api, "now": now, "exit": null})
@@ -658,10 +655,8 @@ impl Worker<'_> {
                     .ok_or_else(|| tr("{server} is not in the router's slots.", &[("server", s.into())]))?,
                 None => "auto".into(),
             };
-            if !engine::router::router_pick(&mut ssh, &secret, &tag) {
-                if server.is_none() {
-                    return Ok(()); // no selector on the router: it picks automatically already
-                }
+            // no selector on the router and no pin wanted: it picks automatically already
+            if !engine::router::router_pick(&mut ssh, &secret, &tag) && server.is_some() {
                 // the router's config has no selector yet: add it and push, then pin
                 if engine::singbox_config::pick_add(&mut cfg) {
                     engine::data_files::jsave(&self.paths.router_cfg, &cfg, Some(2)).map_err(|e| e.to_string())?;
