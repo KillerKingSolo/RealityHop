@@ -148,13 +148,21 @@ fn a_node_under_the_hard_minimum_fails_after_its_own_test() {
 #[test]
 fn older_pc_configs_retest_every_minute_and_log_each_connection() {
     use engine::singbox_config::pc_tune;
-    let mut c = json!({"log": {"level": "warn"}, "outbounds": [{"type": "urltest", "tag": "auto", "interval": "10m"}]});
-    assert!(pc_tune(&mut c));
+    let old = json!({"log": {"level": "warn"}, "outbounds": [{"type": "urltest", "tag": "auto", "interval": "10m"}],
+        "route": {"auto_detect_interface": true}});
+    let mut c = old.clone();
+    assert!(pc_tune(&mut c, false));
     assert_eq!((c["log"]["level"].clone(), c["outbounds"][0]["interval"].clone()), (json!("info"), json!("1m")));
-    assert!(!pc_tune(&mut c), "already up to date");
+    assert_eq!(c["route"]["auto_detect_interface"], true, "Windows keeps the interface watch");
+    assert!(!pc_tune(&mut c, false), "already up to date");
+    // on a Mac the interface watch closed PIA's connection at each of PIA's own route changes
+    let mut m = old.clone();
+    assert!(pc_tune(&mut m, true));
+    assert_eq!(m["route"]["auto_detect_interface"], false);
+    assert!(!pc_tune(&mut m, true));
     let mut own =
         json!({"log": {"level": "debug"}, "outbounds": [{"type": "urltest", "tag": "auto", "interval": "3m"}]});
-    assert!(!pc_tune(&mut own));
+    assert!(!pc_tune(&mut own, true));
     let t: serde_json::Value = serde_json::from_str(engine::setup_steps::PC_TEMPLATE).unwrap();
     assert_eq!((t["log"]["level"].clone(), t["outbounds"][0]["interval"].clone()), (json!("info"), json!("1m")));
 }

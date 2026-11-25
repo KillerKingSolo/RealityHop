@@ -139,8 +139,11 @@ pub const RETEST: &str = "1m";
 /// The PC tunnel's log level: "info" names the node each connection goes through, so a PIA drop can be traced to it.
 pub const PC_LOG: &str = "info";
 
-// The re-test interval and log level of PC configs from before 2.1.2; values changed by hand stay. True when it changed
-pub fn pc_tune(c: &mut Value) -> bool {
+// The re-test interval and log level of PC configs from before 2.1.2; values changed by hand stay. mac: also turn off
+// sing-box's interface watch. On every route change it closes all open connections, and PIA changes the routes each
+// time it connects, so PIA's own connection through the tunnel was cut 2 to 3 s after every connect, for minutes. The
+// node addresses are on PIA's bypass list, so the tunnel's traffic leaves outside PIA without it. True when it changed
+pub fn pc_tune(c: &mut Value, mac: bool) -> bool {
     let mut changed = false;
     for o in c["outbounds"].as_array_mut().into_iter().flatten() {
         if o["type"] == "urltest" && o["tag"] == "auto" && o["interval"] == "10m" {
@@ -152,6 +155,10 @@ pub fn pc_tune(c: &mut Value) -> bool {
         c["log"]["level"] = PC_LOG.into();
         changed = true;
     }
+    if mac && c["route"]["auto_detect_interface"] == true {
+        c["route"]["auto_detect_interface"] = false.into();
+        changed = true;
+    }
     changed
 }
 
@@ -159,7 +166,7 @@ pub fn pc_tune(c: &mut Value) -> bool {
 pub fn pick_migrate(paths: &crate::paths::Paths) {
     let Ok(mut c) = crate::data_files::read_json(&paths.pc_cfg) else { return };
     let added = pick_add(&mut c);
-    if pc_tune(&mut c) | added {
+    if pc_tune(&mut c, cfg!(target_os = "macos")) | added {
         let _ = crate::data_files::jsave(&paths.pc_cfg, &c, Some(2));
     }
 }
