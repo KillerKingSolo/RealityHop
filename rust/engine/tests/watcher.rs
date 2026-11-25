@@ -26,6 +26,9 @@ fn a_pia_drop_counts_once_and_wakes_the_loop() {
     w.on_pia(&paths, "Connected");
     w.on_pia(&paths, "Connecting");
     assert_eq!(w.pia_drops(), 1, "a second blip within 30 s is the same drop");
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs_f64();
+    let calm = engine::watcher::pia_calm_for(now);
+    assert!(calm < engine::watcher::CALM, "just dropped: not calm ({calm} s)");
     let h = engine::history::load(&paths.history);
     let kinds: Vec<&str> = h["events"].as_array().unwrap().iter().map(|e| e[1].as_str().unwrap()).collect();
     assert_eq!(kinds, ["drop", "back"]);
@@ -68,6 +71,20 @@ fn a_node_that_carried_three_drops_in_an_hour_is_the_breaker() {
     assert_eq!(w.breaker(t + 3900.0).as_deref(), Some("a"));
     w.forgive("a");
     assert_eq!(w.breaker(t + 3900.0), None, "forgiven once replaced");
+}
+
+#[test]
+fn drops_spread_over_several_nodes_blame_none() {
+    // a drop storm: every node carries some of the drops, so the cause is PIA or the network
+    let w = Watch::new();
+    let t = 1_000_000.0;
+    for (i, n) in ["a", "b", "c", "a", "b", "c", "a", "b", "a"].iter().enumerate() {
+        w.blame(n, t + 60.0 * i as f64);
+    }
+    assert_eq!(w.breaker(t + 600.0), None, "a has 4 of 9 drops: not most of them");
+    w.blame("a", t + 700.0);
+    w.blame("a", t + 760.0);
+    assert_eq!(w.breaker(t + 800.0).as_deref(), Some("a"), "6 of 11");
 }
 
 #[test]

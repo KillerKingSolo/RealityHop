@@ -31,6 +31,20 @@ const DAY: f64 = 24.0 * 3600.0;
 pub const IDLE_KBPS: f64 = 10.0;
 /// PIA drops within an hour, each while the same node carried the tunnel, that get that node replaced.
 pub const BREAKS: usize = 3;
+/// PIA drops closer together than this are one burst: one blame and one node test, not one per blip.
+pub const BURST: f64 = 30.0;
+/// Speed checks, node swaps for PIA drops and filling empty slots wait until PIA has not dropped for this long, so a
+/// drop storm (a network change, Wi-Fi waking) does not judge nodes on a line that is down every few seconds.
+pub const CALM: f64 = 300.0;
+
+// The last PIA drop, as f64 bits (0: none since start); the watcher loop and its checks read it
+static LAST_BLIP: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+// Seconds since PIA last dropped, at time now; infinite when it has not dropped since the watcher started
+pub fn pia_calm_for(now: f64) -> f64 {
+    let t = f64::from_bits(LAST_BLIP.load(std::sync::atomic::Ordering::SeqCst));
+    if t == 0.0 { f64::INFINITY } else { now - t }
+}
 
 // time.time()
 fn now() -> f64 {
@@ -204,7 +218,10 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
         let slots: Vec<usize> = (0..cur.len()).filter(|&i| dead.contains(&field(&cur[i], "tag"))).collect();
         out = Some(format!("{}.", replaced(&replace(paths, ssh, &slots, None, false, false)?)));
     }
-    if out.is_none() && cur.len() < SLOTS {
+    let calm = pia_calm_for(now());
+    if out.is_none() && cur.len() < SLOTS && calm < CALM {
+        say(&format!("only {} of {SLOTS} nodes in use; filling them waits until PIA is steady", cur.len()));
+    } else if out.is_none() && cur.len() < SLOTS {
         // a scan that found fewer working nodes left slots empty: fill them when spares work again
         say(&format!("only {} of {SLOTS} nodes in use; looking for working spares...", cur.len()));
         match replace(paths, ssh, &[], None, false, false) {
@@ -223,7 +240,9 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
         if st.speed_wait == 0.0 {
             st.speed_wait = now();
         }
-        if speed_check_go(rate, now() - st.speed_wait) {
+        if calm < CALM {
+            say(&format!("speed check postponed: PIA dropped {calm:.0} s ago; speeds now would not be real"));
+        } else if speed_check_go(rate, now() - st.speed_wait) {
             (st.speed_t, st.speed_wait) = (now(), 0.0);
             out = slow_fix(paths, ssh, &cur)?;
         } else {
@@ -557,7 +576,7 @@ impl Watch {
     // PIA's connection state changed (one feed line)
     pub fn on_pia(&self, paths: &Paths, state: &str) {
         let t = now();
-        let (prev, wake) = {
+        let (prev, wake, first) = {
             let mut g = self.lock();
             let prev = std::mem::replace(&mut g.pia.state, state.to_string());
             if state == "Connected" || state == "Disconnected" {
@@ -566,24 +585,33 @@ impl Watch {
                 g.pia.bad_since = Some(t); // PIA passes through several "connecting" states; count from the first
             }
             let dropped = prev == "Connected" && state != "Connected";
-            // PIA often blips twice in a row: one drop
-            if dropped && g.pia.drops.last().is_none_or(|d| t - d > 30.0) {
+            // PIA often blips twice in a row, or every few seconds for minutes after a network change: one burst
+            let first = dropped && pia_calm_for(t) > BURST;
+            if dropped {
+                LAST_BLIP.store(t.to_bits(), std::sync::atomic::Ordering::SeqCst);
+            }
+            if dropped && g.pia.drops.last().is_none_or(|d| t - d > BURST) {
                 g.pia.drops.push(t);
                 event(paths, "drop", &format!("PIA {}", state.to_lowercase()));
             }
-            (prev, dropped)
+            (prev, dropped, first)
         };
         // the node that carried PIA when it lost its connection; not a disconnect by hand or a settings change, and
         // not a drop Reality Hop caused by restarting the tunnel
         // a drop of PIA's own, not a disconnect by hand or one a tunnel restart caused
         let own = wake && state == "Reconnecting" && !crate::pc_tunnel::restarted_within(60.0);
-        if own && let Some(node) = crate::clash_api::tunnel_node(paths) {
+        // only the first drop of a burst: in a storm every node in turn carries a blip, which says nothing about it
+        if own
+            && first
+            && let Some(node) = crate::clash_api::tunnel_node(paths)
+        {
             self.blame(&node, t);
         }
         dbg(|| format!("PIA {} -> {state}", if prev.is_empty() { "?" } else { &prev }));
         // the tunnel's group tests its nodes only every 10 minutes: a node that still connects but stopped passing
         // traffic would keep PIA's retries until then. Test them all now, so PIA's next try goes through a working one
-        if wake && core_mode(paths) && !stopped(paths) {
+        // once per burst: switching nodes at every blip of a storm changes the address PIA sees and keeps it going
+        if first && core_mode(paths) && !stopped(paths) {
             let p = paths.clone();
             std::thread::spawn(move || steer(&p, own));
         }
@@ -603,12 +631,14 @@ impl Watch {
         self.lock().pia.blame.push((t, node.to_string()));
     }
 
-    // A node that carried the tunnel at BREAKS PIA drops within the last hour, at time now
+    // A node that carried the tunnel at BREAKS PIA drops within the last hour, and at more than half of them, at time
+    // now. Drops spread over several nodes point at PIA or the network, not at one node
     pub fn breaker(&self, now: f64) -> Option<String> {
         let mut g = self.lock();
         g.pia.blame.retain(|(t, _)| now - t < 3600.0);
         let b = &g.pia.blame;
-        b.iter().map(|(_, n)| n).find(|n| b.iter().filter(|(_, m)| m == *n).count() >= BREAKS).cloned()
+        let count = |n: &String| b.iter().filter(|(_, m)| m == n).count();
+        b.iter().map(|(_, n)| n).find(|n| count(n) >= BREAKS && count(n) * 2 > b.len()).cloned()
     }
 
     // Forget the drops blamed on node (it was replaced)
@@ -838,7 +868,7 @@ pub fn watch_loop(paths: &Paths, watch: &Arc<Watch>, hooks: &impl WatchHooks, cm
                 last_full = t;
                 let out = watch_cycle(paths, &mut ssh, &mut st)?;
                 fixed(out, &mut st, &mut ssh);
-            } else if let Some(bad) = watch.breaker(t) {
+            } else if let Some(bad) = watch.breaker(t).filter(|_| pia_calm_for(t) >= CALM) {
                 watch.forgive(&bad);
                 let out = break_fix(paths, &mut ssh, &bad)?;
                 if let Some(o) = &out {
