@@ -59,7 +59,8 @@ impl Worker<'_> {
         say(&format!("candidates: {} with plausible fronts; pinging 443 from this PC...", c.len()));
         let txt = engine::data_files::read_text(&self.paths.nodes_txt).unwrap_or_default();
         let place = engine::node_tables::known_where(&txt);
-        let failed: HashSet<String> = engine::node_tables::known_failed(&txt).into_iter().collect();
+        let age = engine::node_tables::age_secs(&self.paths.nodes_txt);
+        let failed: HashSet<String> = engine::node_tables::known_failed_fresh(&txt, age).into_iter().collect();
         let dead = engine::clash_api::tunnel_fails(self.paths, now());
         for n in c.iter_mut() {
             let s = f(n, "server");

@@ -190,3 +190,36 @@ pub fn known_failed(text: &str) -> Vec<String> {
     out.dedup();
     out
 }
+
+/// How long a failure that can pass later (no answer, too slow, cut) keeps a node out of the tests.
+pub const FAIL_HOLD_SECS: u64 = 3600;
+
+// known_failed, but once the scan is older than FAIL_HOLD_SECS only the nodes that serve another site's certificate
+// stay out: a scan during a network fault fails good nodes for reasons that pass later (stale)
+pub fn known_failed_fresh(text: &str, age_secs: u64) -> Vec<String> {
+    if age_secs < FAIL_HOLD_SECS {
+        return known_failed(text);
+    }
+    let (mut out, mut failed) = (Vec::new(), false);
+    for l in text_lines(text) {
+        failed = failed || l.starts_with("FAILED");
+        if failed
+            && l.contains("certificate is valid for")
+            && let Some(m) = FAILED_ROW.captures(&l)
+        {
+            out.push(m[1].to_string());
+        }
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
+// Seconds since nodes.txt was last written; u64::MAX when unknown
+pub fn age_secs(path: &std::path::Path) -> u64 {
+    std::fs::metadata(path)
+        .and_then(|m| m.modified())
+        .ok()
+        .and_then(|t| t.elapsed().ok())
+        .map_or(u64::MAX, |d| d.as_secs())
+}

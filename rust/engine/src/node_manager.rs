@@ -525,7 +525,7 @@ pub fn fastest_local(
     let txt = read_text(&paths.nodes_txt).unwrap_or_default();
     let where_ = crate::node_tables::known_where(&txt);
     let mut skip = exclude.clone();
-    skip.extend(crate::node_tables::known_failed(&txt));
+    skip.extend(crate::node_tables::known_failed_fresh(&txt, crate::node_tables::age_secs(&paths.nodes_txt)));
     skip.extend(crate::clash_api::tunnel_fails(paths, now()).keys().cloned());
     let mut c: Vec<Value> = feed(paths, ssh)?.into_iter().filter(|n| !skip.contains(&field(n, "server"))).collect();
     let live = probe(paths, ssh, &mut c)?;

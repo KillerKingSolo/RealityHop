@@ -155,11 +155,14 @@ fn older_pc_configs_retest_every_minute_and_log_each_connection() {
     assert_eq!((c["log"]["level"].clone(), c["outbounds"][0]["interval"].clone()), (json!("info"), json!("1m")));
     assert_eq!(c["route"]["auto_detect_interface"], true, "Windows keeps the interface watch");
     assert!(!pc_tune(&mut c, false), "already up to date");
-    // on a Mac the interface watch closed PIA's connection at each of PIA's own route changes
+    // a Mac keeps the interface watch, and one a test build turned off is turned back on
     let mut m = old.clone();
     assert!(pc_tune(&mut m, true));
-    assert_eq!(m["route"]["auto_detect_interface"], false);
-    assert!(!pc_tune(&mut m, true));
+    assert_eq!(m["route"]["auto_detect_interface"], true);
+    let mut off = json!({"route": {"auto_detect_interface": false}});
+    assert!(pc_tune(&mut off, true));
+    assert_eq!(off["route"]["auto_detect_interface"], true);
+    assert!(!pc_tune(&mut off, true));
     let mut own =
         json!({"log": {"level": "debug"}, "outbounds": [{"type": "urltest", "tag": "auto", "interval": "3m"}]});
     assert!(!pc_tune(&mut own, true));
@@ -181,4 +184,45 @@ fn the_node_carrying_pia_is_the_oldest_connection_and_the_hold_takes_a_fresh_pas
     let passes = json!({"vless-1": 120, "vless-2": 90, "vless-4": 300}).as_object().cloned().unwrap();
     assert_eq!(best_pass(&passes, "vless-2").as_deref(), Some("vless-1"));
     assert_eq!(best_pass(&Default::default(), "vless-2"), None);
+}
+
+// The 443 ping waits for the server's reply to a TLS hello: a proxy that only accepts the connection does not count
+#[test]
+fn the_443_ping_needs_a_reply_not_just_an_accepted_connection() {
+    use engine::node_tests::{client_hello, hello_ms_on};
+    use std::io::{Read, Write};
+    use std::time::Duration;
+    let h = client_hello("www.example.com", 7);
+    assert_eq!(&h[..3], &[0x16, 3, 1]);
+    assert_eq!(u16::from_be_bytes([h[3], h[4]]) as usize, h.len() - 5, "record length");
+    assert_eq!(h[5], 1, "ClientHello");
+    assert!(h.windows(15).any(|w| w == b"www.example.com"), "the SNI is in it");
+    // accepts (the OS queues the connection) but never answers
+    let silent = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let sp = silent.local_addr().unwrap().port();
+    assert_eq!(hello_ms_on("127.0.0.1", sp, "x", Duration::from_millis(400)), None);
+    let answers = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let ap = answers.local_addr().unwrap().port();
+    std::thread::spawn(move || {
+        if let Ok((mut s, _)) = answers.accept() {
+            let mut b = [0u8; 5];
+            let _ = s.read(&mut b);
+            let _ = s.write_all(&[0x15]);
+            std::thread::sleep(Duration::from_millis(200));
+        }
+    });
+    assert!(hello_ms_on("127.0.0.1", ap, "x", Duration::from_secs(2)).is_some_and(|ms| (0..2000).contains(&ms)));
+    drop(silent);
+}
+
+// A failure that can pass later keeps a node out of the tests for an hour; a wrong certificate keeps it out for good
+#[test]
+fn old_scan_failures_expire_except_wrong_certificates() {
+    use engine::node_tables::{FAIL_HOLD_SECS, known_failed_fresh};
+    let txt = "IN USE\n\nFAILED  (do not retest until the feed changes their key)\n  \
+        1.1.1.1          www.bing.com         certificate is valid for x.ru\n  \
+        2.2.2.2          www.apple.com        no-response\n  \
+        3.3.3.3          www.amd.com          cut a lasting connection after 10 s\n";
+    assert_eq!(known_failed_fresh(txt, 60), vec!["1.1.1.1", "2.2.2.2", "3.3.3.3"]);
+    assert_eq!(known_failed_fresh(txt, FAIL_HOLD_SECS), vec!["1.1.1.1"]);
 }

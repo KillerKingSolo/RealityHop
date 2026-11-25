@@ -139,10 +139,9 @@ pub const RETEST: &str = "1m";
 /// The PC tunnel's log level: "info" names the node each connection goes through, so a PIA drop can be traced to it.
 pub const PC_LOG: &str = "info";
 
-// The re-test interval and log level of PC configs from before 2.1.2; values changed by hand stay. mac: also turn off
-// sing-box's interface watch. On every route change it closes all open connections, and PIA changes the routes each
-// time it connects, so PIA's own connection through the tunnel was cut 2 to 3 s after every connect, for minutes. The
-// node addresses are on PIA's bypass list, so the tunnel's traffic leaves outside PIA without it. True when it changed
+// The re-test interval and log level of PC configs from before 2.1.2; values changed by hand stay. mac: turn the
+// interface watch back on where a 2.1.2 test build turned it off. Off did not help: sing-box watches the network
+// either way. True when it changed
 pub fn pc_tune(c: &mut Value, mac: bool) -> bool {
     let mut changed = false;
     for o in c["outbounds"].as_array_mut().into_iter().flatten() {
@@ -155,8 +154,8 @@ pub fn pc_tune(c: &mut Value, mac: bool) -> bool {
         c["log"]["level"] = PC_LOG.into();
         changed = true;
     }
-    if mac && c["route"]["auto_detect_interface"] == true {
-        c["route"]["auto_detect_interface"] = false.into();
+    if mac && c["route"]["auto_detect_interface"] == false {
+        c["route"]["auto_detect_interface"] = true.into();
         changed = true;
     }
     changed

@@ -76,14 +76,87 @@ pub fn ping443(host: &str, timeout: Duration) -> Option<i64> {
     connect_ms(host, 443, timeout)
 }
 
+// A TLS 1.3 ClientHello for sni. Only the reply time matters, so the key share is not a real key (hello)
+pub fn client_hello(sni: &str, seed: u64) -> Vec<u8> {
+    let mut x = seed | 1;
+    let mut rnd = |n: usize| -> Vec<u8> {
+        (0..n)
+            .map(|_| {
+                x ^= x << 13;
+                x ^= x >> 7;
+                x ^= x << 17;
+                x as u8
+            })
+            .collect()
+    };
+    let be16 = |v: usize| [(v >> 8) as u8, v as u8];
+    let ext = |t: u16, body: Vec<u8>| [&t.to_be_bytes()[..], &be16(body.len()), &body].concat();
+    let list16 = |items: &[u16]| {
+        let b: Vec<u8> = items.iter().flat_map(|v| v.to_be_bytes()).collect();
+        [&be16(b.len())[..], &b].concat()
+    };
+    let name = sni.as_bytes();
+    let mut exts = Vec::new();
+    if !name.is_empty() {
+        exts.extend(ext(0, [&be16(name.len() + 3)[..], &[0], &be16(name.len()), name].concat()));
+    }
+    exts.extend(ext(0x0a, list16(&[0x001d, 0x0017])));
+    exts.extend(ext(0x0b, vec![1, 0]));
+    exts.extend(ext(0x0d, list16(&[0x0403, 0x0804, 0x0401, 0x0503, 0x0805, 0x0501, 0x0806, 0x0601])));
+    exts.extend(ext(0x2b, vec![4, 3, 4, 3, 3]));
+    exts.extend(ext(0x2d, vec![1, 1]));
+    exts.extend(ext(0x33, [&be16(36)[..], &[0, 0x1d, 0, 32], &rnd(32)].concat()));
+    let body = [
+        &[3, 3][..],
+        &rnd(32),
+        &[32],
+        &rnd(32),
+        &list16(&[0x1301, 0x1302, 0x1303, 0xc02b, 0xc02f, 0xc02c, 0xc030]),
+        &[1, 0],
+        &be16(exts.len()),
+        &exts,
+    ]
+    .concat();
+    let hs = [&[1, (body.len() >> 16) as u8][..], &be16(body.len()), &body].concat();
+    [&[0x16, 3, 1][..], &be16(hs.len()), &hs].concat()
+}
+
+// Time from sending a TLS hello to the server's first byte back, in whole ms; None when it does not answer within
+// timeout. A bare TCP connect is not enough: a local proxy (a VPN app's split tunnel) accepts it at once for any
+// address, so every node looks 1 ms away (hello)
+pub fn hello_ms(host: &str, sni: &str, timeout: Duration) -> Option<i64> {
+    hello_ms_on(host, 443, sni, timeout)
+}
+
+// hello_ms on any port
+pub fn hello_ms_on(host: &str, port: u16, sni: &str, timeout: Duration) -> Option<i64> {
+    use std::io::{Read, Write};
+    let addr = (host, port).to_socket_addrs().ok()?.next()?;
+    let start = Instant::now();
+    let mut s = TcpStream::connect_timeout(&addr, timeout).ok()?;
+    let left = timeout.checked_sub(start.elapsed()).filter(|d| !d.is_zero())?;
+    s.set_read_timeout(Some(left)).ok()?;
+    s.set_write_timeout(Some(left)).ok()?;
+    let seed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos() as u64;
+    s.write_all(&client_hello(sni, seed)).ok()?;
+    let t = Instant::now();
+    let mut b = [0u8; 1];
+    match s.read(&mut b) {
+        Ok(1) => Some(t.elapsed().as_millis() as i64),
+        _ => None,
+    }
+}
+
 // Set tcp_ms on every node (null when 443 never answered); the indexes of the ones that answered, fastest first.
 // One 2 s ping for all, then the best of two more for the ones that answered (engine.tcp_probe)
 pub fn tcp_probe(nodes: &mut [Value]) -> Vec<usize> {
     let servers: Vec<String> = nodes.iter().map(server).collect();
-    let mut ms = pool(128, servers.len(), |i| ping443(&servers[i], Duration::from_secs(2)));
+    let snis: Vec<String> =
+        nodes.iter().map(|n| n.get("sni").and_then(Value::as_str).unwrap_or("").to_string()).collect();
+    let ping = |i: usize, ms: u64| hello_ms(&servers[i], &snis[i], Duration::from_millis(ms));
+    let mut ms = pool(128, servers.len(), |i| ping(i, 2000));
     let up: Vec<usize> = (0..ms.len()).filter(|&i| ms[i].is_some()).collect();
-    let more =
-        pool(128, up.len(), |k| (0..2).filter_map(|_| ping443(&servers[up[k]], Duration::from_millis(1500))).min());
+    let more = pool(128, up.len(), |k| (0..2).filter_map(|_| ping(up[k], 1500)).min());
     for (k, &i) in up.iter().enumerate() {
         if let (Some(a), Some(b)) = (ms[i], more[k]) {
             ms[i] = Some(a.min(b));
