@@ -8,10 +8,6 @@ on:
     paths: ['rust/**', '.github/workflows/rust.yml']
   workflow_dispatch:
   workflow_call:   # the release runs these checks on the tagged commit first
-    inputs:
-      release:
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -21,7 +17,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [windows-latest, macos-15, macos-15-intel, macos-26, macos-26-intel, xcode-27]   # xcode-27: macOS 27 (GitHub preview image)
+        include:
+          - { runner: windows-latest, os: Windows }
+          - { runner: macos-15, os: 'macOS 15, Apple silicon' }
+          - { runner: macos-15-intel, os: 'macOS 15, Intel' }
+          - { runner: macos-26, os: 'macOS 26, Apple silicon' }
+          - { runner: macos-26-intel, os: 'macOS 26, Intel' }
+          - { runner: xcode-27, os: 'macOS 27, Apple silicon' }   # xcode-27: macOS 27 (GitHub preview image)
+    name: test (${{ matrix.os }})
     runs-on: ${{ matrix.runner }}
     defaults:
       run:
@@ -36,38 +39,8 @@ jobs:
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked
 
-  build:   # test builds to try by hand: the Windows exe (MSVC links the WebView2 loader in) and the Apple silicon dmg
-    if: ${{ !inputs.release }}   # the release builds its own
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [windows-latest, macos-15]
-    runs-on: ${{ matrix.runner }}
-    defaults:
-      run:
-        working-directory: rust
-        shell: bash
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Toolchain from rust-toolchain.toml
-        run: rustup toolchain install
-      - name: Windows exe
-        if: runner.os == 'Windows'
-        run: |
-          cargo build --locked --release -p realityhop-app
-          mkdir -p dist && cp target/release/RealityHop.exe dist/
-      - name: macOS dmg
-        if: runner.os == 'macOS'
-        run: sh build-mac.sh
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: rust-${{ runner.os }}
-          path: rust/dist/*
-          retention-days: 7
-
   deny:   # vulnerabilities, licenses and sources of every crate
+    name: crate audit (vulnerabilities, licenses, sources)
     runs-on: ubuntu-latest
     defaults:
       run:

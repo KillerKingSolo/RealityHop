@@ -587,14 +587,14 @@ impl Worker<'_> {
     pub fn replace_all(&self) -> Result<(), String> {
         let mut ssh = RouterSsh { paths: self.paths };
         let nodes = nm::scan(self.paths, &mut ssh, None)?;
-        nm::apply(self.paths, &mut ssh, &nodes, 6)?;
+        nm::apply(self.paths, &mut ssh, &nodes, nm::SLOTS)?;
         self.after_deploy(&tr("All slots were rewritten with the 6 best nodes from the scan.", &[]));
         Ok(())
     }
 
     // Rescue from the vault (do_rescue)
     pub fn rescue(&self) -> Result<(), String> {
-        let sentence = nm::rescue(self.paths, &mut RouterSsh { paths: self.paths }, 6)?;
+        let sentence = nm::rescue(self.paths, &mut RouterSsh { paths: self.paths }, nm::SLOTS)?;
         let ok = sentence.starts_with("Rescue done");
         self.forget_router();
         {

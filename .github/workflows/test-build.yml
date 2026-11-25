@@ -1,0 +1,59 @@
+name: test-build
+
+# Test builds to try by hand, on each change to main and on pull requests. The release builds its own.
+
+on:
+  push:
+    branches: [main]
+    paths: ['rust/**', '.github/workflows/test-build.yml']
+  pull_request:
+    paths: ['rust/**', '.github/workflows/test-build.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:   # the Windows exe (MSVC links the WebView2 loader in)
+    name: test build (Windows exe)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: rust
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Toolchain from rust-toolchain.toml
+        run: rustup toolchain install
+      - name: Windows exe
+        run: |
+          cargo build --locked --release -p realityhop-app
+          mkdir -p dist && cp target/release/RealityHop.exe dist/
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-Windows
+          path: rust/dist/*
+          retention-days: 7
+
+  build-mac:   # the Apple silicon dmg
+    name: test build (Mac dmg, Apple silicon)
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: rust
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Toolchain from rust-toolchain.toml
+        run: rustup toolchain install
+      - name: macOS dmg
+        run: sh build-mac.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-macOS
+          path: rust/dist/*
+          retention-days: 7

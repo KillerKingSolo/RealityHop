@@ -5,7 +5,7 @@
 use crate::activity_log::{FileLog, dbg, say};
 use crate::clash_api::{check_pc, wait_api};
 use crate::history;
-use crate::node_manager::{apply, inuse, replace, rescue, router_sync, router_up, scan};
+use crate::node_manager::{SLOTS, apply, inuse, replace, rescue, router_sync, router_up, scan};
 use crate::node_tests::{node_test, router_test};
 use crate::paths::Paths;
 use crate::pc_tunnel::{core_ensure, core_log_trim, core_mode, core_restart, regroup};
@@ -128,7 +128,7 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
     if cur.is_empty() {
         // nothing in use yet (a setup that could not finish): find the first set
         let nodes = scan(paths, ssh, None)?;
-        apply(paths, ssh, &nodes, 6)?;
+        apply(paths, ssh, &nodes, SLOTS)?;
         let out = "No nodes were in use; the 6 best from a fresh scan are in now.".to_string();
         say(&out);
         return Ok(Some(out));
@@ -199,10 +199,19 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
     history::record(&paths.history, &pings, None, now());
     let mut out = None;
     if !dead.is_empty() && dead.len() == res.len() {
-        out = Some(rescue(paths, ssh, 6)?);
+        out = Some(rescue(paths, ssh, SLOTS)?);
     } else if !dead.is_empty() {
         let slots: Vec<usize> = (0..cur.len()).filter(|&i| dead.contains(&field(&cur[i], "tag"))).collect();
         out = Some(format!("{}.", replaced(&replace(paths, ssh, &slots, None, false, false)?)));
+    }
+    if out.is_none() && cur.len() < SLOTS {
+        // a scan that found fewer working nodes left slots empty: fill them when spares work again
+        say(&format!("only {} of {SLOTS} nodes in use; looking for working spares...", cur.len()));
+        match replace(paths, ssh, &[], None, false, false) {
+            Ok(sw) if !sw.is_empty() => out = Some(format!("{}.", replaced(&sw))),
+            Ok(_) => {}
+            Err(e) => say(&format!("empty slots stay empty for now: {e}")),
+        }
     }
     let s = Settings::read(paths).unwrap_or_default();
     if out.is_none() && s.min_mbps != 0 && paths.core.exists() && !router_only(paths)
@@ -819,7 +828,7 @@ pub fn watch_loop(paths: &Paths, watch: &Arc<Watch>, hooks: &impl WatchHooks, cm
                 ));
                 tray_recheck(paths, &mut ssh, &mut st);
             } else if watch.take("rescue") {
-                let out = rescue(paths, &mut ssh, 6)?;
+                let out = rescue(paths, &mut ssh, SLOTS)?;
                 say(&out);
                 hooks.notify(&out);
                 event(paths, "rescue", &out);

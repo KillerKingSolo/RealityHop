@@ -10,13 +10,13 @@ permissions:
 
 jobs:
   checks:   # format, lints, tests on every platform, and cargo-deny, on the tagged commit
+    name: checks
     permissions:
       contents: read
     uses: ./.github/workflows/rust.yml
-    with:
-      release: true
 
   build:
+    name: build (Windows exe)
     permissions:
       contents: read
     runs-on: windows-latest
@@ -58,6 +58,7 @@ jobs:
           path: rust/dist/RealityHop.exe
 
   mac-intel:   # build only; one job per chip, so each chip's tests start as soon as its own build is done
+    name: build (Mac dmg, Intel)
     permissions:
       contents: read   # builds and tests only; publish is the one job that writes
     strategy:
@@ -96,6 +97,7 @@ jobs:
           path: rust/target/debug/rh-tools
 
   mac-apple-silicon:
+    name: build (Mac dmg, Apple silicon)
     permissions:
       contents: read
     strategy:
@@ -107,6 +109,7 @@ jobs:
     steps: *mac-build
 
   test-apple-silicon:   # the Apple silicon app on macOS 15, 26 and 27
+    name: test Mac app (Apple silicon, ${{ matrix.os }})
     needs: mac-apple-silicon
     permissions:
       contents: read
@@ -116,10 +119,13 @@ jobs:
         include:
           - runner: macos-15
             chip: apple-silicon
+            os: macOS 15
           - runner: macos-26
             chip: apple-silicon
+            os: macOS 26
           - runner: xcode-27           # macOS 27 (GitHub preview image)
             chip: apple-silicon
+            os: macOS 27
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30   # a hung app start fails the job instead of holding the runner
     steps: &mac-test
@@ -137,8 +143,70 @@ jobs:
           name: tools-mac-${{ matrix.chip }}
           path: tools-bin
 
-      - name: Rosetta on this runner
-        if: matrix.rosetta
+      - name: Test the built app (disk image, start from the dmg, language, wizard, watcher, self-update)
+        run: |   # an artifact loses the execute bit
+          chmod +x tools-bin/rh-tools
+          tools-bin/rh-tools mac-app-test "dist/RealityHop-mac-${{ matrix.chip }}.dmg" ${{ matrix.chip }} "$RUNNER_TEMP/shots"
+
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: screenshots-${{ matrix.runner }}-${{ matrix.chip }}
+          path: ${{ runner.temp }}/shots
+
+  test-intel:   # the Intel app on Intel Macs, macOS 15 and 26
+    name: test Mac app (Intel, ${{ matrix.os }})
+    needs: mac-intel
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            chip: intel
+            os: macOS 15
+          - runner: macos-26-intel
+            chip: intel
+            os: macOS 26
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps: *mac-test
+
+  test-intel-rosetta:   # the Intel app on Apple silicon through Rosetta, macOS 26 and 27
+    name: test Mac app (Intel through Rosetta, ${{ matrix.os }})
+    needs: mac-intel
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-26
+            chip: intel
+            os: macOS 26
+          - runner: xcode-27           # macOS 27 (GitHub preview image)
+            chip: intel
+            os: macOS 27
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: RealityHop-mac-${{ matrix.chip }}
+          path: dist
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: tools-mac-${{ matrix.chip }}
+          path: tools-bin
+
+      - name: Rosetta
         run: arch -x86_64 /usr/bin/true 2>/dev/null || sudo softwareupdate --install-rosetta --agree-to-license
 
       - name: Test the built app (disk image, start from the dmg, language, wizard, watcher, self-update)
@@ -150,33 +218,12 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: screenshots-${{ matrix.runner }}-${{ matrix.chip }}${{ matrix.rosetta && '-rosetta' || '' }}
+          name: screenshots-${{ matrix.runner }}-${{ matrix.chip }}-rosetta
           path: ${{ runner.temp }}/shots
 
-  test-intel:   # the Intel app on macOS 15 and 26, and on Apple silicon through Rosetta (macOS 26 and 27)
-    needs: mac-intel
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: macos-15-intel
-            chip: intel
-          - runner: macos-26-intel
-            chip: intel
-          - runner: macos-26
-            chip: intel
-            rosetta: true
-          - runner: xcode-27
-            chip: intel
-            rosetta: true
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 30
-    steps: *mac-test
-
   publish:
-    needs: [checks, build, mac-intel, mac-apple-silicon, test-apple-silicon, test-intel]
+    name: publish the release
+    needs: [checks, build, mac-intel, mac-apple-silicon, test-apple-silicon, test-intel, test-intel-rosetta]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:

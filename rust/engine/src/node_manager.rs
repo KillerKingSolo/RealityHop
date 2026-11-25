@@ -276,11 +276,39 @@ fn feed(paths: &Paths, ssh: &mut impl Ssh) -> Result<Vec<Value>, String> {
     Ok(nodes.into_iter().map(|n| serde_json::to_value(n).unwrap_or_default()).collect())
 }
 
-// Working nodes from the node list that are not in use, best first; also everything tested (engine.find_spares)
+// Test the pool (best 443 ping first) in batches of top, until `need` pass or the pool runs out: a short first batch
+// must not settle for fewer nodes while more of the list could work. Every node tested, in order
+fn test_until(
+    paths: &Paths,
+    ssh: &mut impl Ssh,
+    pool: Vec<Value>,
+    top: usize,
+    need: usize,
+) -> Result<Vec<Value>, String> {
+    let mut tested: Vec<Value> = Vec::new();
+    let mut rest = pool.into_iter().peekable();
+    while rest.peek().is_some() {
+        let mut batch: Vec<Value> = rest.by_ref().take(top.max(1)).collect();
+        if !tested.is_empty() {
+            let ok = tested.iter().filter(|n| yes(n, "ok")).count();
+            say(&format!("{ok} of {need} found; testing the next {} candidates...", batch.len()));
+        }
+        router_test(paths, ssh, &mut batch, true)?;
+        tested.extend(batch);
+        if tested.iter().filter(|n| yes(n, "ok")).count() >= need {
+            break;
+        }
+    }
+    Ok(tested)
+}
+
+// Working nodes from the node list that are not in use, best first; also everything tested. Testing goes on past the
+// first `top` until `need` work (engine.find_spares)
 pub fn find_spares(
     paths: &Paths,
     ssh: &mut impl Ssh,
     top: usize,
+    need: usize,
     exclude: &HashSet<String>,
 ) -> Result<(Vec<Value>, Vec<Value>), String> {
     let c = feed(paths, ssh)?;
@@ -292,12 +320,13 @@ pub fn find_spares(
         live.len(),
         top.min(live.len())
     ));
-    let mut test: Vec<Value> = live.iter().take(top).map(|&i| cand[i].clone()).collect();
-    router_test(paths, ssh, &mut test, true)?;
+    let pool: Vec<Value> = live.iter().map(|&i| cand[i].clone()).collect();
+    let test = test_until(paths, ssh, pool, top, need)?;
     Ok((best_first(paths, &test), test))
 }
 
-// The full ranking: the nodes in use plus the fastest candidates, all handshake-tested (engine.scan)
+// The full ranking: the nodes in use plus the fastest candidates, all handshake-tested. Testing goes on past the first
+// `top` candidates until SLOTS nodes pass (engine.scan)
 pub fn scan(paths: &Paths, ssh: &mut impl Ssh, top: Option<usize>) -> Result<Vec<Value>, String> {
     let top = top.unwrap_or_else(|| current(paths).top.max(0) as usize);
     let mut all = inuse(paths)?;
@@ -312,9 +341,16 @@ pub fn scan(paths: &Paths, ssh: &mut impl Ssh, top: Option<usize>) -> Result<Vec
     let live: Vec<usize> = probe(paths, ssh, &mut all)?.into_iter().filter(|&i| !yes(&all[i], "inuse")).collect();
     say(&format!("answering on 443: {}, handshake-testing the {top} fastest plus the {k} in use...", live.len()));
     let mut nodes: Vec<Value> = all[..k].to_vec();
-    nodes
-        .extend(live.iter().filter(|&&i| !used.contains(&field(&all[i], "server"))).take(top).map(|&i| all[i].clone()));
+    let first = live.len().min(top);
+    nodes.extend(live[..first].iter().map(|&i| all[i].clone()));
     router_test(paths, ssh, &mut nodes, true)?;
+    let ok = nodes.iter().filter(|n| yes(n, "ok")).count();
+    if ok < SLOTS && first < live.len() {
+        let pool: Vec<Value> = live[first..].iter().map(|&i| all[i].clone()).collect();
+        say(&format!("{ok} of {SLOTS} found; testing the next {} candidates...", (live.len() - first).min(top)));
+        let mut more = test_until(paths, ssh, pool, top, SLOTS - ok)?;
+        nodes.append(&mut more);
+    }
     for l in crate::node_tables::table(&nodes) {
         say(&l);
     }
@@ -339,9 +375,12 @@ pub fn vault_spares(
     Ok((best_first(paths, &test), test))
 }
 
+/// The number of nodes in use the app aims for.
+pub const SLOTS: usize = 6;
+
 // Swap the in-use nodes at the given slots (0-based) for the best tested spares, from the online node list or (vault)
-// from the nodes that worked before, then deploy. fast_only: only spares that reach the floor; with none, nothing
-// changes (engine.replace)
+// from the nodes that worked before, fill empty slots up to SLOTS, then deploy. fast_only: only spares that reach the
+// floor; with none, nothing changes (engine.replace)
 pub fn replace(
     paths: &Paths,
     ssh: &mut impl Ssh,
@@ -360,7 +399,8 @@ pub fn replace(
     let mut ex: HashSet<String> = servers(&cur).into_iter().collect();
     ex.extend(crate::clash_api::tunnel_fails(paths, now()).keys().cloned());
     let mut vault = vault;
-    let found = if vault { vault_spares(paths, ssh, top, &ex) } else { find_spares(paths, ssh, top, &ex) };
+    let need = slots.len() + SLOTS.saturating_sub(cur.len());
+    let found = if vault { vault_spares(paths, ssh, top, &ex) } else { find_spares(paths, ssh, top, need, &ex) };
     let (mut spares, mut tested) = match found {
         Ok(f) => f,
         Err(e) if !vault => {
@@ -387,22 +427,23 @@ pub fn replace(
         let from = if vault { "among the nodes that worked before" } else { "in the online node list" };
         return Err(format!("no working spare found {from}; nothing changed"));
     }
-    if spares.len() < slots.len() {
-        say(&format!(
-            "only {} working spare(s) for {} slot(s); replacing what can be replaced",
-            spares.len(),
-            slots.len()
-        ));
+    if spares.len() < need {
+        say(&format!("only {} working spare(s) for {need} slot(s); replacing what can be replaced", spares.len()));
     }
     let mut swaps = Vec::new();
-    for (&i, s) in slots.iter().zip(spares) {
-        let Some(old) = cur.get(i).map(|n| field(n, "server")) else { continue };
+    let mut spares = spares.into_iter();
+    // the given slots first; then empty slots up to SLOTS, after a scan that found fewer working nodes
+    let mut todo: Vec<usize> = slots.iter().copied().filter(|&i| i < cur.len()).collect();
+    todo.extend(cur.len()..SLOTS.max(cur.len()));
+    for i in todo {
+        let Some(s) = spares.next() else { break };
+        let old = cur.get(i).map_or("(empty)".to_string(), |n| field(n, "server"));
         let mbps = s.get("mbps").filter(|m| !m.is_null()).map_or(String::new(), |m| format!(", {m} Mbps"));
         let ms = crate::python_json::py_str(s.get("ms").unwrap_or(&Value::Null));
         let place = s.get("where").map_or("?".to_string(), crate::python_json::py_str);
         say(&format!("vless-{}: {old} -> {}  ({ms}ms{mbps}, {place})", i + 1, field(&s, "server")));
         swaps.push((format!("vless-{}", i + 1), old, s.clone()));
-        cur[i] = s;
+        if i < cur.len() { cur[i] = s } else { cur.push(s) }
     }
     let kept: Vec<usize> = (0..cur.len()).filter(|&i| cur[i].get("ms").is_none_or(Value::is_null)).collect();
     if !kept.is_empty() && (paths.core.exists() || router_only(paths)) {
@@ -582,7 +623,7 @@ pub fn rescue(paths: &Paths, ssh: &mut impl Ssh, k: usize) -> Result<String, Str
     say(&format!("rescue: {} of {} vault nodes work", ok.len(), test.len()));
     if ok.len() < k {
         say("rescue: too few, scanning the feed for more...");
-        match find_spares(paths, ssh, top, &servers(&test).into_iter().collect()) {
+        match find_spares(paths, ssh, top, k - ok.len(), &servers(&test).into_iter().collect()) {
             Ok((more, _)) => ok.extend(more),
             Err(e) => say(&format!("rescue: feed scan failed ({e}); using what works")),
         }

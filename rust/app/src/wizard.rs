@@ -377,7 +377,7 @@ impl Worker<'_> {
         {
             say("router: finding the first nodes (tested on the router)...");
             let nodes = engine::node_manager::scan(self.paths, &mut ssh, None)?;
-            engine::node_manager::apply(self.paths, &mut ssh, &nodes, 6)?;
+            engine::node_manager::apply(self.paths, &mut ssh, &nodes, engine::node_manager::SLOTS)?;
         }
         let who = if every { "every device on the main network".to_string() } else { ips.join(", ") };
         say(&format!("router: pushing the config for {who}..."));

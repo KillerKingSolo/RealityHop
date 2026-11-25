@@ -110,6 +110,15 @@ function act(name, args) {
   return invoke('act', { name, args: args || null });
 }
 
+// Sidebar group icons, drawn the same on Windows and macOS
+const svg = body => `<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+const ICONS = {
+  nodes: svg('<circle cx="8" cy="3" r="1.8"/><circle cx="3" cy="13" r="1.8"/><circle cx="13" cy="13" r="1.8"/><path d="M7 4.6 4 11.4M9 4.6l3 6.8M4.8 13h6.4"/>'),
+  pc: svg('<rect x="1.5" y="2.5" width="13" height="8.5" rx="1"/><path d="M5.5 14h5M8 11v3"/>'),
+  router: svg('<rect x="1.5" y="9" width="13" height="4.5" rx="1"/><path d="M4.5 9V5.5M11.5 9V5.5"/><circle cx="4.5" cy="11.25" r=".5" fill="currentColor"/><circle cx="7" cy="11.25" r=".5" fill="currentColor"/>'),
+  help: svg('<circle cx="8" cy="8" r="6.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"/><circle cx="8" cy="11.6" r=".5" fill="currentColor"/>'),
+};
+
 // ---- sidebar: every action, grouped
 async function buildSide(m) {
   const key = JSON.stringify(m);
@@ -117,9 +126,11 @@ async function buildSide(m) {
   built = key;
   const nav = $('groups');
   nav.replaceChildren();
-  const group = async (title, glyph) => {
+  const group = async (title, icon) => {
     const g = el('div', 'group');
-    g.append(el('span', 'gi', glyph), el('span', 'gt', await T(title)));
+    const i = el('span', 'gi');
+    i.innerHTML = ICONS[icon];   // fixed SVG strings below; the Windows icon font is missing on macOS
+    g.append(i, el('span', 'gt', await T(title)));
     nav.append(g);
   };
   const item = async (english, fn) => {
@@ -130,7 +141,7 @@ async function buildSide(m) {
     nav.append(b);
     return b;
   };
-  await group('Nodes', '');
+  await group('Nodes', 'nodes');
   await item('Show candidates', openCandidates);
   await item('Fix: test online nodes', () => fixSelected('online'));
   await item('Fix: nodes that worked before', () => fixSelected('vault'));
@@ -138,18 +149,18 @@ async function buildSide(m) {
   await item('Replace all with best 6', replaceAll);
   await item('Rescue from verified vault', rescue);
   if (!m.ronly) {
-    await group('PC tunnel', '');
+    await group('PC tunnel', 'pc');
     await item('Restart PC tunnel', () => act('restart_pc'));
     await item('Run setup again', rerunSetup);
   }
   if (m.router) {
-    await group('Router', '');
+    await group('Router', 'router');
     await item('Test on router', () => act('test_router'));
     await item('Devices', openDevices);
     await item('Push to router', pushRouter);
     if (m.ronly) await item('Run setup again', rerunSetup);
   }
-  await group(m.backend ? 'Files & help' : 'Help', '');
+  await group(m.backend ? 'Files & help' : 'Help', 'help');
   await item('Report a problem', openReport);
   if (m.backend) {
     await item('Open backend folder', () => invoke('open_folder', { which: 'data' }));

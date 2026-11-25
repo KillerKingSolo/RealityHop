@@ -23,6 +23,7 @@ concurrency:
 
 jobs:
   build:
+    name: build and test router core
     runs-on: ubuntu-latest
     outputs:
       new: ${{ steps.plan.outputs.new }}
@@ -79,6 +80,7 @@ jobs:
             router-core/out/preview/
 
   propose:
+    name: propose router core update (pull request)
     needs: build
     if: needs.build.outputs.new == 'yes' && github.event_name != 'push'
     runs-on: ubuntu-latest
@@ -126,6 +128,7 @@ jobs:
           gh pr create --repo "$REPO" --head "$B" --base main --title "router-core: sing-box $S / $P, Go $G" --body-file /tmp/body.md
 
   publish:
+    name: publish router core files
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
