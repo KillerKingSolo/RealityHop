@@ -21,6 +21,7 @@ async function openCandidates() {
     b.onclick = fn; tipFor(b, english); bar.append(b);
   };
   await button(bar1, 'Ping and test again', () => act('cand_scan'));
+  await button(bar1, 'Test 50 more', () => act('cand_more'));
   bar1.append(el('span', 'grow'));
   cand.pick = el('span', 'muted');
   bar1.append(cand.pick);

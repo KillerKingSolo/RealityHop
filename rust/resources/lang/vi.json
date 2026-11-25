@@ -541,5 +541,18 @@
  "Check the node speeds every (hours; each check can use up to 50 MB per node)": "Kiểm tra tốc độ các nút mỗi (giờ; mỗi lần kiểm tra có thể dùng tới 50 MB cho mỗi nút)",
  "PIA down {s} s, longest {m} s": "PIA mất kết nối {s} giây, lâu nhất {m} giây",
  "after {n} s": "sau {n} giây",
- "Working, but slow (over {ms} ms)": "Đang hoạt động nhưng chậm (trên {ms} ms)"
+ "Working, but slow ({ms}ms+)": "Đang hoạt động nhưng chậm ({ms}ms+)",
+ "Test 50 more": "Kiểm tra thêm 50",
+ "Tests the next 50 fastest candidates that are not tested yet, even when 6 already work. Use it to find more working nodes to pick from.": "Kiểm tra 50 ứng viên nhanh nhất tiếp theo chưa được kiểm tra, kể cả khi đã có 6 nút hoạt động. Dùng để tìm thêm nút hoạt động để chọn.",
+ "Every candidate is tested already. Ping and test again for a fresh list.": "Mọi ứng viên đã được kiểm tra. Nhấn «Ping và kiểm tra lại» để có danh sách mới.",
+ "{server} is not in the PC tunnel's slots.": "{server} không nằm trong các khe của đường hầm PC.",
+ "The PC tunnel did not take the change. Restart the PC tunnel, then try again.": "Đường hầm PC không nhận thay đổi. Hãy khởi động lại đường hầm PC rồi thử lại.",
+ "{server} is not in the router's slots.": "{server} không nằm trong các khe của router.",
+ "The router did not take the change; see the activity log.": "Router không nhận thay đổi; xem nhật ký hoạt động.",
+ "{who} now uses {server}, until it fails.": "{who} giờ dùng {server}, cho đến khi nó hỏng.",
+ "{who} picks its node automatically again.": "{who} lại tự động chọn nút.",
+ "Use this node": "Dùng nút này",
+ "{who} will use {server} until that node fails, then pick automatically again.": "{who} sẽ dùng {server} cho đến khi nút đó hỏng, rồi lại tự động chọn.",
+ "PC and router: pick nodes automatically again": "PC và router: lại tự động chọn nút",
+ "Drag onto another row: PC, Router, or the & for both. That node is used until it fails, then the pick is automatic again.": "Kéo sang hàng khác: PC, Router, hoặc & cho cả hai. Nút đó được dùng cho đến khi hỏng, rồi việc chọn lại tự động."
 }

@@ -541,5 +541,18 @@
  "Check the node speeds every (hours; each check can use up to 50 MB per node)": "每隔多久检查节点速度（小时；每次检查每个节点最多可用 50 MB）",
  "PIA down {s} s, longest {m} s": "PIA 中断 {s} 秒，最长 {m} 秒",
  "after {n} s": "{n} 秒后",
- "Working, but slow (over {ms} ms)": "可用，但较慢（超过 {ms} 毫秒）"
+ "Working, but slow ({ms}ms+)": "可用，但较慢 ({ms}ms+)",
+ "Test 50 more": "再测试 50 个",
+ "Tests the next 50 fastest candidates that are not tested yet, even when 6 already work. Use it to find more working nodes to pick from.": "测试接下来 50 个尚未测试的最快候选节点，即使已有 6 个可用。用它找到更多可选的可用节点。",
+ "Every candidate is tested already. Ping and test again for a fresh list.": "所有候选节点都已测试。点击“重新 ping 并测试”获取新列表。",
+ "{server} is not in the PC tunnel's slots.": "{server} 不在电脑隧道的槽位中。",
+ "The PC tunnel did not take the change. Restart the PC tunnel, then try again.": "电脑隧道未接受此更改。请重启电脑隧道后重试。",
+ "{server} is not in the router's slots.": "{server} 不在路由器的槽位中。",
+ "The router did not take the change; see the activity log.": "路由器未接受此更改；请查看活动日志。",
+ "{who} now uses {server}, until it fails.": "{who} 现在使用 {server}，直到它失效。",
+ "{who} picks its node automatically again.": "{who} 重新自动选择节点。",
+ "Use this node": "使用此节点",
+ "{who} will use {server} until that node fails, then pick automatically again.": "{who} 将使用 {server}，直到该节点失效，然后重新自动选择。",
+ "PC and router: pick nodes automatically again": "电脑和路由器：重新自动选择节点",
+ "Drag onto another row: PC, Router, or the & for both. That node is used until it fails, then the pick is automatic again.": "拖到另一行：电脑、路由器，或拖 & 表示两者。该节点会一直使用到失效，之后恢复自动选择。"
 }

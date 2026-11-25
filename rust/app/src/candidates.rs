@@ -94,19 +94,29 @@ impl Worker<'_> {
 
     // Test the fastest untested candidates until a full set works or none are left (test)
     pub fn cand_test(&self) -> Result<(), String> {
+        self.cand_run(false)
+    }
+
+    // Test the next fastest untested candidates, even when a full set already works (more)
+    pub fn cand_more(&self) -> Result<(), String> {
+        self.cand_run(true)
+    }
+
+    fn cand_run(&self, more: bool) -> Result<(), String> {
         let mut nodes = std::mem::take(&mut self.w().cand.nodes);
-        let r = self.test_nodes(&mut nodes);
+        let r = self.test_nodes(&mut nodes, more);
         self.w().cand.nodes = nodes;
         r
     }
 
-    fn test_nodes(&self, nodes: &mut [Value]) -> Result<(), String> {
+    // more: one batch of the untested, then stop; else batches until a full set works
+    fn test_nodes(&self, nodes: &mut [Value], more: bool) -> Result<(), String> {
         if nodes.is_empty() {
             self.set_msg(tr("Nothing to test; ping first.", &[]));
             return Ok(());
         }
         let s = Settings::read(self.paths).unwrap_or_default();
-        let (k, top_n) = (self.slots(), s.top.max(1) as usize);
+        let (k, top_n) = (self.slots(), if more { 50 } else { s.top.max(1) as usize });
         let mut ssh = RouterSsh { paths: self.paths };
         let mut top: Vec<usize> = Vec::new();
         loop {
@@ -115,9 +125,9 @@ impl Worker<'_> {
             if batch.is_empty() {
                 break;
             }
-            let more = if top.is_empty() { "" } else { " untested" };
+            let next = if top.is_empty() && !more { "" } else { " untested" };
             say(&format!(
-                "candidates: this PC is testing the {} fastest{more}, 5 at a time (about 20 seconds)...",
+                "candidates: this PC is testing the {} fastest{next}, 5 at a time (about 20 seconds)...",
                 batch.len()
             ));
             let mut b: Vec<Value> = batch.iter().map(|i| nodes[*i].clone()).collect();
@@ -127,10 +137,17 @@ impl Worker<'_> {
             }
             r?;
             top.extend(batch);
-            if engine::process::cancelled() || nm::best_first(self.paths, nodes).len() >= k {
+            if more || engine::process::cancelled() || nm::best_first(self.paths, nodes).len() >= k {
                 break;
             }
         }
+        if more && top.is_empty() {
+            self.set_msg(tr("Every candidate is tested already. Ping and test again for a fresh list.", &[]));
+            return Ok(());
+        }
+        // every candidate the test has run on, this time and before; the old scan's failures do not count
+        let top: Vec<usize> =
+            (0..nodes.len()).filter(|&i| !untested(&nodes[i]) && nodes[i].get("known") != Some(&json!(true))).collect();
         let tested: Vec<Value> = top.iter().map(|i| nodes[*i].clone()).collect();
         let ok = nm::best_first(self.paths, &tested);
         let floor = engine::node_tests::floor_now(self.paths, s.min_mbps, now());

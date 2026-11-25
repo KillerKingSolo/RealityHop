@@ -202,6 +202,9 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
         }
     }
     tray_mark(paths, st, &res, Some(&dead));
+    if side == Side::Pc {
+        settle(paths, &res, &dead);
+    }
     let pings: Vec<(String, Option<i64>)> = cur
         .iter()
         .map(|n| {
@@ -346,7 +349,9 @@ pub fn tray_recheck(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) {
         if !router_only(paths) && wait_api(paths, Duration::from_secs(30)) {
             let r = check_pc(paths, &mut cur, false, now()).map_err(|_| "not a JSON object".to_string())?;
             if r.is_some_and(|r| !r.stale) {
-                tray_mark(paths, st, &results(&cur, "pc_ms"), None);
+                let res = results(&cur, "pc_ms");
+                settle(paths, &res, &dead_of(&res));
+                tray_mark(paths, st, &res, None);
                 after(st);
                 return Ok(());
             }
@@ -962,6 +967,59 @@ pub fn watch_loop(paths: &Paths, watch: &Arc<Watch>, hooks: &impl WatchHooks, cm
     }
 }
 
+// The PC tunnel's selector after a check of every slot (res, dead: from that check). A pin holds while its node
+// works and ends when it fails. Otherwise the group "auto" (the fast nodes) while one of them works, and the best
+// working slow node, as a backup, while none does (settle)
+pub fn settle(paths: &Paths, res: &Results, dead: &[String]) {
+    use crate::clash_api::{pick, pin_of, proxies, set_pin, tag_of};
+    let Some(px) = proxies(paths) else { return };
+    let Some(held) = px.get(crate::singbox_config::PICK).map(|p| p["now"].as_str().unwrap_or("auto").to_string())
+    else {
+        return; // a config from before 2.1.1: no selector
+    };
+    let works = |t: &str| !dead.iter().any(|d| d == t) && res.iter().any(|(x, m)| x == t && m.is_some());
+    if let Some(server) = pin_of(paths, "pc") {
+        match tag_of(&paths.pc_cfg, &server) {
+            Some(t) if works(&t) => {
+                if held != t {
+                    pick(paths, &t);
+                }
+                return;
+            }
+            t => {
+                set_pin(paths, "pc", None);
+                say(&format!(
+                    "the pinned node {server} {}; the PC tunnel picks its node automatically again",
+                    if t.is_some() { "failed" } else { "is no longer in a slot" }
+                ));
+                pick(paths, "auto");
+            }
+        }
+    }
+    let group: Vec<String> = px
+        .get("auto")
+        .and_then(|g| g["all"].as_array())
+        .map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect())
+        .unwrap_or_default();
+    if group.iter().any(|t| works(t)) {
+        if held != "auto" && !group.contains(&held) {
+            pick(paths, "auto");
+            say("a fast node works again; the PC tunnel is back on the fast nodes");
+        }
+        return;
+    }
+    let backup = res
+        .iter()
+        .filter(|(t, m)| m.is_some() && works(t) && !group.contains(t))
+        .min_by(|a, b| a.1.unwrap_or(f64::MAX).total_cmp(&b.1.unwrap_or(f64::MAX)));
+    if let Some((t, _)) = backup
+        && held != *t
+        && pick(paths, t)
+    {
+        say(&format!("no fast node works; the PC tunnel uses {t}, a slower node, until one does"));
+    }
+}
+
 /// How long the tunnel holds another node after the one in use broke PIA's connection but still passes the quick test.
 pub const HOLD: Duration = Duration::from_secs(600);
 
@@ -981,6 +1039,18 @@ fn server_of(paths: &Paths, tag: &str) -> Option<String> {
 fn steer(p: &Paths, own: bool, carrier: Option<String>) {
     use std::sync::atomic::Ordering;
     let mine = HOLDS.fetch_add(1, Ordering::SeqCst) + 1;
+    // a pinned node stays while it passes a test of its own; one that fails ends the pin
+    if let Some(server) = crate::clash_api::pin_of(p, "pc") {
+        let tag = crate::clash_api::tag_of(&p.pc_cfg, &server);
+        let api = crate::clash_api::ControlApi::pc(p).ok();
+        let ok = tag.as_ref().zip(api).is_some_and(|(t, a)| a.delay(t).is_ok_and(|(ms, _)| ms.is_some()));
+        if ok {
+            say(&format!("PIA drop: the pinned node {server} still passes; the PC tunnel stays on it"));
+            return;
+        }
+        crate::clash_api::set_pin(p, "pc", None);
+        say(&format!("PIA drop: the pinned node {server} failed; the PC tunnel picks its node automatically again"));
+    }
     crate::clash_api::pick(p, "auto"); // a new drop ends any hold
     let tag = |p: &Paths| crate::clash_api::proxies(p).as_ref().and_then(crate::clash_api::now_tag);
     let before = carrier.clone().or_else(|| tag(p));

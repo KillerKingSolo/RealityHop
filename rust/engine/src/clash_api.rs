@@ -275,6 +275,30 @@ pub fn pick(paths: &Paths, tag: &str) -> bool {
     api.put(&format!("/proxies/{}", crate::singbox_config::PICK), &body, Duration::from_secs(3)).is_ok()
 }
 
+/// The sides a node can be pinned on: "pc" (the PC tunnel) and "router".
+pub const SIDES: [&str; 2] = ["pc", "router"];
+
+// The node address pinned on one side, from this-pc.json; None when that side picks by itself
+pub fn pin_of(paths: &Paths, side: &str) -> Option<String> {
+    crate::settings::this_pc(paths).get("pin")?.get(side)?.as_str().map(str::to_string)
+}
+
+// Pin one side to a node address, or end its pin with None
+pub fn set_pin(paths: &Paths, side: &str, server: Option<&str>) {
+    let mut pin = crate::settings::this_pc(paths).get("pin").and_then(Value::as_object).cloned().unwrap_or_default();
+    match server {
+        Some(s) => pin.insert(side.into(), Value::from(s)),
+        None => pin.remove(side),
+    };
+    let kw = serde_json::json!({ "pin": pin });
+    let _ = crate::settings::set_this_pc(paths, kw.as_object().cloned().unwrap_or_default());
+}
+
+// The tag of a node address in one config file
+pub fn tag_of(cfg: &std::path::Path, server: &str) -> Option<String> {
+    crate::singbox_config::nodes_of(cfg).ok()?.into_iter().find(|(_, n)| n.server == server).map(|(t, _)| t)
+}
+
 // The lowest-ping working node of the group other than skip, from its latest tests
 pub fn best_other(px: &Map<String, Value>, skip: &str) -> Option<String> {
     let all = px.get("auto")?.get("all")?.as_array()?;

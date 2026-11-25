@@ -8,6 +8,19 @@ API=http://127.0.0.1:9090; URL=https://www.gstatic.com/generate_204
 log() { echo "$(date '+%F %T') $*" >> $L; tail -n 200 $L > $L.t && mv $L.t $L; }
 
 pgrep -f '/etc/sing-box/config[.]json' >/dev/null || exit 0     # service off on purpose: leave it alone
+
+# heal.sh pin (cron, every 2 minutes): a node pinned from the PC stays while it works; when it fails twice, 20 s
+# apart, the tunnel picks its node automatically again
+if [ "$1" = pin ]; then
+    H="Authorization: Bearer $(jq -r '.experimental.clash_api.secret' $C)"
+    t=$(curl -s -m 5 -H "$H" "$API/proxies/pick" | jq -r '.now // empty' 2>/dev/null)
+    { [ -z "$t" ] || [ "$t" = auto ]; } && exit 0
+    curl -s -m 12 -H "$H" "$API/proxies/$t/delay?url=$URL&timeout=8000" | grep -q delay && exit 0
+    sleep 20
+    curl -s -m 12 -H "$H" "$API/proxies/$t/delay?url=$URL&timeout=8000" | grep -q delay && exit 0
+    curl -s -m 5 -X PUT -H "$H" -d '{"name":"auto"}' "$API/proxies/pick" && log "pinned node $t failed twice; back to automatic"
+    exit 0
+fi
 [ $(( $(date +%s) - $(cat /tmp/pc-alive 2>/dev/null || echo 0) )) -lt 7200 ] && exit 0   # the PC watcher checked within 2 h: it decides
 # a lock older than an hour was left by a run that was killed: it would stop this script and the PC's checks until a reboot
 mkdir /tmp/heal.lock 2>/dev/null || [ $(( $(date +%s) - $(cat /tmp/heal.started 2>/dev/null || echo 0) )) -ge 3600 ] || exit 0

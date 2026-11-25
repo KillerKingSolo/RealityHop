@@ -109,8 +109,13 @@ and a VPN app that can use a SOCKS5 proxy.
 3. Open Reality Hop from Applications. The first time, macOS blocks it, because the app is not notarized by Apple
    (that needs a paid Apple developer account). Allow it once:
    1. macOS says it cannot verify Reality Hop. Click **Done**, not **Move to Trash**.
+
+      <img src="docs/images/mac-not-opened.png" alt="macOS: RealityHop.app Not Opened, with Move to Trash and Done" width="240">
+
    2. Open **System Settings → Privacy & Security** and scroll down to **Security**.
    3. Next to "Reality Hop" was blocked, click **Open Anyway**, then **Open Anyway** again and enter your Mac password.
+
+      <img src="docs/images/mac-open-anyway.png" alt="Privacy &amp; Security: RealityHop.app was blocked, with an Open Anyway button" width="600">
 
    You do this only once. Updates open without asking again. Right-click → **Open** no longer works on macOS 15 and
    newer. The source is all here, and you can [build it yourself](docs/building.md).

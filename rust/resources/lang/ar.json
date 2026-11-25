@@ -541,5 +541,18 @@
  "Check the node speeds every (hours; each check can use up to 50 MB per node)": "افحص سرعات العقد كل (ساعات؛ قد يستخدم كل فحص حتى 50 ميغابايت لكل عقدة)",
  "PIA down {s} s, longest {m} s": "توقف PIA {s} ث، الأطول {m} ث",
  "after {n} s": "بعد {n} ث",
- "Working, but slow (over {ms} ms)": "يعمل، لكنه بطيء (أكثر من {ms} مللي ثانية)"
+ "Working, but slow ({ms}ms+)": "يعمل، لكنه بطيء ({ms}ms+)",
+ "Test 50 more": "اختبار 50 أخرى",
+ "Tests the next 50 fastest candidates that are not tested yet, even when 6 already work. Use it to find more working nodes to pick from.": "يختبر أسرع 50 مرشحًا تاليًا لم تُختبر بعد، حتى إن كانت 6 تعمل بالفعل. استخدمه للعثور على مزيد من العقد العاملة للاختيار منها.",
+ "Every candidate is tested already. Ping and test again for a fresh list.": "تم اختبار جميع المرشحين بالفعل. اضغط «ping واختبار من جديد» للحصول على قائمة جديدة.",
+ "{server} is not in the PC tunnel's slots.": "{server} ليس ضمن خانات نفق الحاسوب.",
+ "The PC tunnel did not take the change. Restart the PC tunnel, then try again.": "لم يقبل نفق الحاسوب التغيير. أعد تشغيل نفق الحاسوب ثم حاول مرة أخرى.",
+ "{server} is not in the router's slots.": "{server} ليس ضمن خانات الراوتر.",
+ "The router did not take the change; see the activity log.": "لم يقبل الراوتر التغيير؛ راجع سجل النشاط.",
+ "{who} now uses {server}, until it fails.": "يستخدم {who} الآن {server} حتى يتعطل.",
+ "{who} picks its node automatically again.": "يعود {who} إلى اختيار العقدة تلقائيًا.",
+ "Use this node": "استخدام هذه العقدة",
+ "{who} will use {server} until that node fails, then pick automatically again.": "سيستخدم {who} العقدة {server} حتى تتعطل، ثم يعود إلى الاختيار التلقائي.",
+ "PC and router: pick nodes automatically again": "الحاسوب والراوتر: اختيار العقد تلقائيًا من جديد",
+ "Drag onto another row: PC, Router, or the & for both. That node is used until it fails, then the pick is automatic again.": "اسحب إلى صف آخر: الحاسوب أو الراوتر أو & لكليهما. تُستخدم تلك العقدة حتى تتعطل، ثم يعود الاختيار تلقائيًا."
 }

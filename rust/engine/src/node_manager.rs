@@ -89,9 +89,30 @@ pub fn write_configs(paths: &Paths, best: &[Value]) -> Result<(), String> {
     let pc = read_json(&paths.pc_cfg).map_err(|e| e.to_string())?;
     let r = read_json(&paths.router_cfg).map_err(|e| e.to_string())?;
     let nodes: Vec<_> = best.iter().map(router::node_of).collect();
-    let (pc, r) = crate::singbox_config::write_configs(&pc, &r, &nodes);
+    let fast = fast_flags(paths, &pc, best);
+    let (pc, r) = crate::singbox_config::write_configs(&pc, &r, &nodes, &fast);
     jsave(&paths.router_cfg, &r, Some(2)).map_err(|e| e.to_string())?;
     jsave(&paths.pc_cfg, &pc, Some(2)).map_err(|e| e.to_string())
+}
+
+// Per node, whether it reaches the speed floor now. A node with no speed measured keeps its place: fast when the
+// PC config's group "auto" lists its address (or when the floor is off)
+fn fast_flags(paths: &Paths, pc: &Value, best: &[Value]) -> Vec<bool> {
+    let min = crate::settings::Settings::read(paths).unwrap_or_default().min_mbps;
+    if min == 0 {
+        return vec![true; best.len()];
+    }
+    let floor = crate::node_tests::floor_now(paths, min, now());
+    let outs = pc["outbounds"].as_array().cloned().unwrap_or_default();
+    let group: Vec<Value> =
+        outs.iter().find(|o| o["tag"] == "auto").and_then(|o| o["outbounds"].as_array().cloned()).unwrap_or_default();
+    let was_fast = |server: &str| group.iter().any(|t| outs.iter().any(|o| o["tag"] == *t && o["server"] == server));
+    best.iter()
+        .map(|n| match n.get("mbps").and_then(Value::as_i64) {
+            Some(m) => m >= floor,
+            None => was_fast(n.get("server").and_then(Value::as_str).unwrap_or("")),
+        })
+        .collect()
 }
 
 // nodes.txt: the set in use, the spares and the failures, dated today (engine.write_txt)

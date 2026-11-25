@@ -541,5 +541,18 @@
  "Check the node speeds every (hours; each check can use up to 50 MB per node)": "Comprobar la velocidad de los nodos cada (horas; cada comprobación puede usar hasta 50 MB por nodo)",
  "PIA down {s} s, longest {m} s": "PIA caída {s} s, la más larga {m} s",
  "after {n} s": "tras {n} s",
- "Working, but slow (over {ms} ms)": "Funciona, pero lento (más de {ms} ms)"
+ "Working, but slow ({ms}ms+)": "Funciona, pero lento ({ms}ms+)",
+ "Test 50 more": "Probar 50 más",
+ "Tests the next 50 fastest candidates that are not tested yet, even when 6 already work. Use it to find more working nodes to pick from.": "Prueba los 50 candidatos más rápidos que aún no se han probado, aunque ya funcionen 6. Úsalo para encontrar más nodos que funcionen entre los que elegir.",
+ "Every candidate is tested already. Ping and test again for a fresh list.": "Ya se probaron todos los candidatos. Pulsa «Ping y prueba de nuevo» para obtener una lista nueva.",
+ "{server} is not in the PC tunnel's slots.": "{server} no está en las ranuras del túnel del PC.",
+ "The PC tunnel did not take the change. Restart the PC tunnel, then try again.": "El túnel del PC no aceptó el cambio. Reinicia el túnel del PC y vuelve a intentarlo.",
+ "{server} is not in the router's slots.": "{server} no está en las ranuras del router.",
+ "The router did not take the change; see the activity log.": "El router no aceptó el cambio; consulta el registro de actividad.",
+ "{who} now uses {server}, until it fails.": "{who} usa ahora {server}, hasta que falle.",
+ "{who} picks its node automatically again.": "{who} vuelve a elegir su nodo automáticamente.",
+ "Use this node": "Usar este nodo",
+ "{who} will use {server} until that node fails, then pick automatically again.": "{who} usará {server} hasta que ese nodo falle; luego volverá a elegir automáticamente.",
+ "PC and router: pick nodes automatically again": "PC y router: elegir nodos automáticamente otra vez",
+ "Drag onto another row: PC, Router, or the & for both. That node is used until it fails, then the pick is automatic again.": "Arrastra a otra fila: PC, Router o el & para ambos. Ese nodo se usa hasta que falle; luego la elección vuelve a ser automática."
 }

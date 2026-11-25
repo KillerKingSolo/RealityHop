@@ -10,9 +10,11 @@ let snap = null, sel = null, logShown = true, built = '';
 // Hover help of every button, by its English text (TIPS)
 const TIPS = {
   'Ping and test again': 'Downloads the node list again, pings port 443 of each candidate from this PC, then tests the fastest with a separate copy of sing-box: a real handshake and download through each. Runs on its own when this window opens.',
+  'Test 50 more': 'Tests the next 50 fastest candidates that are not tested yet, even when 6 already work. Use it to find more working nodes to pick from.',
   'Replace all 6 with the best 6': 'Puts the 6 fastest tunnel-tested candidates into your slots (it tests first if too few passed), restarts the tunnel, checks every slot and closes this window.',
   'Put picked in slots': 'Puts the candidates you picked into the slots, in the order you clicked them, restarts the tunnel and checks them.',
   'Test PC tunnel': 'Tests the nodes in your slots through the running PC tunnel, as Check now does. Restart first after a change.',
+  'drag-pin': 'Drag onto another row: PC, Router, or the & for both. That node is used until it fails, then the pick is automatic again.',
   'Show candidates': 'Opens the nodes from the public node list that could replace yours. Ping and test them, then put them in slots.',
   'Fix: test online nodes': 'Replaces the selected node with the best node from the online list that passes a test.',
   'Fix: nodes that worked before': 'Replaces the selected node with the best node from the vault of nodes that worked before.',
@@ -277,6 +279,7 @@ async function render(s) {
 async function drawLists() {
   const box = $('lists');
   const heads = await Promise.all(HEAD.map(([, h]) => T(h)));
+  const using = { split: (await T('In use by {who}', { who: '\u0001' })).split('\u0001'), pc: await T('PC'), router: await T('Router') };
   box.replaceChildren(...snap.lists.map(l => {
     const c = el('div', 'card list');
     const h = el('div', 'list-head');
@@ -290,7 +293,9 @@ async function drawLists() {
     const body = el('tbody');
     for (const r of l.rows) {
       const tr = el('tr', r.state + (sel && sel.key === l.key && sel.tag === r.tag ? ' sel' : ''));
-      for (const v of [r.tag, r.server, r.front, r.where, r.host, r.tcp, r.tunnel, r.text]) tr.append(el('td', '', v));
+      for (const v of [r.tag, r.server, r.front, r.where, r.host, r.tcp, r.tunnel]) tr.append(el('td', '', v));
+      tr.append(statusCell(r, using));
+      tr.dataset.server = r.server;
       tr.onclick = e => { e.stopPropagation(); sel = { key: l.key, tag: r.tag }; drawLists(); };
       tr.oncontextmenu = e => { e.preventDefault(); e.stopPropagation(); sel = { key: l.key, tag: r.tag }; drawLists(); popup(e); };
       tr.ondblclick = () => details(l.key, r.tag);
@@ -301,6 +306,48 @@ async function drawLists() {
     return c;
   }));
   await fitCols();
+}
+
+// A row's STATUS: "In use by PC & Router" with PC, & (both) and Router as handles to drag onto another row
+function statusCell(r, using) {
+  const td = el('td', '', r.lead);
+  if (!r.pc && !r.router) return td;
+  td.append('   ·   ' + using.split[0]);
+  const grab = (text, who) => {
+    const s = el('span', 'grab', text);
+    s.onmousedown = e => { if (e.button === 0) { e.preventDefault(); e.stopPropagation(); pinDrag(e, who, who === 'both' ? using.pc + ' & ' + using.router : text); } };
+    tipFor(s, 'drag-pin');
+    return s;
+  };
+  if (r.pc) td.append(grab(using.pc, 'pc'));
+  if (r.pc && r.router) td.append(grab(' & ', 'both'));
+  if (r.router) td.append(grab(using.router, 'router'));
+  td.append(using.split[1] || '');
+  return td;
+}
+
+// Drag PC, Router or both onto a row: that node is used until it fails (pin). Mouse events, not HTML drag and drop:
+// the window takes drops for itself on Windows
+function pinDrag(e, who, label) {
+  const ghost = el('div', 'pin-ghost', label);
+  document.body.append(ghost);
+  let over = null;
+  const move = m => {
+    ghost.style.left = m.clientX + 12 + 'px'; ghost.style.top = m.clientY + 8 + 'px';
+    const row = document.elementFromPoint(m.clientX, m.clientY)?.closest('#lists tbody tr');
+    if (row !== over) { over?.classList.remove('drop'); over = row; over?.classList.add('drop'); }
+  };
+  const up = async () => {
+    removeEventListener('mousemove', move); removeEventListener('mouseup', up);
+    ghost.remove(); over?.classList.remove('drop');
+    const server = over?.dataset.server;
+    if (!server) return;
+    const names = { pc: await T('PC'), router: await T('Router'), both: await T('PC') + ' & ' + await T('Router') };
+    if (await yesNo('Use this node', await T('{who} will use {server} until that node fails, then pick automatically again.', { who: names[who], server })))
+      act('pin', { who, server });
+  };
+  addEventListener('mousemove', move); addEventListener('mouseup', up);
+  move(e);
 }
 
 // The node tables' column widths (fitTables)
@@ -346,6 +393,9 @@ function fitTables(tables, head, sample) {
 async function popup(e) {
   const menu = $('menu');
   menu.replaceChildren();
+  const auto = el('div', '', await T('PC and router: pick nodes automatically again'));
+  auto.onclick = () => { menu.hidden = true; act('pin', { who: 'both', server: null }); };
+  menu.append(auto);
   for (const [how, label] of [['online', 'Fix this node: test online nodes and swap in the best one'],
     ['vault', 'Fix this node: swap in a node that worked before (tested again)'],
     ['quick', 'Fix this node: quick swap to the fastest ping (configs only, not tested)']]) {

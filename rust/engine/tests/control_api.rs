@@ -154,7 +154,8 @@ fn the_selector_goes_in_front_of_auto_once_and_follows_the_node_set() {
         sni: "example.com".into(),
         fp: "chrome".into(),
     };
-    let (pc, _) = engine::singbox_config::write_configs(&c, &serde_json::json!({"outbounds": []}), &[n("1.1.1.1")]);
+    let (pc, _) =
+        engine::singbox_config::write_configs(&c, &serde_json::json!({"outbounds": []}), &[n("1.1.1.1")], &[true]);
     let pick = pc["outbounds"].as_array().unwrap().iter().find(|o| o["tag"] == PICK).unwrap().clone();
     assert_eq!(pick["outbounds"], serde_json::json!(["auto", "vless-1"]), "a new set reaches the selector too");
 }

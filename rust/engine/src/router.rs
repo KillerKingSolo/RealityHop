@@ -275,14 +275,32 @@ pub fn check_phone(ssh: &mut impl Ssh, nodes: &mut [Value], secret: &str) -> Res
 }
 
 // The node the router tunnel uses now (its tag), or None (engine.router_now)
+// A pin (the selector "pick" on a node) comes first; the group "auto" decides otherwise
 pub fn router_now(ssh: &mut impl Ssh, secret: &str) -> Option<Value> {
-    let out = ssh
-        .run("sh -s", Some(&format!("curl -s -m 5 -H \"Authorization: Bearer {secret}\" {API}/proxies/auto\n")), 20)
-        .ok()?;
-    match serde_json::from_str::<Value>(&out).ok()? {
+    let h = format!("-H \"Authorization: Bearer {secret}\"");
+    let script = format!("curl -s -m 5 {h} {API}/proxies/pick; echo; curl -s -m 5 {h} {API}/proxies/auto\n");
+    let out = ssh.run("sh -s", Some(&script), 20).ok()?;
+    let answers: Vec<Value> = out.lines().filter_map(|l| serde_json::from_str(l.trim()).ok()).collect();
+    let of = |t: &str| answers.iter().find(|v| v["type"].as_str().is_some_and(|x| x.eq_ignore_ascii_case(t)));
+    if let Some(n) = of("Selector").map(|v| &v["now"]).filter(|n| n.as_str().is_some_and(|t| t != "auto")) {
+        return Some(n.clone());
+    }
+    let selector = |v: &Value| v["type"].as_str().is_some_and(|t| t.eq_ignore_ascii_case("Selector"));
+    match answers.iter().find(|v| v.get("now").is_some() && !selector(v))? {
+        // a router with no selector answers "not found" first
         Value::Object(m) => Some(m.get("now").cloned().unwrap_or(Value::Null)),
         _ => None,
     }
+}
+
+// Point the router tunnel's selector at a node tag, or at "auto" to end a pin. False when the router config has no
+// selector yet (push first) or the API refuses
+pub fn router_pick(ssh: &mut impl Ssh, secret: &str, tag: &str) -> bool {
+    let body = json!({ "name": tag }).to_string();
+    let script = format!(
+        "curl -s -o /dev/null -w '%{{http_code}}' -m 5 -X PUT -H \"Authorization: Bearer {secret}\" -d '{body}' {API}/proxies/pick\n"
+    );
+    ssh.run("sh -s", Some(&script), 20).is_ok_and(|o| o.trim() == "204")
 }
 
 // The node lists downloaded and pre-filtered by the router, for when this PC cannot reach GitHub (engine.router_feed)
@@ -495,7 +513,7 @@ pub fn push_heal(ssh: &mut impl Ssh, vault: &[Value], heal_sh: &str) -> Result<S
         })
         .collect();
     let script = format!(
-        "cat > /etc/sing-box/vault.json <<'VEOF'\n{}\nVEOF\ncat > /etc/sing-box/heal.sh <<'HEOF'\n{}HEOF\nchmod +x /etc/sing-box/heal.sh\nsed -i '/heal.sh/d' /etc/crontabs/root; {{ echo '*/30 * * * * /etc/sing-box/heal.sh' >> /etc/crontabs/root; /etc/init.d/cron restart; }}\necho \"self-repair: installed, {} vault nodes on the router\"\n",
+        "cat > /etc/sing-box/vault.json <<'VEOF'\n{}\nVEOF\ncat > /etc/sing-box/heal.sh <<'HEOF'\n{}HEOF\nchmod +x /etc/sing-box/heal.sh\nsed -i '/heal.sh/d' /etc/crontabs/root; {{ echo '*/30 * * * * /etc/sing-box/heal.sh' >> /etc/crontabs/root; echo '*/2 * * * * /etc/sing-box/heal.sh pin' >> /etc/crontabs/root; /etc/init.d/cron restart; }}\necho \"self-repair: installed, {} vault nodes on the router\"\n",
         dumps(&Value::Array(list.clone()), None),
         heal_sh.replace('\r', ""),
         list.len()

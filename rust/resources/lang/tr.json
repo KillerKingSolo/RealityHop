@@ -541,5 +541,18 @@
  "Check the node speeds every (hours; each check can use up to 50 MB per node)": "Düğüm hızlarını şu aralıkla denetle (saat; her denetim düğüm başına 50 MB'a kadar kullanabilir)",
  "PIA down {s} s, longest {m} s": "PIA kesintisi {s} sn, en uzun {m} sn",
  "after {n} s": "{n} sn sonra",
- "Working, but slow (over {ms} ms)": "Çalışıyor ama yavaş ({ms} ms üzeri)"
+ "Working, but slow ({ms}ms+)": "Çalışıyor ama yavaş ({ms}ms+)",
+ "Test 50 more": "50 tane daha test et",
+ "Tests the next 50 fastest candidates that are not tested yet, even when 6 already work. Use it to find more working nodes to pick from.": "6 düğüm zaten çalışsa bile, henüz test edilmemiş en hızlı 50 adayı test eder. Seçebileceğin daha fazla çalışan düğüm bulmak için kullan.",
+ "Every candidate is tested already. Ping and test again for a fresh list.": "Tüm adaylar zaten test edildi. Yeni bir liste için «Yeniden ping at ve test et»e bas.",
+ "{server} is not in the PC tunnel's slots.": "{server}, bilgisayar tünelinin yuvalarında değil.",
+ "The PC tunnel did not take the change. Restart the PC tunnel, then try again.": "Bilgisayar tüneli değişikliği almadı. Bilgisayar tünelini yeniden başlatıp tekrar dene.",
+ "{server} is not in the router's slots.": "{server}, yönlendiricinin yuvalarında değil.",
+ "The router did not take the change; see the activity log.": "Yönlendirici değişikliği almadı; etkinlik günlüğüne bak.",
+ "{who} now uses {server}, until it fails.": "{who} artık {server} kullanıyor, bozulana kadar.",
+ "{who} picks its node automatically again.": "{who} düğümünü yeniden otomatik seçiyor.",
+ "Use this node": "Bu düğümü kullan",
+ "{who} will use {server} until that node fails, then pick automatically again.": "{who}, o düğüm bozulana kadar {server} kullanacak, sonra yeniden otomatik seçecek.",
+ "PC and router: pick nodes automatically again": "Bilgisayar ve yönlendirici: düğümleri yeniden otomatik seç",
+ "Drag onto another row: PC, Router, or the & for both. That node is used until it fails, then the pick is automatic again.": "Başka bir satıra sürükle: Bilgisayar, Yönlendirici veya ikisi için &. O düğüm bozulana kadar kullanılır, sonra seçim yeniden otomatik olur."
 }

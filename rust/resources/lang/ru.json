@@ -541,5 +541,18 @@
  "Check the node speeds every (hours; each check can use up to 50 MB per node)": "Проверять скорость узлов каждые (часов; каждая проверка может использовать до 50 МБ на узел)",
  "PIA down {s} s, longest {m} s": "PIA не работал {s} с, дольше всего {m} с",
  "after {n} s": "через {n} с",
- "Working, but slow (over {ms} ms)": "Работает, но медленно (более {ms} мс)"
+ "Working, but slow ({ms}ms+)": "Работает, но медленно ({ms}ms+)",
+ "Test 50 more": "Проверить ещё 50",
+ "Tests the next 50 fastest candidates that are not tested yet, even when 6 already work. Use it to find more working nodes to pick from.": "Проверяет следующие 50 самых быстрых непроверенных кандидатов, даже если 6 уже работают. Так можно найти больше рабочих узлов для выбора.",
+ "Every candidate is tested already. Ping and test again for a fresh list.": "Все кандидаты уже проверены. Нажмите «Пинг и проверка заново», чтобы получить новый список.",
+ "{server} is not in the PC tunnel's slots.": "{server} нет в слотах туннеля ПК.",
+ "The PC tunnel did not take the change. Restart the PC tunnel, then try again.": "Туннель ПК не принял изменение. Перезапустите туннель ПК и попробуйте снова.",
+ "{server} is not in the router's slots.": "{server} нет в слотах роутера.",
+ "The router did not take the change; see the activity log.": "Роутер не принял изменение; см. журнал действий.",
+ "{who} now uses {server}, until it fails.": "{who} теперь использует {server}, пока он не откажет.",
+ "{who} picks its node automatically again.": "{who} снова выбирает узел автоматически.",
+ "Use this node": "Использовать этот узел",
+ "{who} will use {server} until that node fails, then pick automatically again.": "{who} будет использовать {server}, пока этот узел не откажет, затем снова выбор будет автоматическим.",
+ "PC and router: pick nodes automatically again": "ПК и роутер: снова выбирать узлы автоматически",
+ "Drag onto another row: PC, Router, or the & for both. That node is used until it fails, then the pick is automatic again.": "Перетащите на другую строку: ПК, Роутер или & для обоих. Этот узел используется, пока не откажет, затем выбор снова автоматический."
 }

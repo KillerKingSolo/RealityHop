@@ -207,7 +207,7 @@ fn json_dumps() {
 #[test]
 fn write_configs() {
     check("write_configs", |a| {
-        let (pc, r) = singbox_config::write_configs(&a[0], &a[1], &nodes(&a[2]));
+        let (pc, r) = singbox_config::write_configs(&a[0], &a[1], &nodes(&a[2]), &[]);
         json!([python_json::dumps(&pc, Some(2)), python_json::dumps(&r, Some(2))])
     });
 }

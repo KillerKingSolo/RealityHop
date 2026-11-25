@@ -240,3 +240,48 @@ fn working_nodes_are_counted_out_of_six_slots() {
     let six: Vec<(String, Option<f64>)> = (1..=6).map(|i| (format!("vless-{i}"), Some(100.0))).collect();
     assert_eq!(tray_mark(&six, None, 200.0).state, "ok");
 }
+
+#[test]
+fn the_tunnel_picks_among_fast_nodes_and_keeps_slow_ones_as_backup() {
+    use engine::singbox_config::{PICK, pick_add, write_configs};
+    let node = |s: &str| engine::node::Node {
+        server: s.into(),
+        uuid: "u".into(),
+        pbk: "p".into(),
+        sid: "".into(),
+        sni: "www.apple.com".into(),
+        fp: "chrome".into(),
+    };
+    let group = json!({"type": "urltest", "tag": "auto", "outbounds": []});
+    let mut pc = json!({"outbounds": [group.clone()], "route": {"final": "auto"}});
+    pick_add(&mut pc);
+    let router = json!({"outbounds": [group]});
+    let set = [node("1.1.1.1"), node("2.2.2.2"), node("3.3.3.3")];
+    let of =
+        |c: &Value, tag: &str| c["outbounds"].as_array().unwrap().iter().find(|o| o["tag"] == tag).unwrap().clone();
+    // one fast node: the PC group holds it alone; the router keeps all three, since it has no backup
+    let (p, r) = write_configs(&pc, &router, &set, &[false, true, false]);
+    assert_eq!(of(&p, "auto")["outbounds"], json!(["vless-2"]));
+    assert_eq!(of(&p, PICK)["outbounds"], json!(["auto", "vless-1", "vless-2", "vless-3"]));
+    assert_eq!(of(&r, "auto")["outbounds"], json!(["vless-1", "vless-2", "vless-3"]));
+    // two fast: the router group drops the slow one too
+    let (_, r) = write_configs(&pc, &router, &set, &[true, false, true]);
+    assert_eq!(of(&r, "auto")["outbounds"], json!(["vless-1", "vless-3"]));
+    // none fast: every node stays in the group
+    let (p, _) = write_configs(&pc, &router, &set, &[false, false, false]);
+    assert_eq!(of(&p, "auto")["outbounds"], json!(["vless-1", "vless-2", "vless-3"]));
+}
+
+#[test]
+fn a_router_pin_shows_as_the_node_in_use() {
+    let pinned = r#"{"type":"Selector","now":"vless-4"}
+{"type":"URLTest","now":"vless-2"}"#;
+    assert_eq!(router::router_now(&mut Reply(pinned), "s"), Some(json!("vless-4")));
+    let auto = r#"{"type":"Selector","now":"auto"}
+{"type":"URLTest","now":"vless-2"}"#;
+    assert_eq!(router::router_now(&mut Reply(auto), "s"), Some(json!("vless-2")));
+    // a router config from before the switch: the selector is not found, the group answers
+    let old = r#"{"message":"Resource not found"}
+{"type":"URLTest","now":"vless-3"}"#;
+    assert_eq!(router::router_now(&mut Reply(old), "s"), Some(json!("vless-3")));
+}

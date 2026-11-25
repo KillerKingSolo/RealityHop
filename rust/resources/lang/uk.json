@@ -541,5 +541,18 @@
  "Check the node speeds every (hours; each check can use up to 50 MB per node)": "Перевіряти швидкість вузлів кожні (годин; кожна перевірка може використати до 50 МБ на вузол)",
  "PIA down {s} s, longest {m} s": "PIA не працював {s} с, найдовше {m} с",
  "after {n} s": "через {n} с",
- "Working, but slow (over {ms} ms)": "Працює, але повільно (понад {ms} мс)"
+ "Working, but slow ({ms}ms+)": "Працює, але повільно ({ms}ms+)",
+ "Test 50 more": "Перевірити ще 50",
+ "Tests the next 50 fastest candidates that are not tested yet, even when 6 already work. Use it to find more working nodes to pick from.": "Перевіряє наступні 50 найшвидших неперевірених кандидатів, навіть якщо 6 уже працюють. Так можна знайти більше робочих вузлів для вибору.",
+ "Every candidate is tested already. Ping and test again for a fresh list.": "Усіх кандидатів уже перевірено. Натисніть «Пінг і перевірка знову», щоб отримати новий список.",
+ "{server} is not in the PC tunnel's slots.": "{server} немає в слотах тунелю ПК.",
+ "The PC tunnel did not take the change. Restart the PC tunnel, then try again.": "Тунель ПК не прийняв зміну. Перезапустіть тунель ПК і спробуйте ще раз.",
+ "{server} is not in the router's slots.": "{server} немає в слотах роутера.",
+ "The router did not take the change; see the activity log.": "Роутер не прийняв зміну; дивіться журнал дій.",
+ "{who} now uses {server}, until it fails.": "{who} тепер використовує {server}, доки він не відмовить.",
+ "{who} picks its node automatically again.": "{who} знову вибирає вузол автоматично.",
+ "Use this node": "Використовувати цей вузол",
+ "{who} will use {server} until that node fails, then pick automatically again.": "{who} використовуватиме {server}, доки цей вузол не відмовить, потім вибір знову автоматичний.",
+ "PC and router: pick nodes automatically again": "ПК і роутер: знову вибирати вузли автоматично",
+ "Drag onto another row: PC, Router, or the & for both. That node is used until it fails, then the pick is automatic again.": "Перетягніть на інший рядок: ПК, Роутер або & для обох. Цей вузол використовується, доки не відмовить, потім вибір знову автоматичний."
 }

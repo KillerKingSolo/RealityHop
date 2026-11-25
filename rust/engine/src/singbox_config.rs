@@ -100,12 +100,13 @@ fn vless_set(best: &[Node]) -> Vec<Value> {
     best.iter().enumerate().map(|(i, n)| outbound19(n, &format!("vless-{}", i + 1))).collect()
 }
 
-// The other outbounds, with every urltest group pointed at the new set
-fn rest_with_groups(outs: &[Value], tags: &[Value], keep: impl Fn(&Value) -> bool) -> Vec<Value> {
+// The other outbounds, with every urltest group pointed at group (the fast nodes of the set) and the selector at
+// the whole set
+fn rest_with_groups(outs: &[Value], tags: &[Value], group: &[Value], keep: impl Fn(&Value) -> bool) -> Vec<Value> {
     let mut rest: Vec<Value> = outs.iter().filter(|o| o["type"] != "vless" && keep(o)).cloned().collect();
     for o in &mut rest {
         if o["type"] == "urltest" {
-            o["outbounds"] = Value::Array(tags.to_vec());
+            o["outbounds"] = Value::Array(group.to_vec());
         } else if o["type"] == "selector" && o["tag"] == PICK {
             o["outbounds"] = Value::Array([Value::from("auto")].into_iter().chain(tags.iter().cloned()).collect());
         }
@@ -171,19 +172,31 @@ pub fn pick_migrate(paths: &crate::paths::Paths) {
 }
 
 // Put a node set into both configs (engine.write_configs): the vless outbounds first, then the rest, and on the PC
-// the set-<md5> marker; everything else in them stays as is
-pub fn write_configs(pc: &Value, router: &Value, best: &[Node]) -> (Value, Value) {
+// the set-<md5> marker; everything else in them stays as is. fast: per node, whether it reaches the speed floor. The
+// group "auto" picks by ping among the fast nodes only, so a slow node with a low ping is not used while a fast one
+// works. The PC tunnel can still reach a slow node through its selector, as a backup (watcher settle); the router
+// has no backup, so it keeps every node in the group unless at least 2 are fast
+pub fn write_configs(pc: &Value, router: &Value, best: &[Node], fast: &[bool]) -> (Value, Value) {
     let vl = vless_set(best);
     let tags: Vec<Value> = vl.iter().map(|v| v["tag"].clone()).collect();
+    let quick: Vec<Value> = tags
+        .iter()
+        .zip(fast.iter().chain(std::iter::repeat(&true)))
+        .filter(|(_, f)| **f)
+        .map(|(t, _)| t.clone())
+        .collect();
+    let pc_group = if quick.is_empty() { &tags } else { &quick };
+    let r_group = if quick.len() < 2 { &tags } else { &quick };
     let mut r = router.clone();
     let outs = r["outbounds"].as_array().cloned().unwrap_or_default();
-    r["outbounds"] = Value::Array(vl.iter().cloned().chain(rest_with_groups(&outs, &tags, |_| true)).collect());
+    r["outbounds"] =
+        Value::Array(vl.iter().cloned().chain(rest_with_groups(&outs, &tags, r_group, |_| true)).collect());
     let mut p = pc.clone();
     let outs = p["outbounds"].as_array().cloned().unwrap_or_default();
     let not_mark = |o: &Value| !o["tag"].as_str().is_some_and(|t| t.starts_with("set-"));
     let mark = json!({"type": "direct", "tag": set_mark(best.iter().map(|n| n.server.as_str()))});
     p["outbounds"] =
-        Value::Array(vl.into_iter().chain(rest_with_groups(&outs, &tags, not_mark)).chain([mark]).collect());
+        Value::Array(vl.into_iter().chain(rest_with_groups(&outs, &tags, pc_group, not_mark)).chain([mark]).collect());
     (p, r)
 }
 

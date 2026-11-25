@@ -541,5 +541,18 @@
  "Check the node speeds every (hours; each check can use up to 50 MB per node)": "بررسی سرعت گره‌ها هر (ساعت؛ هر بررسی ممکن است تا ۵۰ مگابایت برای هر گره مصرف کند)",
  "PIA down {s} s, longest {m} s": "قطعی PIA {s} ث، طولانی‌ترین {m} ث",
  "after {n} s": "پس از {n} ث",
- "Working, but slow (over {ms} ms)": "کار می‌کند، اما کند است (بیش از {ms} میلی‌ثانیه)"
+ "Working, but slow ({ms}ms+)": "کار می‌کند، اما کند است ({ms}ms+)",
+ "Test 50 more": "آزمایش ۵۰ مورد دیگر",
+ "Tests the next 50 fastest candidates that are not tested yet, even when 6 already work. Use it to find more working nodes to pick from.": "۵۰ نامزد سریع بعدی را که هنوز آزمایش نشده‌اند آزمایش می‌کند، حتی اگر ۶ گره کار کنند. با آن گره‌های کارآمد بیشتری برای انتخاب پیدا کنید.",
+ "Every candidate is tested already. Ping and test again for a fresh list.": "همه نامزدها قبلاً آزمایش شده‌اند. برای فهرست تازه، «پینگ و آزمایش دوباره» را بزنید.",
+ "{server} is not in the PC tunnel's slots.": "{server} در جایگاه‌های تونل رایانه نیست.",
+ "The PC tunnel did not take the change. Restart the PC tunnel, then try again.": "تونل رایانه این تغییر را نپذیرفت. تونل رایانه را دوباره راه‌اندازی کنید و دوباره امتحان کنید.",
+ "{server} is not in the router's slots.": "{server} در جایگاه‌های روتر نیست.",
+ "The router did not take the change; see the activity log.": "روتر این تغییر را نپذیرفت؛ گزارش فعالیت را ببینید.",
+ "{who} now uses {server}, until it fails.": "{who} اکنون از {server} استفاده می‌کند، تا زمانی که از کار بیفتد.",
+ "{who} picks its node automatically again.": "{who} دوباره گره را خودکار انتخاب می‌کند.",
+ "Use this node": "استفاده از این گره",
+ "{who} will use {server} until that node fails, then pick automatically again.": "{who} تا زمانی که این گره از کار بیفتد از {server} استفاده می‌کند، سپس دوباره خودکار انتخاب می‌کند.",
+ "PC and router: pick nodes automatically again": "رایانه و روتر: انتخاب خودکار گره‌ها دوباره",
+ "Drag onto another row: PC, Router, or the & for both. That node is used until it fails, then the pick is automatic again.": "روی ردیف دیگری بکشید: رایانه، روتر، یا & برای هر دو. آن گره تا زمانی که از کار بیفتد استفاده می‌شود، سپس انتخاب دوباره خودکار است."
 }

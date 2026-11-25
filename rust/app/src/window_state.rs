@@ -630,6 +630,61 @@ impl Worker<'_> {
         Ok(())
     }
 
+    // Pin the PC tunnel ("pc"), the router ("router") or both ("both") to the node at server, or with None let them
+    // pick automatically again. A pin holds until that node fails (the watcher and the router's heal.sh pin check)
+    pub fn pin(&self, who: &str, server: Option<&str>) -> Result<(), String> {
+        use engine::clash_api::{pick, set_pin, tag_of};
+        let mode = Mode::of(self.paths);
+        let mut done = Vec::new();
+        if (who == "pc" || who == "both") && !mode.ronly {
+            let tag = match server {
+                Some(s) => tag_of(&self.paths.pc_cfg, s)
+                    .ok_or_else(|| tr("{server} is not in the PC tunnel's slots.", &[("server", s.into())]))?,
+                None => "auto".into(),
+            };
+            if !pick(self.paths, &tag) {
+                return Err(tr("The PC tunnel did not take the change. Restart the PC tunnel, then try again.", &[]));
+            }
+            set_pin(self.paths, "pc", server);
+            done.push(tr("PC", &[]));
+            self.check_local("pc");
+        }
+        if (who == "router" || who == "both") && mode.router {
+            let mut ssh = RouterSsh { paths: self.paths };
+            let mut cfg = engine::data_files::read_json(&self.paths.router_cfg).map_err(|e| e.to_string())?;
+            let secret = engine::router::secret(&cfg);
+            let tag = match server {
+                Some(s) => tag_of(&self.paths.router_cfg, s)
+                    .ok_or_else(|| tr("{server} is not in the router's slots.", &[("server", s.into())]))?,
+                None => "auto".into(),
+            };
+            if !engine::router::router_pick(&mut ssh, &secret, &tag) {
+                if server.is_none() {
+                    return Ok(()); // no selector on the router: it picks automatically already
+                }
+                // the router's config has no selector yet: add it and push, then pin
+                if engine::singbox_config::pick_add(&mut cfg) {
+                    engine::data_files::jsave(&self.paths.router_cfg, &cfg, Some(2)).map_err(|e| e.to_string())?;
+                }
+                say("router: adding the node switch to its config and pushing it...");
+                self.push_router()?;
+                if !engine::router::router_pick(&mut ssh, &secret, &tag) {
+                    return Err(tr("The router did not take the change; see the activity log.", &[]));
+                }
+            }
+            done.push(tr("Router", &[]));
+            self.read_router_now();
+        }
+        let who = done.join(" & ");
+        let text = match server {
+            Some(s) => tr("{who} now uses {server}, until it fails.", &[("who", who), ("server", s.into())]),
+            None => tr("{who} picks its node automatically again.", &[("who", who)]),
+        };
+        say(&text);
+        self.status(text, "ok");
+        Ok(())
+    }
+
     // Restart the PC tunnel on the configs (pc_restart)
     pub fn restart_pc(&self) {
         let live = nm::pc_push(self.paths);
@@ -751,7 +806,7 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
                     && (key == "pc" || mode.ronly)
                     && tun.as_ref().and_then(Value::as_f64).is_some_and(|m| m > s.slow_ms as f64);
                 let (state, text) = if slow {
-                    ("warn", tr("Working, but slow (over {ms} ms)", &[("ms", s.slow_ms.to_string())]))
+                    ("warn", tr("Working, but slow ({ms}ms+)", &[("ms", s.slow_ms.to_string())]))
                 } else {
                     (state, text)
                 };
@@ -779,6 +834,9 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
                     "tcp": ms(n.get("tcp_ms"), &tr("None", &[])), "tunnel": ms(tun.as_ref(), "-"),
                     "state": if state == "bad" && !has(n, "tcp_ms") { "broken" } else { state },
                     "text": format!("{mark}{text}{using}"),
+                    "lead": format!("{mark}{text}"),
+                    "pc": pc_srv.as_deref() == Some(f(n, "server").as_str()),
+                    "router": r_srv.as_deref() == Some(f(n, "server").as_str()),
                     "node": n,
                 })
             })

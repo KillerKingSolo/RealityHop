@@ -280,9 +280,9 @@ pub fn mbps(port: usize, secs: u64, give_up: bool, floor: i64) -> Result<Option<
 }
 
 // Download speed of the working nodes (test ports base + index). First up to 8 at once, 4 s: a node that reaches the
-// floor even while sharing this PC's line passes, and one under an eighth of it is slow. Sharing is not fair (a
-// nearby node takes more), so every node in between gets a test of its own, best first, until 6 pass. test(port,
-// secs, give_up) runs one download test (engine.speed_test)
+// floor even while sharing this PC's line passes. Sharing is not fair (a nearby node takes more, so a fast node can
+// show 2 Mbps), so every node under the floor gets a test of its own, best share first, until 6 pass. A node with no
+// test of its own keeps its shared speed. test(port, secs, give_up) runs one download test (engine.speed_test)
 pub fn speed_test_with(
     paths: &Paths,
     nodes: &mut [Value],
@@ -306,11 +306,11 @@ pub fn speed_test_with(
     seen(paths, share.values().map(|m| m.unwrap_or(0)).max(), now);
     let (mut fast, mut alone) = (0, Vec::new());
     for &i in &ok {
+        if let Some(m) = share[&i] {
+            set(&mut nodes[i], "mbps", m.into());
+        }
         match share[&i] {
-            Some(m) if m >= fl() || (m as f64) < fl() as f64 / 8.0 => {
-                set(&mut nodes[i], "mbps", m.into());
-                fast += usize::from(m >= fl());
-            }
+            Some(m) if m >= fl() => fast += 1,
             _ => alone.push(i),
         }
     }
@@ -322,7 +322,9 @@ pub fn speed_test_with(
             break;
         }
         let m = test(base + i, 4, true)?;
-        set(&mut nodes[i], "mbps", m.map_or(Value::Null, Value::from));
+        if let Some(m) = m {
+            set(&mut nodes[i], "mbps", m.into()); // an HTTP error says nothing: the shared speed stays
+        }
         seen(paths, m, now);
         fast += usize::from(m.unwrap_or(0) >= fl());
     }

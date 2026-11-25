@@ -268,6 +268,10 @@ fn run(app: &AppHandle, ctx: &Ctx, job: &Job) -> Result<(), String> {
             Ok(())
         }
         "push_router" => wk.push_router(),
+        "pin" => {
+            let who = arg("who").as_str().unwrap_or("").to_string();
+            wk.pin(&who, arg("server").as_str())
+        }
         "fix" => {
             let slot = arg("slot").as_u64().ok_or("no slot")? as usize;
             wk.fix(slot, arg("how").as_str().unwrap_or("online"))
@@ -313,6 +317,7 @@ fn run(app: &AppHandle, ctx: &Ctx, job: &Job) -> Result<(), String> {
             wk.cand_test()
         }
         "cand_test" => wk.cand_test(),
+        "cand_more" => wk.cand_more(),
         "cand_test_tunnel" => {
             wk.cand_test_tunnel();
             Ok(())

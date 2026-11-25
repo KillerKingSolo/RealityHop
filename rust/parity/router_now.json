@@ -14,7 +14,7 @@
     [
      {
       "cmd": "sh -s",
-      "stdin": "curl -s -m 5 -H \"Authorization: Bearer 0123456789abcdef0123456789abcdef\" http://127.0.0.1:9090/proxies/auto\n",
+      "stdin": "curl -s -m 5 -H \"Authorization: Bearer 0123456789abcdef0123456789abcdef\" http://127.0.0.1:9090/proxies/pick; echo; curl -s -m 5 -H \"Authorization: Bearer 0123456789abcdef0123456789abcdef\" http://127.0.0.1:9090/proxies/auto\n",
       "timeout": 20
      }
     ]
@@ -32,7 +32,7 @@
     [
      {
       "cmd": "sh -s",
-      "stdin": "curl -s -m 5 -H \"Authorization: Bearer 0123456789abcdef0123456789abcdef\" http://127.0.0.1:9090/proxies/auto\n",
+      "stdin": "curl -s -m 5 -H \"Authorization: Bearer 0123456789abcdef0123456789abcdef\" http://127.0.0.1:9090/proxies/pick; echo; curl -s -m 5 -H \"Authorization: Bearer 0123456789abcdef0123456789abcdef\" http://127.0.0.1:9090/proxies/auto\n",
       "timeout": 20
      }
     ]
@@ -48,7 +48,7 @@
     [
      {
       "cmd": "sh -s",
-      "stdin": "curl -s -m 5 -H \"Authorization: Bearer 0123456789abcdef0123456789abcdef\" http://127.0.0.1:9090/proxies/auto\n",
+      "stdin": "curl -s -m 5 -H \"Authorization: Bearer 0123456789abcdef0123456789abcdef\" http://127.0.0.1:9090/proxies/pick; echo; curl -s -m 5 -H \"Authorization: Bearer 0123456789abcdef0123456789abcdef\" http://127.0.0.1:9090/proxies/auto\n",
       "timeout": 20
      }
     ]
