@@ -972,7 +972,7 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
         .collect();
     json!({
         "mode": {"router": mode.router, "ronly": mode.ronly, "mac": !cfg!(windows), "backend": s.backend_files != 0},
-        "version": format!("v{}", engine::VERSION),
+        "version": engine::version_label(), "release": engine::VERSION,
         "core_mode": engine::pc_tunnel::core_mode(paths),
         "core": w.core_text, "rcore": w.rcore_text, "router_away": w.router_away,
         "stopped": settings::stopped(paths), "startup_on": engine::startup_tasks::startup_on(paths), "boot_on": w.boot_on,

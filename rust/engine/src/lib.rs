@@ -53,3 +53,10 @@ pub const NAME: &str = "Reality Hop";
 /// GitHub owner/repo: app updates come from its Releases.
 pub const REPO: &str = "KillerKingSolo/RealityHop";
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+/// A test build's label, as "2.1.2 beta 7", set when it is built (RH_BETA); None in a release.
+pub const BETA: Option<&str> = option_env!("RH_BETA");
+
+/// The version people see: "v2.1.1", or "v2.1.2 beta 7" on a test build. Update checks use VERSION.
+pub fn version_label() -> String {
+    BETA.filter(|b| !b.is_empty()).map_or_else(|| format!("v{VERSION}"), |b| format!("v{b}"))
+}

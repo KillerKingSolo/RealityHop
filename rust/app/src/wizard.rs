@@ -89,7 +89,7 @@ pub fn wz_info(ctx: State<Ctx>, router_only: bool) -> Value {
         "all_dev": engine::router::all_devices(&s.devices), "devices": engine::router::devices(&s.devices),
         "split": split, "ronly": settings::router_only(p),
         "auto_update": s.auto_update != 0, "backend_files": s.backend_files != 0,
-        "version": format!("v{}", engine::VERSION), "repo": engine::REPO,
+        "version": engine::version_label(), "repo": engine::REPO,
         "ask_lang": s.lang.is_empty(), "ask_france": s.dns.is_empty() && !engine::setup_steps::is_setup(p),
         "langs": LANGS, "sys_lang": engine::translations::system_lang(),
     })

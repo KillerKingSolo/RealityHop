@@ -165,7 +165,7 @@ async function openSettings() {
       if (mine !== gen || !updNote.isConnected) return;   // Settings closed while it checked
       // an update: close Settings and show the update window
       if (nv) { panel(null); return openUpdate(); }
-      updNote.textContent = await T('Reality Hop {ver} is the newest version.', { ver: snap.version.slice(1) }) + '  ' + new Date().toLocaleTimeString();
+      updNote.textContent = await T('Reality Hop {ver} is the newest version.', { ver: snap.release }) + '  ' + new Date().toLocaleTimeString();
     } catch (e) {
       if (mine !== gen) return;
       updNote.className = 'note c-bad'; updNote.textContent = await T('Could not reach GitHub: {e}', { e: String(e) });

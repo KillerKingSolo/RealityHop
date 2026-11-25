@@ -85,7 +85,7 @@ pub fn settings_get(ctx: State<Ctx>) -> Value {
     let rc = settings::this_pc(p).get("router_core").cloned().unwrap_or(Value::Null);
     json!({
         "values": s, "lang": lang, "langs": langs, "router": mode.router, "ronly": mode.ronly, "mac": !cfg!(windows),
-        "version": format!("{} v{}", engine::NAME, engine::VERSION), "repo": engine::REPO,
+        "version": format!("{} {}", engine::NAME, engine::version_label()), "repo": engine::REPO,
         "pc_now": if mode.ronly { None } else { engine::pc_tunnel::core_version(p) },
         "rc_now": rc, "defaults": Settings::default(),
     })

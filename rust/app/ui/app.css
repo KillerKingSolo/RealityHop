@@ -218,3 +218,4 @@ body.setup #side { width: 230px; min-width: 230px; }
 .wz-lang-dot { color: var(--acc); font: 14pt var(--uib); text-align: center; margin-top: 20px; }
 .wz-lang-title { text-align: center; white-space: pre-line; font-size: 11pt; margin: 6px 0 14px; }
 .wz-langs { display: flex; flex-direction: column; gap: 6px; width: 320px; align-self: center; }
+#modeLine.beta { color: var(--warn); font-weight: 600; }

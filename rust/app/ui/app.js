@@ -222,6 +222,7 @@ async function render(s) {
   await buildSide(m);
   $('modeLine').textContent = (await T(m.ronly ? 'Router only' : m.router ? 'PC + Router' : 'PC only')) + '  ·  ' +
     (s.core_mode || m.ronly ? s.version : await T('rh-core MISSING'));
+  $('modeLine').classList.toggle('beta', / beta /.test(s.version));   // a test build stands out
   $('coreLine').textContent = s.core || '';
   $('rcoreLine').textContent = [s.rcore, s.router_away ? await T('Router not connected') : ''].filter(Boolean).join('\n');
   $('rcoreLine').classList.toggle('away', !!s.router_away);

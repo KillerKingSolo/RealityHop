@@ -79,11 +79,19 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0   # a test build's beta number counts the commits since the last release tag
 
       - name: Build
         working-directory: rust
-        run: |
+        env:
+          TEST_BUILD: ${{ inputs.mac27_only }}
+        run: |   # a test build shows "v<next patch> beta <commits since the last tag>"
           rustup toolchain install
+          if [ "$TEST_BUILD" = true ]; then
+            t=$(git describe --tags --abbrev=0 --match 'v*'); v=${t#v}
+            export RH_BETA="${v%.*}.$(( ${v##*.} + 1 )) beta $(git rev-list --count "$t"..HEAD)"
+            echo "test build: $RH_BETA"
+          fi
           sh build-mac.sh
 
       - name: Update from this dmg into a copy of the app, router key script
