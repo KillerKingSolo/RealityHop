@@ -110,13 +110,14 @@ function act(name, args) {
   return invoke('act', { name, args: args || null });
 }
 
-// Sidebar group icons, drawn the same on Windows and macOS
-const svg = body => `<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+// Sidebar group icons: the Windows icon font, and SVG copies of the same shapes on macOS, which lacks that font
+const MAC = /Mac/.test(navigator.userAgent);
+const svg = body => `<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
 const ICONS = {
-  nodes: svg('<circle cx="8" cy="3" r="1.8"/><circle cx="3" cy="13" r="1.8"/><circle cx="13" cy="13" r="1.8"/><path d="M7 4.6 4 11.4M9 4.6l3 6.8M4.8 13h6.4"/>'),
-  pc: svg('<rect x="1.5" y="2.5" width="13" height="8.5" rx="1"/><path d="M5.5 14h5M8 11v3"/>'),
-  router: svg('<rect x="1.5" y="9" width="13" height="4.5" rx="1"/><path d="M4.5 9V5.5M11.5 9V5.5"/><circle cx="4.5" cy="11.25" r=".5" fill="currentColor"/><circle cx="7" cy="11.25" r=".5" fill="currentColor"/>'),
-  help: svg('<circle cx="8" cy="8" r="6.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"/><circle cx="8" cy="11.6" r=".5" fill="currentColor"/>'),
+  nodes: ['', svg('<circle cx="8" cy="8" r="6.5"/><ellipse cx="8" cy="8" rx="2.8" ry="6.5"/><path d="M1.9 5.6h12.2M1.9 10.4h12.2"/>')],
+  pc: ['', svg('<path d="M7.5 5.5V2.5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1V13a1 1 0 0 0 1 1H6M3.3 3.7h2.2M3.3 5.5h1.2"/><rect x="6.5" y="6" width="8" height="6" rx="1"/><path d="M10.5 12v2M8.8 14.2h3.4"/>')],
+  router: ['', svg('<path d="M2.7 7.2a5.3 5.3 0 0 1 10.6 0M5.2 7.2a2.8 2.8 0 0 1 5.6 0"/><circle cx="8" cy="7" r="1.4"/><path d="M8 8.4v2.1"/><rect x="2.8" y="10.5" width="10.4" height="3.6" rx="1.8"/>')],
+  help: ['', svg('<path d="M5.6 5.4a2.4 2.4 0 1 1 3.5 2.1c-.7.4-1.1.9-1.1 1.7v.9"/><circle cx="8" cy="13" r=".55" fill="currentColor" stroke="none"/>')],
 };
 
 // ---- sidebar: every action, grouped
@@ -129,7 +130,7 @@ async function buildSide(m) {
   const group = async (title, icon) => {
     const g = el('div', 'group');
     const i = el('span', 'gi');
-    i.innerHTML = ICONS[icon];   // fixed SVG strings below; the Windows icon font is missing on macOS
+    if (MAC) i.innerHTML = ICONS[icon][1]; else i.textContent = ICONS[icon][0];   // fixed strings above
     g.append(i, el('span', 'gt', await T(title)));
     nav.append(g);
   };

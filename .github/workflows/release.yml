@@ -4,6 +4,11 @@ on:
   push:
     tags: ['v*']   # vX.Y.Z, or vX.Y.Z-beta.N for a prerelease (releases/latest skips it, so installed copies stay put)
   workflow_dispatch:
+    inputs:
+      mac27_only:
+        description: Test build only, the Apple silicon dmg tested on macOS 27
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -11,12 +16,14 @@ permissions:
 jobs:
   checks:   # format, lints, tests on every platform, and cargo-deny, on the tagged commit
     name: checks
+    if: ${{ !inputs.mac27_only }}
     permissions:
       contents: read
     uses: ./.github/workflows/rust.yml
 
   build:
     name: build (Windows exe)
+    if: ${{ !inputs.mac27_only }}
     permissions:
       contents: read
     runs-on: windows-latest
@@ -59,6 +66,7 @@ jobs:
 
   mac-intel:   # build only; one job per chip, so each chip's tests start as soon as its own build is done
     name: build (Mac dmg, Intel)
+    if: ${{ !inputs.mac27_only }}
     permissions:
       contents: read   # builds and tests only; publish is the one job that writes
     strategy:
@@ -115,17 +123,8 @@ jobs:
       contents: read
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - runner: macos-15
-            chip: apple-silicon
-            os: macOS 15
-          - runner: macos-26
-            chip: apple-silicon
-            os: macOS 26
-          - runner: xcode-27           # macOS 27 (GitHub preview image)
-            chip: apple-silicon
-            os: macOS 27
+      matrix:   # xcode-27 is macOS 27 (GitHub preview image)
+        include: ${{ fromJSON(inputs.mac27_only && '[{"runner":"xcode-27","chip":"apple-silicon","os":"macOS 27"}]' || '[{"runner":"macos-15","chip":"apple-silicon","os":"macOS 15"},{"runner":"macos-26","chip":"apple-silicon","os":"macOS 26"},{"runner":"xcode-27","chip":"apple-silicon","os":"macOS 27"}]') }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30   # a hung app start fails the job instead of holding the runner
     steps: &mac-test
@@ -157,6 +156,7 @@ jobs:
 
   test-intel:   # the Intel app on Intel Macs, macOS 15 and 26
     name: test Mac app (Intel, ${{ matrix.os }})
+    if: ${{ !inputs.mac27_only }}
     needs: mac-intel
     permissions:
       contents: read
@@ -176,6 +176,7 @@ jobs:
 
   test-intel-rosetta:   # the Intel app on Apple silicon through Rosetta, macOS 26 and 27
     name: test Mac app (Intel through Rosetta, ${{ matrix.os }})
+    if: ${{ !inputs.mac27_only }}
     needs: mac-intel
     permissions:
       contents: read

@@ -10,6 +10,7 @@
   --ui: "Segoe UI Variable Text", "Segoe UI", "Helvetica Neue", sans-serif;
   --uib: "Segoe UI Variable Display Semib", "Segoe UI Semibold", "HelveticaNeue-Medium", "Helvetica Neue", sans-serif;
   --mono: "Cascadia Mono", Consolas, Menlo, monospace;
+  --icons: "Segoe Fluent Icons", "Segoe MDL2 Assets";
   --r-card: 6px; --r-ctl: 4px; --gap: 8px;
 }
 * { box-sizing: border-box; }
@@ -30,7 +31,7 @@ body { display: flex; gap: var(--gap); padding: var(--gap); font: 10pt var(--ui)
 #coreLine, #rcoreLine { white-space: pre-line; }
 #rcoreLine.away { color: var(--warn); }
 .group { display: flex; align-items: center; background: var(--group); margin: 16px 8px 4px; border-left: 4px solid var(--acc); border-radius: var(--r-ctl); }
-.group .gi { color: var(--acc); width: 2.2em; display: flex; align-items: center; justify-content: center; padding: 7px 0; }
+.group .gi { color: var(--acc); font: 12pt var(--icons), var(--uib); width: 2.2em; display: flex; align-items: center; justify-content: center; padding: 7px 0; }
 .group .gt { font: 12pt var(--uib); }
 .nav { display: flex; align-items: center; margin: 1px 8px; cursor: pointer; border-radius: var(--r-ctl); }
 .nav .ni { color: var(--dim); font: 11pt var(--uib); padding: 0 10px; }
