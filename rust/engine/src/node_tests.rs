@@ -315,6 +315,8 @@ pub fn speed_test_with(
         }
     }
     alone.sort_by_key(|i| -share[i].unwrap_or(0));
+    // at most 6 tests of their own, 4 s each one after another: the best shares first, so the rest rarely pass
+    alone.truncate(6);
     for i in alone {
         if fast >= 6 {
             break;
@@ -399,20 +401,30 @@ pub fn hold_out(
     Ok(())
 }
 
-// Fail the working nodes under hard Mbps. One that was slow while sharing the line gets a test of its own first;
-// test(i) is that test on node i. None from it (HTTP error) keeps the node
+// Fail the working nodes under hard Mbps. One that was slow while sharing the line gets a test again first, up to 8
+// at once: hard is a few Mbps, so sharing the line hardly matters; test(i) is that test on node i. None from it
+// (HTTP error) keeps the node
 pub fn slow_out(
     nodes: &mut [Value],
     hard: i64,
-    test: impl Fn(usize) -> Result<Option<i64>, String>,
+    test: impl Fn(usize) -> Result<Option<i64>, String> + Sync,
 ) -> Result<(), String> {
+    let mbps = |n: &Value| n.get("mbps").and_then(Value::as_i64);
+    let again: Vec<usize> = (0..nodes.len())
+        .filter(|&i| nodes[i].get("ok") == Some(&json!(true)) && mbps(&nodes[i]).is_some_and(|m| m > 0 && m < hard))
+        .collect();
+    let got = pool(8, again.len(), |k| test(again[k]));
+    let mut retest = std::collections::HashMap::new();
+    for (&i, r) in again.iter().zip(got) {
+        retest.insert(i, r?);
+    }
     for (i, n) in nodes.iter_mut().enumerate() {
-        let Some(mut m) = n.get("mbps").and_then(Value::as_i64) else { continue };
+        let Some(mut m) = mbps(n) else { continue };
         if n.get("ok") != Some(&json!(true)) || m >= hard {
             continue;
         }
         if m > 0 {
-            match test(i)? {
+            match retest.get(&i).copied().flatten() {
                 Some(again) => m = m.max(again),
                 None => continue,
             }
@@ -437,7 +449,7 @@ impl Drop for Instance {
     }
 }
 
-// The handshake test on this PC: one sing-box instance, one port per node, 10 fetches at a time. speed: then the
+// The handshake test on this PC: one sing-box instance, one port per node, 25 fetches at a time. speed: then the
 // download test (engine.local_test)
 pub fn local_test(paths: &Paths, nodes: &mut [Value], speed: bool) -> Result<(), String> {
     if !paths.core.exists() {
@@ -509,7 +521,8 @@ fn local_test_on(paths: &Paths, nodes: &mut [Value], speed: bool, base: usize) -
             }
             std::thread::sleep(Duration::from_millis(100));
         }
-        let got = pool(10, count, |i| {
+        // 25 at once: a dead node holds its slot for the full 10 s, so 10 at a time took most of a minute for 50
+        let got = pool(25, count, |i| {
             let out = run(
                 &curl_via(base + i, &["-m", "10", "-w", " %{time_total}", EXIT_URL]),
                 None,

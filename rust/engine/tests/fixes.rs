@@ -129,13 +129,15 @@ fn a_node_under_the_hard_minimum_fails_after_its_own_test() {
         json!({"ok": true, "mbps": 0}),
         json!({"ok": true}),
     ];
-    let asked = std::cell::RefCell::new(vec![]);
+    let asked = std::sync::Mutex::new(vec![]);
     slow_out(&mut nodes, 5, |i| {
-        asked.borrow_mut().push(i);
+        asked.lock().unwrap().push(i);
         Ok(Some(if i == 2 { 9 } else { 1 }))
     })
     .unwrap();
-    assert_eq!(*asked.borrow(), vec![1, 2], "only the slow ones that moved some data are tested again");
+    let mut asked = asked.into_inner().unwrap();
+    asked.sort();
+    assert_eq!(asked, vec![1, 2], "only the slow ones that moved some data are tested again");
     assert_eq!(nodes[0]["ok"], true);
     assert_eq!(nodes[1]["ok"], false);
     assert_eq!(nodes[1]["why"], "too slow: 1 Mbps (needs at least 5)");
