@@ -332,3 +332,29 @@ fn cloudflare_moves_to_its_malware_blocking_servers() {
     assert!(dns_apply(&mut r, "cloudflare"));
     assert_eq!(r["dns"]["servers"][0]["address"], "https://1.1.1.2/dns-query");
 }
+
+#[test]
+fn failures_during_a_pia_drop_do_not_count_except_wrong_certificates_and_keys() {
+    use engine::node_tests::{PIA_SKIP, forgive_pia_drop};
+    use serde_json::json;
+    let fresh = || {
+        vec![
+            json!({"server": "1.1.1.1", "ok": false, "why": "no-response"}),
+            json!({"server": "2.2.2.2", "ok": false, "why": "certificate is valid for example.com"}),
+            json!({"server": "3.3.3.3", "ok": false, "why": "reality verification failed"}),
+            json!({"server": "4.4.4.4", "ok": true, "ms": 300}),
+        ]
+    };
+    // PIA dropped 30 s into a 60 s test: the no-response is not counted
+    let mut n = fresh();
+    forgive_pia_drop(&mut n, 1000.0, 1060.0, 30.0);
+    assert!(n[0].get("ok").is_none());
+    assert_eq!(n[0]["why"], PIA_SKIP);
+    assert_eq!((&n[1]["ok"], &n[2]["ok"], &n[3]["ok"]), (&json!(false), &json!(false), &json!(true)));
+    let txt = engine::node_tables::write_txt(&n, &[], "today");
+    assert!(!txt.contains("1.1.1.1") && txt.contains("2.2.2.2"));
+    // PIA steady for the whole test: every failure counts
+    let mut n = fresh();
+    forgive_pia_drop(&mut n, 1000.0, 1060.0, f64::INFINITY);
+    assert_eq!(n[0]["ok"], json!(false));
+}

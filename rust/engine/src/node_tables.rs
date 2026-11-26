@@ -133,7 +133,8 @@ pub fn write_txt(nodes: &[Value], best: &[Value], today: &str) -> String {
     }
     l.push(String::new());
     l.push("FAILED  (do not retest until the feed changes their key)".into());
-    for n in nodes.iter().filter(|n| !yes(n, "ok")) {
+    // a node not judged because PIA dropped during its test has not failed
+    for n in nodes.iter().filter(|n| !yes(n, "ok") && get(n, "why", "") != crate::node_tests::PIA_SKIP) {
         l.push(format!("  {:16} {:20} {}", get(n, "server", ""), get(n, "sni", ""), get(n, "why", "")));
     }
     l.push(String::new());

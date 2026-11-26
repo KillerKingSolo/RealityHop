@@ -612,7 +612,38 @@ pub fn node_test(paths: &Paths, ssh: &mut impl Ssh, nodes: &mut [Value], speed: 
         }
         Ok(())
     } else {
-        local_test(paths, nodes, speed)
+        let t0 = now();
+        let r = local_test(paths, nodes, speed);
+        forgive_pia_drop(nodes, t0, now(), crate::watcher::pia_calm_for(now()));
+        r
+    }
+}
+
+/// Why a node counts as untested: PIA dropped while it was tested through it.
+pub const PIA_SKIP: &str = "not judged: PIA dropped during the test";
+
+// A PIA drop during a test on this PC (or up to 20 s before it, while PIA reconnects): the failures it can cause say
+// nothing about the nodes, so those nodes count as untested. A wrong certificate or REALITY key fails with or without
+// PIA, so those failures stay
+pub fn forgive_pia_drop(nodes: &mut [Value], start: f64, end: f64, calm: f64) {
+    if calm > end - start + 20.0 {
+        return;
+    }
+    let mut k = 0;
+    for n in nodes.iter_mut() {
+        let why = n.get("why").and_then(Value::as_str).unwrap_or_default();
+        let real = why.contains("certificate is valid for") || why.contains("reality verification failed");
+        if n["ok"] == false
+            && !real
+            && let Some(m) = n.as_object_mut()
+        {
+            m.remove("ok");
+            m.insert("why".into(), PIA_SKIP.into());
+            k += 1;
+        }
+    }
+    if k > 0 {
+        say(&format!("PIA dropped during the test: {k} failure(s) not counted; those nodes count as untested"));
     }
 }
 
