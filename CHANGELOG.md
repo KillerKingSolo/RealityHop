@@ -4,7 +4,7 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
-## 2.1.3 (2026-11-25)
+## 2.1.2 (2026-11-25)
 
 **Why update:** the node list downloads again, the Mac tunnel stays up through PIA changes, and scans find real working nodes faster.
 
