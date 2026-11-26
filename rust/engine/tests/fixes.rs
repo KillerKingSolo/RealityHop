@@ -319,8 +319,8 @@ fn a_pin_survives_a_pia_drop_with_no_network() {
 
 #[test]
 fn the_node_list_comes_from_the_outputs_branch() {
-    assert!(node_feed::FEEDS[0].contains("/FastNodes/outputs/"));
-    let m = node_feed::mirrors(node_feed::FEEDS[0]);
+    assert!(node_feed::FEEDS[1].contains("/FastNodes/outputs/"));
+    let m = node_feed::mirrors(node_feed::FEEDS[1]);
     assert_eq!(m[0], "https://cdn.jsdelivr.net/gh/rtwo2/FastNodes@outputs/sub/verified_tls.txt");
     assert_eq!(m[1], "https://fastly.jsdelivr.net/gh/rtwo2/FastNodes@outputs/sub/verified_tls.txt");
 }
@@ -376,4 +376,11 @@ fn a_short_stand_in_page_is_not_the_test_file() {
     assert!(!stand_in(" 200 1200 4.0 3.9"));
     assert!(!stand_in(" 000 0 10.0"));
     assert!(!stand_in(" 404 120 0.3"));
+}
+
+#[test]
+fn morpheusadams_list_comes_first_and_has_mirrors() {
+    assert!(node_feed::FEEDS[0].ends_with("/morpheusadam/v2ray-config/main/subs/bundles/reality.txt"));
+    let m = node_feed::mirrors(node_feed::FEEDS[0]);
+    assert_eq!(m[0], "https://cdn.jsdelivr.net/gh/morpheusadam/v2ray-config@main/subs/bundles/reality.txt");
 }

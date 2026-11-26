@@ -1,11 +1,17 @@
-//! The public node lists (github.com/rtwo2/FastNodes): sources and the line parser.
+//! The public node lists (github.com/morpheusadam/v2ray-config, github.com/rtwo2/FastNodes): sources and the line
+//! parser.
 
 use crate::node::Node;
 use crate::{python_compat, validate};
 use std::collections::HashSet;
 
-/// The lists are published on the source's "outputs" branch.
-pub const FEEDS: [&str; 1] = ["https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt"];
+/// The node lists, merged; a server in both keeps the first list's line. morpheusadam's comes first: tested side by side,
+/// its credentials worked wherever FastNodes' did, and on some servers where they did not. FastNodes publishes on its
+/// "outputs" branch.
+pub const FEEDS: [&str; 2] = [
+    "https://raw.githubusercontent.com/morpheusadam/v2ray-config/main/subs/bundles/reality.txt",
+    "https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt",
+];
 /// The same file on CDN mirrors, for when GitHub is blocked; {0} = owner/repo, {1} = path, {2} = branch.
 pub const MIRRORS: [&str; 2] =
     ["https://cdn.jsdelivr.net/gh/{0}@{2}/{1}", "https://fastly.jsdelivr.net/gh/{0}@{2}/{1}"];
