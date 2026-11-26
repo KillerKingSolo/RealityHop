@@ -68,6 +68,15 @@ pub fn data_moved(from: &Paths, to: &Paths) {
     let _ = std::fs::remove_dir_all(&from.data);
 }
 
+// Change the window's state from inside an action (a test's progress) and draw it again
+pub fn update_win(f: impl FnOnce(&mut crate::window_state::Win)) {
+    if let Some(app) = APP.get() {
+        let ctx = app.state::<Ctx>();
+        f(&mut ctx.win.lock().unwrap_or_else(|e| e.into_inner()));
+        changed(app);
+    }
+}
+
 // Tell the window to draw again
 pub fn changed(app: &AppHandle) {
     let _ = app.emit("changed", ());
@@ -208,10 +217,12 @@ pub fn ticker(app: AppHandle) {
             let ctx = app.state::<Ctx>();
             let (busy_long, auto_on) = {
                 let w = ctx.win.lock().unwrap_or_else(|e| e.into_inner());
-                (w.busy && w.started.is_some_and(|s| s.elapsed() > Duration::from_secs(360)), w.auto_on)
+                // testing every candidate takes longer: 30 minutes
+                let limit = if w.current.as_ref().is_some_and(|j| j.name == "cand_all") { 1800 } else { 360 };
+                (w.busy && w.started.is_some_and(|s| s.elapsed() > Duration::from_secs(limit)), w.auto_on)
             };
             if busy_long {
-                say("the action ran over 6 minutes; cancelled");
+                say("the action ran too long; cancelled");
                 engine::process::cancel();
                 let mut w = ctx.win.lock().unwrap_or_else(|e| e.into_inner());
                 w.status_text = tr("The last action took too long and was cancelled.", &[]);
@@ -324,6 +335,7 @@ fn run(app: &AppHandle, ctx: &Ctx, job: &Job) -> Result<(), String> {
         }
         "cand_test" => wk.cand_test(),
         "cand_more" => wk.cand_more(),
+        "cand_all" => wk.cand_all(),
         "cand_test_tunnel" => {
             wk.cand_test_tunnel();
             Ok(())

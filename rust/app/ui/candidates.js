@@ -22,6 +22,7 @@ async function openCandidates() {
   };
   await button(bar1, 'Ping and test again', () => act('cand_scan'));
   await button(bar1, 'Test 50 more', () => act('cand_more'));
+  await button(bar1, 'Test all', () => act('cand_all'));
   bar1.append(el('span', 'grow'));
   cand.pick = el('span', 'muted');
   bar1.append(cand.pick);

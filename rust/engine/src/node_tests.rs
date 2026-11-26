@@ -558,12 +558,15 @@ fn local_test_on(paths: &Paths, nodes: &mut [Value], speed: bool, base: usize) -
         if let Some(e) = first_err {
             return Err(e);
         }
+        progress(nodes);
         if speed {
             hold_out(nodes, |i| hold(base + i))?;
+            progress(nodes);
         }
         let min_mbps = Settings::read(paths).unwrap_or_default().min_mbps;
         if speed && min_mbps != 0 {
             speed_test(paths, nodes, base, min_mbps)?;
+            progress(nodes);
             let fl = floor_now(paths, min_mbps, now());
             slow_out(nodes, HARD_MIN_MBPS.min(fl / 2), |i| mbps(base + i, 4, true, fl))?;
         }
@@ -617,6 +620,27 @@ pub fn node_test(paths: &Paths, ssh: &mut impl Ssh, nodes: &mut [Value], speed: 
         forgive_pia_drop(nodes, t0, now(), crate::watcher::pia_calm_for(now()));
         r
     }
+}
+
+/// What a node test calls with its results so far.
+pub type Progress = Box<dyn Fn(&[Value])>;
+
+thread_local! {
+    // Called on this thread each time a node test on this PC finishes a step, with the results so far (Candidates)
+    static PROGRESS: std::cell::RefCell<Option<Progress>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Show the results of node tests on this thread as each step finishes; None stops it.
+pub fn on_progress(f: Option<Progress>) {
+    PROGRESS.with(|p| *p.borrow_mut() = f);
+}
+
+fn progress(nodes: &[Value]) {
+    PROGRESS.with(|p| {
+        if let Some(f) = p.borrow().as_ref() {
+            f(nodes)
+        }
+    });
 }
 
 /// Why a node counts as untested: PIA dropped while it was tested through it.

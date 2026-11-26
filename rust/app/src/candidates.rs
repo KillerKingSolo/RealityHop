@@ -28,6 +28,62 @@ fn untested(n: &Value) -> bool {
     !has(n, "ok")
 }
 
+fn tcp(n: &Value) -> f64 {
+    n.get("tcp_ms").and_then(Value::as_f64).unwrap_or(f64::INFINITY)
+}
+
+// A copy of the node with a flag set (pinging, testing)
+fn with(n: &Value, flag: &str) -> Value {
+    let mut n = n.clone();
+    n[flag] = json!(true);
+    n
+}
+
+// Results into the rows (by server), still testing until done, then sorted
+fn merge(paths: &engine::paths::Paths, rows: &mut [Value], res: &[Value], done: bool) {
+    for r in res {
+        if let Some(row) = rows.iter_mut().find(|x| f(x, "server") == f(r, "server")) {
+            *row = r.clone();
+            if done {
+                if let Some(m) = row.as_object_mut() {
+                    m.shift_remove("testing");
+                }
+            } else {
+                row["testing"] = json!(true);
+            }
+        }
+    }
+    sort_rows(paths, rows);
+}
+
+// Working first (best by the speed rank), then the ones in a test, then failed, then untested; 443 ping last
+fn sort_rows(paths: &engine::paths::Paths, rows: &mut [Value]) {
+    let s = Settings::read(paths).unwrap_or_default();
+    let floor = engine::node_tests::floor_now(paths, s.min_mbps, now());
+    let num = |n: &Value, k: &str| n.get(k).and_then(Value::as_f64);
+    let key = |n: &Value| {
+        let group = if n["testing"] == true {
+            1
+        } else if is(n, true) {
+            0
+        } else if is(n, false) {
+            2
+        } else {
+            3
+        };
+        let rank = if group == 0 {
+            engine::speed_test::speed_rank(s.min_mbps, floor, num(n, "mbps"), num(n, "ms"))
+        } else {
+            (9, 9e9)
+        };
+        (group, rank, tcp(n))
+    };
+    rows.sort_by(|a, b| {
+        let (x, y) = (key(a), key(b));
+        x.0.cmp(&y.0).then(x.1.0.cmp(&y.1.0)).then(x.1.1.total_cmp(&y.1.1)).then(x.2.total_cmp(&y.2))
+    });
+}
+
 impl Worker<'_> {
     // The slot count: the nodes in the main table, or 6 (slots)
     fn slots(&self) -> usize {
@@ -79,9 +135,13 @@ impl Worker<'_> {
             }
         }
         let total = c.len();
+        // the list shows at once while the pings run
+        crate::jobs::update_win(|w| {
+            w.cand.nodes = c.iter().map(|n| with(n, "pinging")).collect();
+        });
         let live = nm::probe(self.paths, &mut ssh, &mut c)?;
         let mut nodes: Vec<Value> = live.into_iter().map(|i| c[i].clone()).collect();
-        nodes.sort_by_key(|n| is(n, false)); // stable: fastest 443 first within each group
+        sort_rows(self.paths, &mut nodes);
         let msg = tr(
             "{ok} of {n} candidates answer on 443 from this PC. None is tunnel-tested yet.",
             &[("ok", nodes.len().to_string()), ("n", total.to_string())],
@@ -94,78 +154,84 @@ impl Worker<'_> {
 
     // Test the fastest untested candidates until a full set works or none are left (test)
     pub fn cand_test(&self) -> Result<(), String> {
-        self.cand_run(false)
+        self.test_nodes("fill")
     }
 
     // Test the next fastest untested candidates, even when a full set already works (more)
     pub fn cand_more(&self) -> Result<(), String> {
-        self.cand_run(true)
+        self.test_nodes("more")
     }
 
-    fn cand_run(&self, more: bool) -> Result<(), String> {
-        let mut nodes = std::mem::take(&mut self.w().cand.nodes);
-        let r = self.test_nodes(&mut nodes, more);
-        self.w().cand.nodes = nodes;
-        r
+    // Test every candidate, the old scan's failures too
+    pub fn cand_all(&self) -> Result<(), String> {
+        self.test_nodes("all")
     }
 
-    // more: one batch of the untested, then stop; else batches until a full set works
-    fn test_nodes(&self, nodes: &mut [Value], more: bool) -> Result<(), String> {
-        if nodes.is_empty() {
+    // fill: batches until a full set works; more: one batch of 50; all: batches of 50 until every candidate is tested.
+    // The rows update and sort as each test step finishes
+    fn test_nodes(&self, how: &str) -> Result<(), String> {
+        if self.w().cand.nodes.is_empty() {
             self.set_msg(tr("Nothing to test; ping first.", &[]));
             return Ok(());
         }
         let s = Settings::read(self.paths).unwrap_or_default();
-        let (k, top_n) = (self.slots(), if more { 50 } else { s.top.max(1) as usize });
+        let (k, top_n) = (self.slots(), if how == "fill" { s.top.max(1) as usize } else { 50 });
+        if how == "all" {
+            for n in self.w().cand.nodes.iter_mut().filter(|n| n.get("known") == Some(&json!(true))) {
+                if let Some(m) = n.as_object_mut() {
+                    for x in ["ok", "why", "known"] {
+                        m.shift_remove(x);
+                    }
+                }
+            }
+        }
         let mut ssh = RouterSsh { paths: self.paths };
-        let mut top: Vec<usize> = Vec::new();
+        let mut tried: HashSet<String> = HashSet::new();
         loop {
-            let batch: Vec<usize> =
-                (0..nodes.len()).filter(|i| untested(&nodes[*i]) && !top.contains(i)).take(top_n).collect();
+            let mut batch: Vec<Value> = {
+                let mut w = self.w();
+                let mut un: Vec<&mut Value> =
+                    w.cand.nodes.iter_mut().filter(|n| untested(n) && !tried.contains(&f(n, "server"))).collect();
+                un.sort_by(|a, b| tcp(a).total_cmp(&tcp(b)));
+                un.into_iter().take(top_n).map(|n| with(n, "testing")).collect()
+            };
             if batch.is_empty() {
                 break;
             }
-            let next = if top.is_empty() && !more { "" } else { " untested" };
-            say(&format!(
-                "candidates: this PC is testing the {} fastest{next}, 5 at a time (about 20 seconds)...",
-                batch.len()
-            ));
-            let mut b: Vec<Value> = batch.iter().map(|i| nodes[*i].clone()).collect();
-            let r = engine::node_tests::router_test(self.paths, &mut ssh, &mut b, true);
-            for (i, n) in batch.iter().zip(b) {
-                nodes[*i] = n;
-            }
+            let first = tried.is_empty();
+            tried.extend(batch.iter().map(|n| f(n, "server")));
+            crate::jobs::update_win(|w| merge(self.paths, &mut w.cand.nodes, &batch, false));
+            let next = if first && how == "fill" { "" } else { " untested" };
+            say(&format!("candidates: this PC is testing the {} fastest{next} (about a minute)...", batch.len()));
+            let paths = self.paths.clone();
+            engine::node_tests::on_progress(Some(Box::new(move |res: &[Value]| {
+                crate::jobs::update_win(|w| merge(&paths, &mut w.cand.nodes, res, false));
+            })));
+            let r = engine::node_tests::router_test(self.paths, &mut ssh, &mut batch, true);
+            engine::node_tests::on_progress(None);
+            crate::jobs::update_win(|w| merge(self.paths, &mut w.cand.nodes, &batch, true));
             r?;
-            top.extend(batch);
-            if more || engine::process::cancelled() || nm::best_first(self.paths, nodes).len() >= k {
+            let full = how == "fill" && nm::best_first(self.paths, &self.w().cand.nodes).len() >= k;
+            if how == "more" || full || engine::process::cancelled() {
                 break;
             }
         }
-        if more && top.is_empty() {
+        if how != "fill" && tried.is_empty() {
             self.set_msg(tr("Every candidate is tested already. Ping and test again for a fresh list.", &[]));
             return Ok(());
         }
         // every candidate the test has run on, this time and before; the old scan's failures do not count
-        let top: Vec<usize> =
-            (0..nodes.len()).filter(|&i| !untested(&nodes[i]) && nodes[i].get("known") != Some(&json!(true))).collect();
-        let tested: Vec<Value> = top.iter().map(|i| nodes[*i].clone()).collect();
+        let tested: Vec<Value> = self
+            .w()
+            .cand
+            .nodes
+            .iter()
+            .filter(|n| !untested(n) && n.get("known") != Some(&json!(true)))
+            .cloned()
+            .collect();
         let ok = nm::best_first(self.paths, &tested);
-        let floor = engine::node_tests::floor_now(self.paths, s.min_mbps, now());
-        let num = |n: &Value, k: &str| n.get(k).and_then(Value::as_f64);
-        let key = |n: &Value| {
-            let rank = if is(n, true) {
-                engine::speed_test::speed_rank(s.min_mbps, floor, num(n, "mbps"), num(n, "ms"))
-            } else {
-                (9, 9e9)
-            };
-            (!is(n, true), rank, num(n, "tcp_ms").unwrap_or(f64::INFINITY))
-        };
-        nodes.sort_by(|a, b| {
-            let (x, y) = (key(a), key(b));
-            x.0.cmp(&y.0).then(x.1.0.cmp(&y.1.0)).then(x.1.1.total_cmp(&y.1.1)).then(x.2.total_cmp(&y.2))
-        });
         let mut msg =
-            tr("{ok} of {n} tested candidates work.", &[("ok", ok.len().to_string()), ("n", top.len().to_string())]);
+            tr("{ok} of {n} tested candidates work.", &[("ok", ok.len().to_string()), ("n", tested.len().to_string())]);
         msg += " ";
         msg += &match ok.first() {
             Some(b) => tr(
@@ -365,7 +431,19 @@ pub fn view(paths: &engine::paths::Paths, w: &crate::window_state::Win) -> Value
         .nodes
         .iter()
         .map(|n| {
-            let (state, res) = if is(n, true) {
+            let (state, res) = if n["pinging"] == true {
+                ("test", tr("Pinging 443...", &[]))
+            } else if n["testing"] == true && is(n, true) {
+                (
+                    "test",
+                    tr(
+                        "Answers through the tunnel, {ms} ms; testing that it holds and its speed...",
+                        &[("ms", f(n, "ms"))],
+                    ),
+                )
+            } else if n["testing"] == true && !is(n, false) {
+                ("test", tr("Testing...", &[]))
+            } else if is(n, true) {
                 ("ok", tr("Works, {ms} ms in the test, exit {ip}", &[("ms", f(n, "ms")), ("ip", f(n, "exit"))]))
             } else if is(n, false) {
                 let why = if has(n, "why") { f(n, "why") } else { "?".into() };

@@ -11,6 +11,7 @@ let snap = null, sel = null, logShown = true, built = '';
 const TIPS = {
   'Ping and test again': 'Downloads the node list again, pings port 443 of each candidate from this PC, then tests the fastest with a separate copy of sing-box: a real handshake and download through each. Runs on its own when this window opens.',
   'Test 50 more': 'Tests the next 50 fastest candidates that are not tested yet, even when 6 already work. Use it to find more working nodes to pick from.',
+  'Test all': 'Tests every candidate, 50 at a time, including the ones that failed the last scan. It can take several minutes; Cancel stops it.',
   'Replace all 6 with the best 6': 'Puts the 6 fastest tunnel-tested candidates into your slots (it tests first if too few passed), restarts the tunnel, checks every slot and closes this window.',
   'Put picked in slots': 'Puts the candidates you picked into the slots, in the order you clicked them, restarts the tunnel and checks them.',
   'Test PC tunnel': 'Tests the nodes in your slots through the running PC tunnel, as Check now does. Restart first after a change.',

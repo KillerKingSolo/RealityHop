@@ -302,7 +302,9 @@ fn cand_open(app: AppHandle, ctx: State<Ctx>) {
 fn cand_close(app: AppHandle, ctx: State<Ctx>) {
     let mut w = ctx.win.lock().unwrap_or_else(|e| e.into_inner());
     w.cand.open = false;
-    w.jobs.retain(|j| j.name != "cand_scan" && j.name != "cand_more" && j.name != "cand_test_tunnel");
+    w.jobs.retain(|j| {
+        j.name != "cand_scan" && j.name != "cand_more" && j.name != "cand_all" && j.name != "cand_test_tunnel"
+    });
     drop(w);
     jobs::changed(&app);
 }

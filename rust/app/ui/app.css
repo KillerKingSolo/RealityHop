@@ -115,6 +115,7 @@ tbody tr { cursor: default; }
 tbody tr:nth-child(even) > td { background: var(--row2); }
 tbody td:first-child { border-radius: var(--r-ctl) 0 0 var(--r-ctl); } tbody td:last-child { border-radius: 0 var(--r-ctl) var(--r-ctl) 0; }
 tr.ok td { color: var(--row-ok); } tr.warn td { color: var(--row-warn); } tr.bad td { color: var(--row-bad); } tr.unk td { color: var(--muted); }
+tr.test td { color: var(--fg); background: var(--hover); } /* in a test right now */
 tr.broken > td { background: var(--broken-bg) !important; } tr.broken td { color: var(--row-broken); }
 tr.sel > td { background: var(--sel) !important; } tr.sel td { color: var(--fg); }
 .grab { cursor: grab; text-decoration: underline dotted; text-underline-offset: 3px; padding: 0 2px; }
