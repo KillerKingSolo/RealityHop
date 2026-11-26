@@ -4,6 +4,19 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 2.1.3 (2026-11-25)
+
+**Why update:** more nodes to choose from, speed tests that no longer fail good nodes, and Candidates shows each test as it runs.
+
+- Fixed: the speed and lasting-connection tests failed good nodes when CacheFly sent a stand-in page. They switch to Cloudflare then.
+- Fixed: a kept node that failed its test after a swap could be marked working. It is now replaced or marked failed.
+- Fixed: node test failures during a PIA drop counted against the node. They are no longer counted.
+- Fixed: the Fix buttons dropped the selected node when no spare tested better. They keep it.
+- Changed: the node list also comes from [morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config), read first, next to FastNodes. The app, docs and LICENSE name it.
+- Changed: slow nodes, 0 Mbps included, get a speed test of their own.
+- Changed: Candidates shows each test as it runs and sorts rows as pings and results arrive. It has a Test all button. A row shows a blank 443 ping while pinging and no "?" while a failure's reason is found. The log counts failure reasons.
+- Changed: the busy bar fills left to right over the time the action took last time, and also shows on top of each open dialog.
+
 ## 2.1.2 (2026-11-25)
 
 **Why update:** the node list downloads again, the Mac tunnel stays up through PIA changes, and scans find real working nodes faster.
