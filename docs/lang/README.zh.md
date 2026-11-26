@@ -28,7 +28,7 @@
 - 带有“VPN 封锁”的路由器，以及限速或封锁 VPN 流量的网络运营商
 - 过滤互联网的国家和地区，例如中国的防火长城、俄罗斯、伊朗、土库曼斯坦和阿联酋
 
-它从 [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes) 获取免费的公共节点，自己测试，使用最快的可用节点，并自动替换失效的节点。
+它从 [morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config) 和 [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes) 获取免费的公共节点，自己测试，使用最快的可用节点，并自动替换失效的节点。
 
 **更新内容：**[CHANGELOG.md](../../CHANGELOG.md)（最新版本在前）· **下载：**[最新版本](https://github.com/KillerKingSolo/RealityHop/releases/latest)
 
@@ -129,7 +129,7 @@ Settings → Protocols：Protocol **OpenVPN**，Transport **TCP**，Remote Port 
 
 ## 节点从哪里来
 
-- **节点列表：** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes) 的文件 [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt)。Reality Hop 只保留端口 443 上、使用知名伪装站点的 VLESS + REALITY + XTLS-Vision 节点。然后自己测试；不信任列表自带的验证。
+- **节点列表：** [morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config) 的文件 [`subs/bundles/reality.txt`](https://raw.githubusercontent.com/morpheusadam/v2ray-config/main/subs/bundles/reality.txt)；[rtwo2/FastNodes](https://github.com/rtwo2/FastNodes) 的文件 [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt)。Reality Hop 只保留端口 443 上、使用知名伪装站点的 VLESS + REALITY + XTLS-Vision 节点。然后自己测试；不信任列表自带的验证。
 - **隧道引擎：** [SagerNet/sing-box](https://github.com/SagerNet/sing-box)，从其官方 GitHub 发布下载。稳定版是最新的正式版；测试版是所有版本中最新的，包括 alpha 和 beta。会校验 SHA-256，新版本必须接受配置后才会替换旧版本。在你的电脑上，它以 `rh-core.exe` 运行。
 - **路由器引擎：** Reality Hop 为 arm64 路由器自建的 sing-box，从官方源代码构建，去掉了路由器用不到的部分（18 MB，GL.iNet 的 1.9.7 软件包为 27 MB）。除非在设置中为路由器指定单独的渠道，否则它跟随电脑的渠道。Reality Hop 在更新路由器前会先询问，把旧版本保留在路由器的内存中，如果新版本无法启动就恢复旧版本。路由器的 Plug-ins 页面仍显示 GL.iNet 的 1.9.7 软件包；侧边栏显示实际运行的版本。构建和检查方式：[`router-core/`](../../router-core/README.md)（英文）。
 - **协议：** 带 REALITY 和 XTLS-Vision 的 VLESS，来自 [XTLS](https://github.com/XTLS)。
@@ -187,8 +187,8 @@ cargo run -p realityhop-app
 
 [CC BY-NC-ND 4.0](../../LICENSE)（知识共享 署名-非商业性使用-禁止演绎 4.0）。简而言之：
 
-- **原样分享并注明出处：** KillerKingSolo 的 Reality Hop、SagerNet 的 sing-box 和 rtwo2 的 FastNodes，并附上它们的链接（见 [LICENSE](../../LICENSE)）。
+- **原样分享并注明出处：** KillerKingSolo 的 Reality Hop、SagerNet 的 sing-box、morpheusadam 的 v2ray-config 和 rtwo2 的 FastNodes，并附上它们的链接（见 [LICENSE](../../LICENSE)）。
 - **不得修改：** 你不能分享修改过的副本。
 - **不得商用：** 你不能出售它或将其用于盈利。
 
-超出这些范围需要获得许可。sing-box（GPL-3.0-or-later）和 FastNodes（MIT）是独立的项目，使用各自的许可证；Reality Hop 在运行时下载它们，不随附分发。
+超出这些范围需要获得许可。sing-box（GPL-3.0-or-later）和 FastNodes（MIT）是独立的项目，使用各自的许可证；Reality Hop 在运行时下载它们，不随附分发。morpheusadam/v2ray-config 未声明许可证；Reality Hop 只在运行时下载其列表。

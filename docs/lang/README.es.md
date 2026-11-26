@@ -28,7 +28,7 @@ grande, como cloudflare.com. Está hecho para redes que bloquean las VPN:
 - Routers con «bloqueo de VPN» y proveedores de internet que frenan o bloquean el tráfico VPN
 - Países que filtran internet, como la Gran Muralla de China, Rusia, Irán, Turkmenistán y los EAU
 
-Toma nodos públicos gratuitos de [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), los prueba él mismo, usa los
+Toma nodos públicos gratuitos de [morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config) y [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), los prueba él mismo, usa los
 más rápidos que funcionan y sustituye los caídos por sí solo.
 
 **Novedades:** [CHANGELOG.md](../../CHANGELOG.md) (la versión más nueva primero) · **Descarga:** [última versión](https://github.com/KillerKingSolo/RealityHop/releases/latest)
@@ -178,7 +178,8 @@ Aplicaciones → Aplicaciones instaladas → Reality Hop y Ajustes → Desinstal
 
 ## De dónde vienen los nodos
 
-- **Lista de nodos:** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), archivo
+- **Listas de nodos:** [morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config), archivo
+  [`subs/bundles/reality.txt`](https://raw.githubusercontent.com/morpheusadam/v2ray-config/main/subs/bundles/reality.txt); [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), archivo
   [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt). Reality Hop
   solo conserva nodos VLESS + REALITY + XTLS-Vision en el puerto 443 que usan un sitio de fachada conocido. Luego los
   prueba él mismo; no se fía de la verificación de la lista.
@@ -257,10 +258,10 @@ Detalles, la compilación para Mac y los pasos de publicación: [docs/building.m
 
 [CC BY-NC-ND 4.0](../../LICENSE) (Creative Commons Atribución-NoComercial-SinDerivadas 4.0). En resumen:
 
-- **Compártelo sin cambios y con crédito:** Reality Hop de KillerKingSolo, sing-box de SagerNet y FastNodes de rtwo2,
+- **Compártelo sin cambios y con crédito:** Reality Hop de KillerKingSolo, sing-box de SagerNet, v2ray-config de morpheusadam y FastNodes de rtwo2,
   con sus enlaces (ver [LICENSE](../../LICENSE)).
 - **Sin versiones modificadas:** no puedes compartir una copia editada.
 - **Sin uso comercial:** no puedes venderlo ni usarlo con fines de lucro.
 
 Cualquier otra cosa requiere permiso. sing-box (GPL-3.0-or-later) y FastNodes (MIT) son proyectos aparte con sus
-propias licencias; Reality Hop los descarga al ejecutarse y no los incluye.
+propias licencias; Reality Hop los descarga al ejecutarse y no los incluye. morpheusadam/v2ray-config no indica licencia; Reality Hop solo descarga su lista al ejecutarse.

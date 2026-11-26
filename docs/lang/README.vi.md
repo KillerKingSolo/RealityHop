@@ -28,7 +28,7 @@ chẳng hạn cloudflare.com. Nó được làm cho các mạng chặn VPN:
 - Router có tính năng "chặn VPN", và nhà mạng làm chậm hoặc chặn lưu lượng VPN
 - Các quốc gia lọc internet, như Vạn lý tường lửa của Trung Quốc, Nga, Iran, Turkmenistan và UAE
 
-Nó lấy các nút công cộng miễn phí từ [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), tự kiểm tra chúng, dùng các
+Nó lấy các nút công cộng miễn phí từ [morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config) và [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), tự kiểm tra chúng, dùng các
 nút hoạt động nhanh nhất và tự thay các nút hỏng.
 
 **Có gì mới:** [CHANGELOG.md](../../CHANGELOG.md) (phiên bản mới nhất trước) · **Tải về:** [bản phát hành mới nhất](https://github.com/KillerKingSolo/RealityHop/releases/latest)
@@ -168,7 +168,8 @@ cài → Reality Hop, và Cài đặt → Gỡ cài đặt ngay trong Reality Ho
 
 ## Các nút đến từ đâu
 
-- **Danh sách nút:** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), file
+- **Các danh sách nút:** [morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config), file
+  [`subs/bundles/reality.txt`](https://raw.githubusercontent.com/morpheusadam/v2ray-config/main/subs/bundles/reality.txt); [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), file
   [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt). Reality Hop
   chỉ giữ các nút VLESS + REALITY + XTLS-Vision trên cổng 443 dùng một trang ngụy trang nổi tiếng. Sau đó nó tự kiểm
   tra; nó không tin vào việc xác minh của chính danh sách.
@@ -245,10 +246,10 @@ Chi tiết, bản build cho Mac và các bước phát hành: [docs/building.md]
 
 [CC BY-NC-ND 4.0](../../LICENSE) (Creative Commons Ghi công-Phi thương mại-Không phái sinh 4.0). Tóm lại:
 
-- **Chia sẻ nguyên vẹn, có ghi công:** Reality Hop của KillerKingSolo, sing-box của SagerNet và FastNodes của rtwo2,
+- **Chia sẻ nguyên vẹn, có ghi công:** Reality Hop của KillerKingSolo, sing-box của SagerNet, v2ray-config của morpheusadam và FastNodes của rtwo2,
   kèm liên kết của chúng (xem [LICENSE](../../LICENSE)).
 - **Không có bản sửa đổi:** bạn không được chia sẻ một bản đã chỉnh sửa.
 - **Không dùng cho mục đích thương mại:** bạn không được bán hay dùng nó để kiếm lợi nhuận.
 
 Mọi điều ngoài phạm vi đó cần xin phép. sing-box (GPL-3.0-or-later) và FastNodes (MIT) là các dự án riêng với giấy phép
-riêng; Reality Hop tải chúng khi chạy và không đóng gói kèm theo.
+riêng; Reality Hop tải chúng khi chạy và không đóng gói kèm theo. morpheusadam/v2ray-config không nêu giấy phép; Reality Hop chỉ tải danh sách của nó khi chạy.

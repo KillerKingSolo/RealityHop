@@ -27,7 +27,7 @@ such as cloudflare.com. It is made for networks that block VPNs:
 - Countries that filter the internet, such as China's Great Firewall, Russia, Iran, Turkmenistan and the UAE
 
 It finds free
-public nodes from [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), tests them itself, keeps the fastest working ones in use and replaces dead
+public nodes from [morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config) and [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), tests them itself, keeps the fastest working ones in use and replaces dead
 ones on its own.
 
 **What's new:** [CHANGELOG.md](CHANGELOG.md) (newest version first) · **Download:** [latest release](../../releases/latest)
@@ -169,10 +169,12 @@ OpenVPN config file, use `proto tcp`, the server's port `443`, and add `socks-pr
 
 ## Where the nodes come from
 
-- **Node list:** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), file
+- **Node lists:** [morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config), file
+  [`subs/bundles/reality.txt`](https://raw.githubusercontent.com/morpheusadam/v2ray-config/main/subs/bundles/reality.txt); [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), file
   [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt). Reality Hop
   keeps only VLESS + REALITY + XTLS-Vision nodes on port 443 that use a well-known front site. It then tests them
-  itself; the list's own verification is not trusted.
+  itself; the lists' own verification is not trusted. When a server is on both lists, morpheusadam's entry is
+  used: in tests its credentials worked wherever FastNodes' did, and on some servers where they did not.
 - **Tunnel engine:** [SagerNet/sing-box](https://github.com/SagerNet/sing-box), downloaded from its official GitHub
   releases. Stable is the newest full release; test builds are the newest of all, alpha and beta included. The SHA-256
   checksum is checked, and the new build must accept the config before it replaces the old one. On your PC it runs as
@@ -245,10 +247,12 @@ Details, the Mac build and the release steps: [docs/building.md](docs/building.m
 
 [CC BY-NC-ND 4.0](LICENSE) (Creative Commons Attribution-NonCommercial-NoDerivatives 4.0). In short:
 
-- **Share it unchanged, with credit:** Reality Hop by KillerKingSolo, sing-box by SagerNet and FastNodes by rtwo2, with
+- **Share it unchanged, with credit:** Reality Hop by KillerKingSolo, sing-box by SagerNet, v2ray-config by morpheusadam and FastNodes
+  by rtwo2, with
   their links (see [LICENSE](LICENSE)).
 - **No changed versions:** you may not share an edited copy.
 - **No commercial use:** you may not sell it or use it for profit.
 
 Anything beyond that needs permission. sing-box (GPL-3.0-or-later) and FastNodes (MIT) are separate projects under
 their own licenses; Reality Hop downloads them at run time and does not ship them.
+morpheusadam/v2ray-config states no license; Reality Hop only downloads its list at run time.

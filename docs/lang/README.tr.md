@@ -28,7 +28,7 @@ HTTPS gibi görünür. VPN'leri engelleyen ağlar için yapılmıştır:
 - "VPN engelleme" özelliği olan router'lar ve VPN trafiğini yavaşlatan ya da engelleyen internet sağlayıcıları
 - İnterneti filtreleyen Ülkeler: Çin'in Büyük Güvenlik Duvarı, Rusya, İran, Türkmenistan ve BAE gibi
 
-[rtwo2/FastNodes](https://github.com/rtwo2/FastNodes) üzerinden ücretsiz herkese açık düğümleri bulur, kendisi test
+[morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config) ve [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes) üzerinden ücretsiz herkese açık düğümleri bulur, kendisi test
 eder, çalışan en hızlıları kullanır ve çalışmayanları kendiliğinden değiştirir.
 
 **Yenilikler:** [CHANGELOG.md](../../CHANGELOG.md) (en yeni sürüm önce) · **İndir:** [son sürüm](https://github.com/KillerKingSolo/RealityHop/releases/latest)
@@ -178,7 +178,8 @@ uygulamalar → Reality Hop ve Reality Hop'un kendi Ayarlar → Kaldır seçene�
 
 ## Düğümler nereden geliyor
 
-- **Düğüm listesi:** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), dosya
+- **Düğüm listeleri:** [morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config), dosya
+  [`subs/bundles/reality.txt`](https://raw.githubusercontent.com/morpheusadam/v2ray-config/main/subs/bundles/reality.txt); [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), dosya
   [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt). Reality Hop
   yalnızca 443 portunda, bilinen bir ön site kullanan VLESS + REALITY + XTLS-Vision düğümlerini tutar. Sonra onları
   kendisi test eder; listenin kendi doğrulamasına güvenmez.
@@ -258,10 +259,10 @@ Ayrıntılar, Mac derlemesi ve sürüm adımları: [docs/building.md](../buildin
 
 [CC BY-NC-ND 4.0](../../LICENSE) (Creative Commons Atıf-GayriTicari-Türetilemez 4.0). Kısaca:
 
-- **Değiştirmeden ve atıf yaparak paylaşın:** KillerKingSolo'nun Reality Hop'u, SagerNet'in sing-box'ı ve rtwo2'nin
+- **Değiştirmeden ve atıf yaparak paylaşın:** KillerKingSolo'nun Reality Hop'u, SagerNet'in sing-box'ı, morpheusadam'ın v2ray-config'i ve rtwo2'nin
   FastNodes'u, bağlantılarıyla birlikte (bkz. [LICENSE](../../LICENSE)).
 - **Değiştirilmiş sürüm yok:** düzenlenmiş bir kopyayı paylaşamazsınız.
 - **Ticari kullanım yok:** satamaz ya da kâr için kullanamazsınız.
 
 Bunun ötesindeki her şey izin gerektirir. sing-box (GPL-3.0-or-later) ve FastNodes (MIT), kendi lisanslarına sahip
-ayrı projelerdir; Reality Hop onları çalışırken indirir ve kendisiyle birlikte dağıtmaz.
+ayrı projelerdir; Reality Hop onları çalışırken indirir ve kendisiyle birlikte dağıtmaz. morpheusadam/v2ray-config bir lisans belirtmez; Reality Hop onun listesini yalnızca çalışırken indirir.

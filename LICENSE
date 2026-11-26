@@ -10,14 +10,16 @@ In short (the license text below is what counts):
 - Every copy must give this credit (Section 3(a) of the license), with these links:
     Reality Hop by KillerKingSolo: https://github.com/KillerKingSolo/RealityHop
     Tunnel engine: sing-box by SagerNet: https://github.com/SagerNet/sing-box
-    Node list: FastNodes by rtwo2: https://github.com/rtwo2/FastNodes
+    Node lists: v2ray-config by morpheusadam: https://github.com/morpheusadam/v2ray-config
+                FastNodes by rtwo2: https://github.com/rtwo2/FastNodes
   and keep this notice and a link to the license.
 - You may not share changed versions (Adapted Material).
 - You may not sell it or use it for commercial purposes.
 - For anything beyond this license, ask the copyright holder.
 
 sing-box and FastNodes are separate projects under their own licenses (sing-box: GPL-3.0-or-later; FastNodes: MIT).
-Reality Hop does not contain their code: it downloads sing-box from its official releases, and the node list, at run
+morpheusadam/v2ray-config states no license.
+Reality Hop does not contain their code: it downloads sing-box from its official releases, and the node lists, at run
 time. Crediting them does not mean that they endorse Reality Hop.
 
 -----------------------------------------------------------------------

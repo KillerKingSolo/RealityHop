@@ -30,7 +30,7 @@ VLESS + REALITY ([sing-box](https://github.com/SagerNet/sing-box)) می‌پیچ
 - روترهایی با «مسدودسازی VPN» و ارائه‌دهندگان اینترنتی که ترافیک VPN را کند یا مسدود می‌کنند
 - کشورهایی که اینترنت را فیلتر می‌کنند، مانند دیوار آتش بزرگ چین، روسیه، ایران، ترکمنستان و امارات
 
-گره‌های عمومی رایگان را از [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes) می‌گیرد، خودش آن‌ها را آزمایش
+گره‌های عمومی رایگان را از [morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config) و [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes) می‌گیرد، خودش آن‌ها را آزمایش
 می‌کند، سریع‌ترین گره‌های سالم را به کار می‌برد و گره‌های از کار افتاده را خودش جایگزین می‌کند.
 
 **تازه‌ها:** [CHANGELOG.md](../../CHANGELOG.md) (جدیدترین نسخه اول) · **دانلود:** [آخرین نسخه](https://github.com/KillerKingSolo/RealityHop/releases/latest)
@@ -173,7 +173,8 @@ Installed apps → Reality Hop و تنظیمات → حذف برنامه در خ
 
 ## گره‌ها از کجا می‌آیند
 
-- **فهرست گره‌ها:** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes)، فایل
+- **فهرست‌های گره:** [morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config)، فایل
+  [`subs/bundles/reality.txt`](https://raw.githubusercontent.com/morpheusadam/v2ray-config/main/subs/bundles/reality.txt)؛ [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes)، فایل
   [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt). Reality Hop
   فقط گره‌های VLESS + REALITY + XTLS-Vision روی پورت 443 را نگه می‌دارد که از یک سایت پوششی شناخته‌شده استفاده
   می‌کنند. سپس خودش آن‌ها را آزمایش می‌کند؛ به تأیید خود فهرست اعتماد نمی‌کند.
@@ -252,12 +253,12 @@ cargo run -p realityhop-app
 
 [CC BY-NC-ND 4.0](../../LICENSE) (کریتیو کامنز انتساب-غیرتجاری-بدون اشتقاق 4.0). به‌طور خلاصه:
 
-- **بدون تغییر و با ذکر منبع به اشتراک بگذارید:** Reality Hop از KillerKingSolo، sing-box از SagerNet و FastNodes از
+- **بدون تغییر و با ذکر منبع به اشتراک بگذارید:** Reality Hop از KillerKingSolo، sing-box از SagerNet، v2ray-config از morpheusadam و FastNodes از
   rtwo2، همراه با پیوندهایشان (نگاه کنید به [LICENSE](../../LICENSE)).
 - **بدون نسخه تغییریافته:** نمی‌توانید نسخه ویرایش‌شده را به اشتراک بگذارید.
 - **بدون استفاده تجاری:** نمی‌توانید آن را بفروشید یا برای سود استفاده کنید.
 
 هر چیزی فراتر از این نیاز به اجازه دارد. sing-box (GPL-3.0-or-later) و FastNodes (MIT) پروژه‌های جداگانه با
-مجوزهای خودشان هستند؛ Reality Hop آن‌ها را هنگام اجرا دانلود می‌کند و همراه خود منتشر نمی‌کند.
+مجوزهای خودشان هستند؛ Reality Hop آن‌ها را هنگام اجرا دانلود می‌کند و همراه خود منتشر نمی‌کند. morpheusadam/v2ray-config مجوزی اعلام نکرده است؛ Reality Hop فقط فهرست آن را هنگام اجرا دانلود می‌کند.
 
 </div>

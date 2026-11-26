@@ -165,11 +165,12 @@ const PAGES = {
   async welcome() {
     await h(await T('Welcome to Reality Hop'));
     p(await T('Reality Hop hides your VPN inside a disguised connection. Networks that block VPNs (school, work, hotel, dorm and public Wi-Fi, routers with "VPN blocking", and countries that filter the internet, such as China, Russia or Iran) see only ordinary HTTPS to a big website such as cloudflare.com, so your VPN connects anyway.'));
-    p(await T('It runs sing-box with VLESS + REALITY, takes free public nodes from the FastNodes list, tests them from this PC, keeps the 6 fastest that work and replaces dead ones on its own.'));
+    p(await T('It runs sing-box with VLESS + REALITY, takes free public nodes from the morpheusadam and FastNodes lists, tests them from this PC, keeps the 6 fastest that work and replaces dead ones on its own.'));
     const row = el('div', 'wz-links');
-    for (const [label, text, url] of [['Nodes:', 'github.com/rtwo2/FastNodes', 'https://github.com/rtwo2/FastNodes'],
+    for (const [label, text, url] of [['Nodes:', 'github.com/morpheusadam/v2ray-config', 'https://github.com/morpheusadam/v2ray-config'],
+      ['', 'github.com/rtwo2/FastNodes', 'https://github.com/rtwo2/FastNodes'],
       ['Tunnel engine:', 'github.com/SagerNet/sing-box', 'https://github.com/SagerNet/sing-box']]) {
-      row.append(el('span', 'muted', await T(label)));
+      if (label) row.append(el('span', 'muted', await T(label)));
       link(text, url, row);
     }
     body().append(row);
@@ -188,7 +189,7 @@ const PAGES = {
     p(await T('This step:'));
     items([...(info.frozen && !info.mac ? [await T('Copies Reality Hop into its install folder and adds it to the Start menu (one admin prompt). Everything it keeps stays in that folder (settings, nodes, logs, the tunnel engine); only your Windows account can open it, and Reality Hop updates itself there without asking again')] : []),
       await T('Downloads sing-box from its official releases (github.com/SagerNet/sing-box, about 35 MB) and checks its SHA-256 checksum'),
-      await T('Downloads the public node list (github.com/rtwo2/FastNodes), tests the {top} fastest candidates from this PC and keeps the 6 fastest that work (about a minute)', { top: info.top }),
+      await T('Downloads the public node lists (github.com/morpheusadam/v2ray-config, github.com/rtwo2/FastNodes), tests the {top} fastest candidates from this PC and keeps the 6 fastest that work (about a minute)', { top: info.top }),
       await T('Starts the tunnel on 127.0.0.1:2080')]);
     if (info.frozen && info.first_install) {   // first install: the folder can be chosen
       const row = el('div', 'btnrow');

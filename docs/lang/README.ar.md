@@ -30,7 +30,7 @@ cloudflare.com. صُنع للشبكات التي تحظر VPN:
 - أجهزة الراوتر التي تحظر VPN، ومزوّدو الإنترنت الذين يبطئون أو يحظرون حركة VPN
 - الدول التي تُرشِّح الإنترنت، مثل جدار الحماية العظيم في الصين وروسيا وإيران وتركمانستان والإمارات
 
-يأخذ عُقدًا عامة مجانية من [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes)، ويختبرها بنفسه، ويستخدم الأسرع
+يأخذ عُقدًا عامة مجانية من [morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config) و[rtwo2/FastNodes](https://github.com/rtwo2/FastNodes)، ويختبرها بنفسه، ويستخدم الأسرع
 منها التي تعمل، ويستبدل المعطلة تلقائيًا.
 
 **الجديد:** [CHANGELOG.md](../../CHANGELOG.md) (الأحدث أولًا) · **التنزيل:** [أحدث إصدار](https://github.com/KillerKingSolo/RealityHop/releases/latest)
@@ -169,7 +169,8 @@ Settings → Protocols: Protocol **OpenVPN**، Transport **TCP**، Remote Port *
 
 ## من أين تأتي العقد
 
-- **قائمة العقد:** [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes)، الملف
+- **قوائم العقد:** [morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config)، الملف
+  [`subs/bundles/reality.txt`](https://raw.githubusercontent.com/morpheusadam/v2ray-config/main/subs/bundles/reality.txt)؛ و[rtwo2/FastNodes](https://github.com/rtwo2/FastNodes)، الملف
   [`sub/verified_tls.txt`](https://raw.githubusercontent.com/rtwo2/FastNodes/outputs/sub/verified_tls.txt). يحتفظ
   Reality Hop فقط بعقد VLESS + REALITY + XTLS-Vision على المنفذ 443 التي تستخدم موقع واجهة معروفًا. ثم يختبرها بنفسه؛
   ولا يثق بتحقق القائمة نفسها.
@@ -243,12 +244,12 @@ cargo run -p realityhop-app
 
 [CC BY-NC-ND 4.0](../../LICENSE) (المشاع الإبداعي، نسب المصنف - غير تجاري - منع الاشتقاق 4.0). باختصار:
 
-- **شاركه دون تغيير ومع نسبته لأصحابه:** Reality Hop من KillerKingSolo، وsing-box من SagerNet، وFastNodes من rtwo2،
+- **شاركه دون تغيير ومع نسبته لأصحابه:** Reality Hop من KillerKingSolo، وsing-box من SagerNet، وv2ray-config من morpheusadam، وFastNodes من rtwo2،
   مع روابطها (انظر [LICENSE](../../LICENSE)).
 - **لا نسخ معدّلة:** لا يجوز لك مشاركة نسخة محرَّرة.
 - **لا استخدام تجاري:** لا يجوز لك بيعه أو استخدامه لتحقيق الربح.
 
 أي شيء غير ذلك يحتاج إلى إذن. sing-box (GPL-3.0-or-later) وFastNodes (MIT) مشروعان منفصلان بترخيصيهما الخاصين؛
-ينزّلهما Reality Hop وقت التشغيل ولا يوزّعهما معه.
+ينزّلهما Reality Hop وقت التشغيل ولا يوزّعهما معه. لا يذكر morpheusadam/v2ray-config أي ترخيص؛ ينزّل Reality Hop قائمته وقت التشغيل فقط.
 
 </div>

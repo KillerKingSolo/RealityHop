@@ -150,6 +150,7 @@ async function openSettings() {
   const links = el('div', 'links');
   for (const [text, url] of [[`github.com/${s.repo}`, `https://github.com/${s.repo}`],
     ["What's new (changelog)", `https://github.com/${s.repo}/blob/main/CHANGELOG.md`],
+    ['Nodes come from github.com/morpheusadam/v2ray-config', 'https://github.com/morpheusadam/v2ray-config'],
     ['Nodes come from github.com/rtwo2/FastNodes', 'https://github.com/rtwo2/FastNodes'],
     ['Tunnel engine: github.com/SagerNet/sing-box', 'https://github.com/SagerNet/sing-box']]) {
     const a = el('a', '', await T(text)); a.onclick = () => invoke('open_url', { url }); links.append(a);

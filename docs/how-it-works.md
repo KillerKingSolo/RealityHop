@@ -20,8 +20,9 @@ a big website.
 
 ## Finding nodes
 
-1. Download the public list ([rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), `sub/verified_tls.txt`). The
-   download is reused for 15 minutes. If GitHub is blocked, Reality Hop tries, in order: GitHub through the PC tunnel,
+1. Download the public lists ([morpheusadam/v2ray-config](https://github.com/morpheusadam/v2ray-config), `subs/bundles/reality.txt`, and
+   [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes), `sub/verified_tls.txt`) and merge them; when a server is on both, morpheusadam's entry is
+   used. The download is reused for 15 minutes. If GitHub is blocked, Reality Hop tries, in order: GitHub through the PC tunnel,
    the jsDelivr CDN mirrors, the router (when router features are on), and last the copy it kept from the previous good
    download (`feed-cache.txt`).
 2. Keep only VLESS + REALITY + XTLS-Vision, port 443, a numeric address, a well-formed key, and a front site from a
