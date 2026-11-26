@@ -118,7 +118,7 @@ fn a_node_that_cuts_a_lasting_connection_fails() {
     assert_eq!(nodes[3]["ok"], true);
 }
 
-// A node under the hard minimum fails after a test of its own; 0 Mbps fails at once
+// A node under the hard minimum fails after a test of its own; 0 Mbps from a shared test gets one too
 #[test]
 fn a_node_under_the_hard_minimum_fails_after_its_own_test() {
     use engine::node_tests::slow_out;
@@ -128,22 +128,28 @@ fn a_node_under_the_hard_minimum_fails_after_its_own_test() {
         json!({"ok": true, "mbps": 2}),
         json!({"ok": true, "mbps": 0}),
         json!({"ok": true}),
+        json!({"ok": true, "mbps": 0}),
     ];
     let asked = std::sync::Mutex::new(vec![]);
     slow_out(&mut nodes, 5, |i| {
         asked.lock().unwrap().push(i);
-        Ok(Some(if i == 2 { 9 } else { 1 }))
+        Ok(Some(match i {
+            2 => 9,
+            5 => 80,
+            _ => 1,
+        }))
     })
     .unwrap();
     let mut asked = asked.into_inner().unwrap();
     asked.sort();
-    assert_eq!(asked, vec![1, 2], "only the slow ones that moved some data are tested again");
+    assert_eq!(asked, vec![1, 2, 3, 5], "every slow one is tested again on its own");
     assert_eq!(nodes[0]["ok"], true);
     assert_eq!(nodes[1]["ok"], false);
     assert_eq!(nodes[1]["why"], "too slow: 1 Mbps (needs at least 5)");
     assert_eq!((nodes[2]["ok"].clone(), nodes[2]["mbps"].clone()), (json!(true), json!(9)));
     assert_eq!(nodes[3]["ok"], false);
     assert_eq!(nodes[4]["ok"], true, "untested speed keeps the node");
+    assert_eq!((nodes[5]["ok"].clone(), nodes[5]["mbps"].clone()), (json!(true), json!(80)), "starved, not slow");
 }
 
 // Older PC configs get the 1-minute re-test and the info log; values changed by hand stay
@@ -357,4 +363,17 @@ fn failures_during_a_pia_drop_do_not_count_except_wrong_certificates_and_keys() 
     let mut n = fresh();
     forgive_pia_drop(&mut n, 1000.0, 1060.0, f64::INFINITY);
     assert_eq!(n[0]["ok"], json!(false));
+}
+
+#[test]
+fn a_short_stand_in_page_is_not_the_test_file() {
+    use engine::node_tests::stand_in;
+    // CacheFly's "I just served you 100mb" page
+    assert!(stand_in(" 200 24 0.63"));
+    assert!(stand_in(" 200 24 0.63 0.61"));
+    // the file, or a slow node that ran out of time, or an HTTP error
+    assert!(!stand_in(" 200 655360 10.01"));
+    assert!(!stand_in(" 200 1200 4.0 3.9"));
+    assert!(!stand_in(" 000 0 10.0"));
+    assert!(!stand_in(" 404 120 0.3"));
 }

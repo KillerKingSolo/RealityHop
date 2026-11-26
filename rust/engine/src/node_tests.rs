@@ -20,6 +20,8 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 /// CacheFly's speed test file (anycast), fetched through the node.
 pub const SPEED_URL: &str = "https://cachefly.cachefly.net/100mb.test";
+/// The same test file from Cloudflare: some CacheFly sites answer with a 24-byte page instead of the file.
+pub const SPEED_URL_ALT: &str = "https://speed.cloudflare.com/__down?bytes=100000000";
 /// The handshake test fetches this through each node; it answers with the node's exit address.
 pub const EXIT_URL: &str = "https://api.ipify.org";
 
@@ -281,8 +283,8 @@ pub fn mbps(port: usize, secs: u64, give_up: bool, floor: i64) -> Result<Option<
     if give_up {
         rest.extend(["--speed-time", "2", "--speed-limit", &limit]);
     }
-    rest.extend(["-w", " %{http_code} %{size_download} %{time_total} %{time_starttransfer}", SPEED_URL]);
-    let out = run(&curl_via(port, &rest), None, Duration::from_secs(20), None).map_err(|e| e.to_string())?;
+    rest.extend(["-w", " %{http_code} %{size_download} %{time_total} %{time_starttransfer}"]);
+    let out = download(port, &rest, Duration::from_secs(20))?;
     Ok(match speed_test::parse_mbps(&out.stdout) {
         Speed::Mbps(m) => Some(m),
         Speed::Unknown => None,
@@ -369,20 +371,31 @@ pub const HARD_MIN_MBPS: i64 = 5;
 pub fn hold(port: usize) -> Result<Option<Option<f64>>, String> {
     let secs = HOLD_SECS.to_string();
     let null = if cfg!(windows) { "nul" } else { "/dev/null" };
-    let rest = [
-        "-o",
-        null,
-        "-m",
-        &secs,
-        "--limit-rate",
-        "64k",
-        "-w",
-        " %{http_code} %{size_download} %{time_total}",
-        SPEED_URL,
-    ];
-    let out =
-        run(&curl_via(port, &rest), None, Duration::from_secs(HOLD_SECS + 10), None).map_err(|e| e.to_string())?;
+    let rest = ["-o", null, "-m", &secs, "--limit-rate", "64k", "-w", " %{http_code} %{size_download} %{time_total}"];
+    let out = download(port, &rest, Duration::from_secs(HOLD_SECS + 10))?;
     Ok(hold_result(&out.stdout))
+}
+
+// A download of the test file through one test port with curl's -w output (http_code size_download time_total first).
+// A short 200 answer is a stand-in page, not the file: the download runs again from the other host
+fn download(port: usize, rest: &[&str], limit: Duration) -> Result<crate::process::Output, String> {
+    let with = |url: &str| {
+        let mut r: Vec<&str> = rest.to_vec();
+        r.push(url);
+        run(&curl_via(port, &r), None, limit, None).map_err(|e| e.to_string())
+    };
+    let out = with(SPEED_URL)?;
+    if stand_in(&out.stdout) { with(SPEED_URL_ALT) } else { Ok(out) }
+}
+
+/// The most a stand-in page can be (CacheFly's is 24 bytes).
+const STAND_IN_BYTES: f64 = 4096.0;
+
+// curl's -w output says the answer was a short page that finished on its own: 200, a few bytes, within 3 s
+pub fn stand_in(stdout: &str) -> bool {
+    let w: Vec<&str> = stdout.split(crate::python_compat::is_space).filter(|w| !w.is_empty()).collect();
+    let num = |s: &str| s.parse::<f64>().unwrap_or(f64::INFINITY);
+    matches!(w.as_slice(), [code, size, total, ..] if *code == "200" && num(size) < STAND_IN_BYTES && num(total) < 3.0)
 }
 
 // curl's ' %{http_code} %{size_download} %{time_total}' output of the lasting-connection test, as hold() returns it
@@ -413,8 +426,8 @@ pub fn hold_out(
     Ok(())
 }
 
-// Fail the working nodes under hard Mbps. One that was slow while sharing the line gets a test again first, up to 8
-// at once: hard is a few Mbps, so sharing the line hardly matters; test(i) is that test on node i. None from it
+// Fail the working nodes under hard Mbps. One that was slow while sharing the line gets a test of its own again
+// first; test(i) is that test on node i. None from it
 // (HTTP error) keeps the node
 pub fn slow_out(
     nodes: &mut [Value],
@@ -423,9 +436,10 @@ pub fn slow_out(
 ) -> Result<(), String> {
     let mbps = |n: &Value| n.get("mbps").and_then(Value::as_i64);
     let again: Vec<usize> = (0..nodes.len())
-        .filter(|&i| nodes[i].get("ok") == Some(&json!(true)) && mbps(&nodes[i]).is_some_and(|m| m > 0 && m < hard))
+        .filter(|&i| nodes[i].get("ok") == Some(&json!(true)) && mbps(&nodes[i]).is_some_and(|m| m < hard))
         .collect();
-    let got = pool(8, again.len(), |k| test(again[k]));
+    // one at a time: nodes on one host share its line, so tests side by side fail fast nodes as too slow
+    let got = pool(1, again.len(), |k| test(again[k]));
     let mut retest = std::collections::HashMap::new();
     for (&i, r) in again.iter().zip(got) {
         retest.insert(i, r?);
@@ -435,13 +449,12 @@ pub fn slow_out(
         if n.get("ok") != Some(&json!(true)) || m >= hard {
             continue;
         }
-        if m > 0 {
-            match retest.get(&i).copied().flatten() {
-                Some(again) => m = m.max(again),
-                None => continue,
-            }
-            set(n, "mbps", m.into());
+        // 0 gets its test again too: a shared test can starve a node completely
+        match retest.get(&i).copied().flatten() {
+            Some(again) => m = m.max(again),
+            None => continue,
         }
+        set(n, "mbps", m.into());
         if m < hard {
             set(n, "ok", json!(false));
             set(n, "why", json!(format!("too slow: {m} Mbps (needs at least {hard})")));
