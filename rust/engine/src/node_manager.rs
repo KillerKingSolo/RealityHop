@@ -509,10 +509,36 @@ pub fn replace(
         for (&i, n) in kept.iter().zip(k) {
             cur[i] = n;
         }
+        // a kept node that failed this test is swapped for the next spare; with none left it stays, marked as failed
+        for &i in &kept {
+            if cur[i]["ok"] != false {
+                continue;
+            }
+            let why = field(&cur[i], "why");
+            let Some(s) = spares.next() else {
+                say(&format!(
+                    "vless-{}: {} failed the test ({why}); no spare left, so it stays",
+                    i + 1,
+                    field(&cur[i], "server")
+                ));
+                continue;
+            };
+            say(&format!(
+                "vless-{}: {} failed the test ({why}) -> {}",
+                i + 1,
+                field(&cur[i], "server"),
+                field(&s, "server")
+            ));
+            swaps.push((format!("vless-{}", i + 1), field(&cur[i], "server"), s.clone()));
+            cur[i] = s;
+        }
     }
     geolocate(paths, &mut cur);
+    // only a node with a test time counts as working: a failed or untested one (PIA dropped) is not marked working
     for n in cur.iter_mut() {
-        set(n, "ok", json!(true));
+        if n.get("ok").is_none() && n.get("ms").is_some_and(settings::py_truthy) {
+            set(n, "ok", json!(true));
+        }
     }
     let ms_key = |n: &Value| n.get("ms").and_then(Value::as_f64).filter(|m| *m != 0.0).unwrap_or(9e9);
     cur.sort_by(|a, b| ms_key(a).total_cmp(&ms_key(b))); // fastest first: vless-1 is the lowest ping
