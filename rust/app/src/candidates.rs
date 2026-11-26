@@ -32,6 +32,27 @@ fn tcp(n: &Value) -> f64 {
     n.get("tcp_ms").and_then(Value::as_f64).unwrap_or(f64::INFINITY)
 }
 
+// "12 of 50 work; failed: no-response 30, reality verification failed 5", with numbers in reasons grouped
+fn why_counts(batch: &[Value]) -> String {
+    let mut counts: Vec<(String, usize)> = Vec::new();
+    for n in batch.iter().filter(|n| is(n, false)) {
+        let why: String = f(n, "why").chars().map(|c| if c.is_ascii_digit() { 'N' } else { c }).collect();
+        let why = if why.starts_with("certificate is valid for") { "certificate for another site".into() } else { why };
+        match counts.iter_mut().find(|(w, _)| *w == why) {
+            Some(c) => c.1 += 1,
+            None => counts.push((why, 1)),
+        }
+    }
+    counts.sort_by_key(|c| std::cmp::Reverse(c.1));
+    let list: Vec<String> = counts.iter().map(|(w, k)| format!("{w} {k}")).collect();
+    let ok = batch.iter().filter(|n| is(n, true)).count();
+    format!(
+        "candidates: {ok} of {} work; failed: {}",
+        batch.len(),
+        if list.is_empty() { "none".into() } else { list.join(", ") }
+    )
+}
+
 // A copy of the node with a flag set (pinging, testing)
 fn with(n: &Value, flag: &str) -> Value {
     let mut n = n.clone();
@@ -62,10 +83,11 @@ fn sort_rows(paths: &engine::paths::Paths, rows: &mut [Value]) {
     let floor = engine::node_tests::floor_now(paths, s.min_mbps, now());
     let num = |n: &Value, k: &str| n.get(k).and_then(Value::as_f64);
     let key = |n: &Value| {
-        let group = if n["testing"] == true {
-            1
-        } else if is(n, true) {
+        // a result moves the row to its group at once, still in a test or not
+        let group = if is(n, true) {
             0
+        } else if n["testing"] == true && !is(n, false) {
+            1
         } else if is(n, false) {
             2
         } else {
@@ -139,7 +161,23 @@ impl Worker<'_> {
         crate::jobs::update_win(|w| {
             w.cand.nodes = c.iter().map(|n| with(n, "pinging")).collect();
         });
-        let live = nm::probe(self.paths, &mut ssh, &mut c)?;
+        let paths = self.paths.clone();
+        engine::node_tests::on_progress(Some(Box::new(move |res: &[Value]| {
+            crate::jobs::update_win(|w| {
+                for r in res.iter().filter(|r| has(r, "tcp_ms")) {
+                    if let Some(row) = w.cand.nodes.iter_mut().find(|x| f(x, "server") == f(r, "server")) {
+                        row["tcp_ms"] = r["tcp_ms"].clone();
+                        if let Some(m) = row.as_object_mut() {
+                            m.shift_remove("pinging");
+                        }
+                    }
+                }
+                sort_rows(&paths, &mut w.cand.nodes);
+            });
+        })));
+        let live = nm::probe(self.paths, &mut ssh, &mut c);
+        engine::node_tests::on_progress(None);
+        let live = live?;
         let mut nodes: Vec<Value> = live.into_iter().map(|i| c[i].clone()).collect();
         sort_rows(self.paths, &mut nodes);
         let msg = tr(
@@ -211,6 +249,7 @@ impl Worker<'_> {
             engine::node_tests::on_progress(None);
             crate::jobs::update_win(|w| merge(self.paths, &mut w.cand.nodes, &batch, true));
             r?;
+            say(&why_counts(&batch));
             let full = how == "fill" && nm::best_first(self.paths, &self.w().cand.nodes).len() >= k;
             if how == "more" || full || engine::process::cancelled() {
                 break;

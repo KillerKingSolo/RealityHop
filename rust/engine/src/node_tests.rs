@@ -156,6 +156,16 @@ pub fn tcp_probe(nodes: &mut [Value]) -> Vec<usize> {
     let ping = |i: usize, ms: u64| hello_ms(&servers[i], &snis[i], Duration::from_millis(ms));
     let mut ms = pool(128, servers.len(), |i| ping(i, 2000));
     let up: Vec<usize> = (0..ms.len()).filter(|&i| ms[i].is_some()).collect();
+    // the first answers, to show while the second round runs
+    let first: Vec<Value> = up
+        .iter()
+        .map(|&i| {
+            let mut n = nodes[i].clone();
+            set(&mut n, "tcp_ms", ms[i].map_or(Value::Null, Value::from));
+            n
+        })
+        .collect();
+    progress(&first);
     let more = pool(128, up.len(), |k| (0..2).filter_map(|_| ping(up[k], 1500)).min());
     for (k, &i) in up.iter().enumerate() {
         if let (Some(a), Some(b)) = (ms[i], more[k]) {
