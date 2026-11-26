@@ -5,7 +5,7 @@
 let panelClosed = null;
 function panel(content) {
   if (!content && panelClosed) { const f = panelClosed; panelClosed = null; f(); }
-  $('panelBox').replaceChildren(...(content || []));
+  $('panelBox').replaceChildren(...(content ? [progSlot(), ...content] : []));
   $('panel').hidden = !content;
 }
 
