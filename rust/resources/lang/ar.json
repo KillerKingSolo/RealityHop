@@ -360,6 +360,7 @@
  "Pinging 443...": "اختبار المنفذ 443...",
  "Answers through the tunnel, {ms} ms; testing that it holds and its speed...": "يجيب عبر النفق، {ms} ms؛ جارٍ اختبار ثباته وسرعته...",
  "Testing...": "جارٍ الاختبار...",
+ "Failed the test; finding out why...": "فشل الاختبار؛ جارٍ معرفة السبب...",
  "vless-{n} was kept: it tests at least as well as every spare.": "أُبقيت vless-{n}: نتيجة اختبارها لا تقل عن أي بديل.",
  "Nothing deployed yet.": "لم يُنشر شيء بعد.",
  "Router NOT updated (not reachable).": "لم يُحدَّث الراوتر (يتعذر الوصول إليه).",

@@ -360,6 +360,7 @@
  "Pinging 443...": "پینگ پورت 443...",
  "Answers through the tunnel, {ms} ms; testing that it holds and its speed...": "از طریق تونل پاسخ می‌دهد، {ms} میلی‌ثانیه؛ آزمایش پایداری و سرعت...",
  "Testing...": "در حال آزمایش...",
+ "Failed the test; finding out why...": "آزمایش رد شد؛ در حال یافتن علت...",
  "vless-{n} was kept: it tests at least as well as every spare.": "vless-{n} نگه داشته شد: نتیجه آزمونش دست‌کم به خوبی هر جایگزین است.",
  "Nothing deployed yet.": "هنوز چیزی اعمال نشده.",
  "Router NOT updated (not reachable).": "روتر به‌روز نشد (در دسترس نیست).",

@@ -443,6 +443,8 @@ pub fn view(paths: &engine::paths::Paths, w: &crate::window_state::Win) -> Value
                 )
             } else if n["testing"] == true && !is(n, false) {
                 ("test", tr("Testing...", &[]))
+            } else if n["testing"] == true && !has(n, "why") {
+                ("bad", tr("Failed the test; finding out why...", &[]))
             } else if is(n, true) {
                 ("ok", tr("Works, {ms} ms in the test, exit {ip}", &[("ms", f(n, "ms")), ("ip", f(n, "exit"))]))
             } else if is(n, false) {
@@ -461,7 +463,7 @@ pub fn view(paths: &engine::paths::Paths, w: &crate::window_state::Win) -> Value
             json!({
                 "server": f(n, "server"), "front": crate::window_state::brand(&f(n, "sni")),
                 "where": if has(n, "where") { f(n, "where") } else { "?".into() }, "host": host(n),
-                "tcp": ms(n.get("tcp_ms"), &tr("No answer", &[])), "tunnel": ms(n.get("ms"), ""),
+                "tcp": if n["pinging"] == true { String::new() } else { ms(n.get("tcp_ms"), &tr("No answer", &[])) }, "tunnel": ms(n.get("ms"), ""),
                 "result": res, "state": state, "ok": is(n, true),
             })
         })

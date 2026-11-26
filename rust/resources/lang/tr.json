@@ -360,6 +360,7 @@
  "Pinging 443...": "443'e ping atılıyor...",
  "Answers through the tunnel, {ms} ms; testing that it holds and its speed...": "Tünel üzerinden yanıt veriyor, {ms} ms; dayanıklılığı ve hızı test ediliyor...",
  "Testing...": "Test ediliyor...",
+ "Failed the test; finding out why...": "Test başarısız; nedeni araştırılıyor...",
  "vless-{n} was kept: it tests at least as well as every spare.": "vless-{n} tutuldu: testte en az her yedek kadar iyi sonuç verdi.",
  "Nothing deployed yet.": "Henüz hiçbir şey uygulanmadı.",
  "Router NOT updated (not reachable).": "Router GÜNCELLENMEDİ (erişilemiyor).",

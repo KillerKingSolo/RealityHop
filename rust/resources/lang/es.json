@@ -360,6 +360,7 @@
  "Pinging 443...": "Haciendo ping al 443...",
  "Answers through the tunnel, {ms} ms; testing that it holds and its speed...": "Responde por el túnel, {ms} ms; probando que se mantiene y su velocidad...",
  "Testing...": "Probando...",
+ "Failed the test; finding out why...": "Falló la prueba; buscando el motivo...",
  "vless-{n} was kept: it tests at least as well as every spare.": "vless-{n} se mantuvo: su prueba es al menos tan buena como la de cualquier reserva.",
  "Nothing deployed yet.": "Aún no se ha desplegado nada.",
  "Router NOT updated (not reachable).": "Router NO actualizado (no accesible).",

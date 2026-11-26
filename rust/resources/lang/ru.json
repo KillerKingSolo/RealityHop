@@ -360,6 +360,7 @@
  "Pinging 443...": "Пинг 443...",
  "Answers through the tunnel, {ms} ms; testing that it holds and its speed...": "Отвечает через туннель, {ms} мс; проверка устойчивости и скорости...",
  "Testing...": "Проверка...",
+ "Failed the test; finding out why...": "Тест не пройден; выясняем причину...",
  "vless-{n} was kept: it tests at least as well as every spare.": "vless-{n} оставлен: он прошёл тест не хуже любого запасного.",
  "Nothing deployed yet.": "Пока ничего не развёрнуто.",
  "Router NOT updated (not reachable).": "Роутер НЕ обновлён (недоступен).",

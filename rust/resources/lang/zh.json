@@ -360,6 +360,7 @@
  "Pinging 443...": "正在 ping 443...",
  "Answers through the tunnel, {ms} ms; testing that it holds and its speed...": "通过隧道有响应，{ms} ms；正在测试稳定性和速度...",
  "Testing...": "正在测试...",
+ "Failed the test; finding out why...": "测试失败；正在查找原因...",
  "vless-{n} was kept: it tests at least as well as every spare.": "vless-{n} 已保留：它的测试结果不比任何备用节点差。",
  "Nothing deployed yet.": "尚未部署任何内容。",
  "Router NOT updated (not reachable).": "路由器未更新（无法访问）。",

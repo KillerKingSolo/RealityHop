@@ -360,6 +360,7 @@
  "Pinging 443...": "Đang ping 443...",
  "Answers through the tunnel, {ms} ms; testing that it holds and its speed...": "Trả lời qua đường hầm, {ms} ms; đang kiểm tra độ bền và tốc độ...",
  "Testing...": "Đang kiểm tra...",
+ "Failed the test; finding out why...": "Kiểm tra thất bại; đang tìm nguyên nhân...",
  "vless-{n} was kept: it tests at least as well as every spare.": "vless-{n} được giữ lại: kết quả kiểm tra ít nhất bằng mọi nút dự phòng.",
  "Nothing deployed yet.": "Chưa triển khai gì.",
  "Router NOT updated (not reachable).": "Router CHƯA được cập nhật (không truy cập được).",
