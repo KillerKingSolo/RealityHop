@@ -42,6 +42,8 @@ pub struct Win {
     pub busy: bool,
     pub started: Option<Instant>,
     pub current: Option<Job>,
+    /// How long each action took last time (seconds), for the busy bar.
+    pub took: HashMap<String, f64>,
     pub jobs: Vec<Job>,
     pub auto_on: bool,
     pub auto_fix: bool,
@@ -975,7 +977,7 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
         "status": {"text": w.status_text, "state": w.status_state, "pill": tr(pill, &[])},
         "tiles": tiles, "lists": lists, "events": events, "now": now(),
         "down": engine::history::drop_lengths(&events),
-        "busy": w.busy, "update": w.update.as_ref().map(|u| u.latest.ver.clone()),
+        "busy": w.busy, "prog": prog(w), "update": w.update.as_ref().map(|u| u.latest.ver.clone()),
         "main": mode.main(),
     })
 }
@@ -983,6 +985,9 @@ pub fn snapshot(paths: &Paths, w: &Win) -> Value {
 // The last check's results, kept in last.json, so the window shows them at once (App.__init__)
 pub fn load_last(paths: &Paths, w: &mut Win) {
     let last = engine::data_files::jload(&paths.last);
+    if let Some(t) = last.get("took").and_then(Value::as_object) {
+        w.took = t.iter().filter_map(|(k, v)| Some((k.clone(), v.as_f64()?))).collect();
+    }
     let Some(lists) = last.get("lists").and_then(Value::as_object) else { return };
     for (k, cfg) in [("pc", &paths.pc_cfg), ("phone", &paths.router_cfg)] {
         let saved: Vec<Value> = lists.get(k).and_then(Value::as_array).cloned().unwrap_or_default();
@@ -1007,6 +1012,16 @@ pub fn load_last(paths: &Paths, w: &mut Win) {
         tr("Last check {at}: {status} Checking again now...", &[("at", at.into()), ("status", w.status_text.clone())]);
 }
 
+// The busy bar: seconds since the running action started and how long it took last time; null while it waits
+pub fn prog(w: &Win) -> Value {
+    match (w.busy, w.started, &w.current) {
+        (true, Some(s), Some(j)) => {
+            json!({"el": s.elapsed().as_secs_f64(), "exp": w.took.get(&j.name).copied().unwrap_or(30.0)})
+        }
+        _ => Value::Null,
+    }
+}
+
 // Keep the results in last.json (done)
 pub fn save_last(paths: &Paths, w: &Win) {
     let mut m = Map::new();
@@ -1014,5 +1029,6 @@ pub fn save_last(paths: &Paths, w: &Win) {
     m.insert("pcs".into(), w.pcs.clone().unwrap_or(Value::Null));
     m.insert("router".into(), w.router.as_ref().map_or(Value::Null, |(r, at)| json!([r, at])));
     m.insert("at".into(), json!(clock()));
+    m.insert("took".into(), json!(w.took));
     let _ = engine::data_files::jsave(&paths.last, &Value::Object(m), None);
 }

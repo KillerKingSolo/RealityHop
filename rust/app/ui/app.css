@@ -73,8 +73,7 @@ button.ghost:hover:not(:disabled) { background: #202026; }
 /* main */
 #main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding: 0 8px 4px; min-width: 0; }
 .prog-slot { height: 3px; margin: 0 -8px; border-radius: 2px; position: sticky; top: 0; z-index: 5; overflow: hidden; flex: none; }
-.prog { position: absolute; top: 0; height: 3px; width: 30%; background: var(--acc); animation: prog 1.2s linear infinite; }
-@keyframes prog { from { left: -30%; } to { left: 100%; } }
+.prog { position: absolute; top: 0; left: 0; height: 3px; width: 0; background: var(--acc); transition: width .2s linear; }
 #head { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex: none; }
 h1 { font: 20pt var(--uib); margin: 0; }
 .pill { font: 9pt var(--uib); padding: 3px 10px; margin: 6px 6px 0; border-radius: 999px; }

@@ -99,7 +99,7 @@ pub fn wz_info(ctx: State<Ctx>, router_only: bool) -> Value {
 #[tauri::command]
 pub fn wz_view(ctx: State<Ctx>) -> Value {
     let w = ctx.win.lock().unwrap_or_else(|e| e.into_inner());
-    json!({"ok": w.wz.ok, "note": w.wz.note, "rows": w.wz.rows, "busy": w.busy, "relaunch": w.wz.relaunch.is_some()})
+    json!({"ok": w.wz.ok, "note": w.wz.note, "rows": w.wz.rows, "busy": w.busy, "prog": crate::window_state::prog(&w), "relaunch": w.wz.relaunch.is_some()})
 }
 
 // A new page: the last page's note goes

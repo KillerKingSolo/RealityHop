@@ -107,7 +107,7 @@ function act(name, args) {
 // ---- navigation (nav, show, next, back)
 async function nav() {
   const busy = view.busy;
-  $('prog').hidden = !busy;
+  drawProg(busy, view.prog);
   $('nextBtn').disabled = busy || (GATES.has(page) && !ok(page)) || page === 'router' || page === 'lang' || page === 'france';
   $('backBtn').disabled = busy || page === seq()[0] || page === 'lang' || page === 'france';
   $('nextBtn').textContent = await T(page === 'finish' ? 'Finish' : 'Next');

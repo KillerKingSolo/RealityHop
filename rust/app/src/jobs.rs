@@ -108,6 +108,7 @@ pub fn work(app: &AppHandle, job: Job) {
             }
             d
         };
+        changed(&h); // the busy bar starts filling
         if dropped {
             say("cancelled");
             drop(turn);
@@ -135,7 +136,12 @@ fn done(app: &AppHandle) {
     let next = {
         let mut w = ctx.win.lock().unwrap_or_else(|e| e.into_inner());
         w.busy = false;
-        w.current = None;
+        // a cancelled action says nothing about how long the next one takes
+        if let (Some(j), Some(s)) = (w.current.take(), w.started)
+            && !engine::process::cancelled()
+        {
+            w.took.insert(j.name, s.elapsed().as_secs_f64());
+        }
         let moved = MOVED.lock().unwrap_or_else(|e| e.into_inner()).clone();
         save_last(moved.as_ref().unwrap_or(&ctx.paths), &w);
         tray_follows(app, &ctx.paths, &w);

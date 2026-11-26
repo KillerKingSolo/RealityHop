@@ -238,7 +238,7 @@ async function render(s) {
   const pill = $('pill');
   pill.className = 'pill ' + s.status.state;
   pill.textContent = s.status.pill;
-  $('prog').hidden = !s.busy;
+  drawProg(s.busy, s.prog);
   $('cancelBtn').disabled = !s.busy;
   $('powerBtn').textContent = await T(s.stopped ? 'Start' : 'Stop');
   $('restartBtn').textContent = await T(m.ronly ? 'Test on router' : 'Restart tunnel');
