@@ -219,7 +219,7 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
         out = Some(rescue(paths, ssh, SLOTS)?);
     } else if !dead.is_empty() {
         let slots: Vec<usize> = (0..cur.len()).filter(|&i| dead.contains(&field(&cur[i], "tag"))).collect();
-        out = Some(format!("{}.", replaced(&replace(paths, ssh, &slots, None, false, false)?)));
+        out = Some(format!("{}.", replaced(&replace(paths, ssh, &slots, None, false, false, false)?)));
     }
     let calm = pia_calm_for(now());
     if out.is_none() && cur.len() < SLOTS && calm < CALM {
@@ -227,7 +227,7 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
     } else if out.is_none() && cur.len() < SLOTS {
         // a scan that found fewer working nodes left slots empty: fill them when spares work again
         say(&format!("only {} of {SLOTS} nodes in use; looking for working spares...", cur.len()));
-        match replace(paths, ssh, &[], None, false, false) {
+        match replace(paths, ssh, &[], None, false, false, false) {
             Ok(sw) if !sw.is_empty() => out = Some(format!("{}.", replaced(&sw))),
             Ok(_) => {}
             Err(e) => say(&format!("empty slots stay empty for now: {e}")),
@@ -306,7 +306,7 @@ pub fn break_fix(paths: &Paths, ssh: &mut impl Ssh, server: &str) -> Result<Opti
         return Ok(None);
     };
     say(&format!("{} broke PIA's connection {BREAKS} times in an hour; replacing it", field(&cur[slot], "tag")));
-    let swaps = replace(paths, ssh, &[slot], None, false, false)?;
+    let swaps = replace(paths, ssh, &[slot], None, false, false, false)?;
     Ok((!swaps.is_empty())
         .then(|| format!("{} (it broke PIA's connection {BREAKS} times in an hour).", replaced(&swaps))))
 }
@@ -332,7 +332,7 @@ pub fn slow_fix(paths: &Paths, ssh: &mut impl Ssh, cur: &[Value]) -> Result<Opti
         say(&format!("speed check: no working node is under {} Mbps", floor()));
         return Ok(None);
     }
-    let swaps = replace(paths, ssh, &slow, None, false, true)?;
+    let swaps = replace(paths, ssh, &slow, None, false, true, false)?;
     Ok((!swaps.is_empty()).then(|| format!("{} (under {} Mbps).", replaced(&swaps), floor())))
 }
 

@@ -355,6 +355,7 @@
  "Test the {top} fastest nodes from the online node list (under a minute) and swap the best one in for {tag} ({cur})?": "¿Probar los {top} nodos más rápidos de la lista en línea (menos de un minuto) y poner el mejor en lugar de {tag} ({cur})?",
  "{tag} was replaced in the configs: {old} -> {new} (443 ping {ms} ms, not tunnel-tested).": "{tag} se sustituyó en las configuraciones: {old} -> {new} (ping 443 {ms} ms, sin probar por túnel).",
  "{tag} was replaced: {old} -> {new} ({ms} ms, {where}).": "{tag} se sustituyó: {old} -> {new} ({ms} ms, {where}).",
+ "vless-{n} was kept: it tests at least as well as every spare.": "vless-{n} se mantuvo: su prueba es al menos tan buena como la de cualquier reserva.",
  "Nothing deployed yet.": "Aún no se ha desplegado nada.",
  "Router NOT updated (not reachable).": "Router NO actualizado (no accesible).",
  "PC tunnel updated; router NOT updated (not reachable).": "Túnel del PC actualizado; router NO actualizado (no accesible).",

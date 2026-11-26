@@ -355,6 +355,7 @@
  "Test the {top} fastest nodes from the online node list (under a minute) and swap the best one in for {tag} ({cur})?": "测试在线节点列表中最快的 {top} 个节点（不到一分钟），并用最佳节点替换 {tag}（{cur}）？",
  "{tag} was replaced in the configs: {old} -> {new} (443 ping {ms} ms, not tunnel-tested).": "{tag} 已在配置中替换：{old} -> {new}（443 延迟 {ms} 毫秒，未进行隧道测试）。",
  "{tag} was replaced: {old} -> {new} ({ms} ms, {where}).": "{tag} 已替换：{old} -> {new}（{ms} 毫秒，{where}）。",
+ "vless-{n} was kept: it tests at least as well as every spare.": "vless-{n} 已保留：它的测试结果不比任何备用节点差。",
  "Nothing deployed yet.": "尚未部署任何内容。",
  "Router NOT updated (not reachable).": "路由器未更新（无法访问）。",
  "PC tunnel updated; router NOT updated (not reachable).": "电脑隧道已更新；路由器未更新（无法访问）。",

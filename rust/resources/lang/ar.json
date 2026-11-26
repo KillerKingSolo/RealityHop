@@ -355,6 +355,7 @@
  "Test the {top} fastest nodes from the online node list (under a minute) and swap the best one in for {tag} ({cur})?": "اختبار أسرع {top} عقد من القائمة على الإنترنت (أقل من دقيقة) ووضع الأفضل مكان {tag} ({cur})؟",
  "{tag} was replaced in the configs: {old} -> {new} (443 ping {ms} ms, not tunnel-tested).": "استُبدلت {tag} في الإعدادات: {old} -> {new} (ping 443 {ms} ms، غير مُختبرة عبر النفق).",
  "{tag} was replaced: {old} -> {new} ({ms} ms, {where}).": "استُبدلت {tag}: {old} -> {new} ({ms} ms، {where}).",
+ "vless-{n} was kept: it tests at least as well as every spare.": "أُبقيت vless-{n}: نتيجة اختبارها لا تقل عن أي بديل.",
  "Nothing deployed yet.": "لم يُنشر شيء بعد.",
  "Router NOT updated (not reachable).": "لم يُحدَّث الراوتر (يتعذر الوصول إليه).",
  "PC tunnel updated; router NOT updated (not reachable).": "حُدّث نفق الحاسوب؛ لم يُحدَّث الراوتر (يتعذر الوصول إليه).",

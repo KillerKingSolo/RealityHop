@@ -11,7 +11,7 @@ use crate::speed_test;
 use md5::{Digest, Md5};
 use regex::Regex;
 use serde_json::{Map, Value, json};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::LazyLock;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -401,7 +401,8 @@ pub const SLOTS: usize = 6;
 
 // Swap the in-use nodes at the given slots (0-based) for the best tested spares, from the online node list or (vault)
 // from the nodes that worked before, fill empty slots up to SLOTS, then deploy. fast_only: only spares that reach the
-// floor; with none, nothing changes (engine.replace)
+// floor; with none, nothing changes. keep_better: the nodes at the given slots get the spares' test and stay when no
+// spare ranks above them (engine.replace)
 pub fn replace(
     paths: &Paths,
     ssh: &mut impl Ssh,
@@ -409,6 +410,7 @@ pub fn replace(
     top: Option<usize>,
     vault: bool,
     fast_only: bool,
+    keep_better: bool,
 ) -> Result<Vec<Swap>, String> {
     let top = top.unwrap_or_else(|| current(paths).top.max(0) as usize);
     if router_up(paths, ssh)
@@ -452,11 +454,41 @@ pub fn replace(
         say(&format!("only {} working spare(s) for {need} slot(s); replacing what can be replaced", spares.len()));
     }
     let mut swaps = Vec::new();
-    let mut spares = spares.into_iter();
+    let mut spares = spares.into_iter().peekable();
     // the given slots first; then empty slots up to SLOTS, after a scan that found fewer working nodes
     let mut todo: Vec<usize> = slots.iter().copied().filter(|&i| i < cur.len()).collect();
     todo.extend(cur.len()..SLOTS.max(cur.len()));
+    let olds: HashMap<usize, Value> = if keep_better {
+        let idx: Vec<usize> = todo.iter().copied().filter(|&i| i < cur.len()).collect();
+        let mut t: Vec<Value> = idx.iter().map(|&i| cur[i].clone()).collect();
+        if !t.is_empty() {
+            say("testing the node(s) to fix the same way, so a spare goes in only when it is better...");
+            node_test(paths, ssh, &mut t, true)?;
+        }
+        idx.into_iter().zip(t).collect()
+    } else {
+        HashMap::new()
+    };
+    let min = current(paths).min_mbps;
+    let floor = crate::node_tests::floor_now(paths, min, now());
+    let rank = |n: &Value| {
+        let f = |k: &str| n.get(k).and_then(Value::as_f64);
+        speed_test::speed_rank(min, floor, f("mbps"), f("ms"))
+    };
     for i in todo {
+        let Some(best) = spares.peek() else { break };
+        if let Some(o) = olds.get(&i).filter(|o| yes(o, "ok"))
+            && rank(o) <= rank(best)
+        {
+            say(&format!(
+                "vless-{}: {} kept; it tests at least as well as the best spare ({})",
+                i + 1,
+                field(o, "server"),
+                field(best, "server")
+            ));
+            cur[i] = o.clone();
+            continue;
+        }
         let Some(s) = spares.next() else { break };
         let old = cur.get(i).map_or("(empty)".to_string(), |n| field(n, "server"));
         let mbps = s.get("mbps").filter(|m| !m.is_null()).map_or(String::new(), |m| format!(", {m} Mbps"));
@@ -465,6 +497,9 @@ pub fn replace(
         say(&format!("vless-{}: {old} -> {}  ({ms}ms{mbps}, {place})", i + 1, field(&s, "server")));
         swaps.push((format!("vless-{}", i + 1), old, s.clone()));
         if i < cur.len() { cur[i] = s } else { cur.push(s) }
+    }
+    if keep_better && swaps.is_empty() {
+        return Ok(swaps); // nothing changed: no deploy, no restart
     }
     let kept: Vec<usize> = (0..cur.len()).filter(|&i| cur[i].get("ms").is_none_or(Value::is_null)).collect();
     if !kept.is_empty() && (paths.core.exists() || router_only(paths)) {

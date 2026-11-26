@@ -355,6 +355,7 @@
  "Test the {top} fastest nodes from the online node list (under a minute) and swap the best one in for {tag} ({cur})?": "Çevrimiçi listedeki en hızlı {top} düğüm test edilsin (bir dakikadan kısa) ve en iyisi {tag} ({cur}) yerine konsun mu?",
  "{tag} was replaced in the configs: {old} -> {new} (443 ping {ms} ms, not tunnel-tested).": "{tag} yapılandırmalarda değiştirildi: {old} -> {new} (443 ping {ms} ms, tünelle test edilmedi).",
  "{tag} was replaced: {old} -> {new} ({ms} ms, {where}).": "{tag} değiştirildi: {old} -> {new} ({ms} ms, {where}).",
+ "vless-{n} was kept: it tests at least as well as every spare.": "vless-{n} tutuldu: testte en az her yedek kadar iyi sonuç verdi.",
  "Nothing deployed yet.": "Henüz hiçbir şey uygulanmadı.",
  "Router NOT updated (not reachable).": "Router GÜNCELLENMEDİ (erişilemiyor).",
  "PC tunnel updated; router NOT updated (not reachable).": "PC tüneli güncellendi; router GÜNCELLENMEDİ (erişilemiyor).",

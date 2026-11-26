@@ -560,7 +560,15 @@ impl Worker<'_> {
                 .collect();
             self.after_files(&s.join(" "));
         } else {
-            let swaps = nm::replace(self.paths, &mut ssh, &[slot], None, how == "vault", false)?;
+            let swaps = nm::replace(self.paths, &mut ssh, &[slot], None, how == "vault", false, true)?;
+            if swaps.is_empty() {
+                let t = tr(
+                    "vless-{n} was kept: it tests at least as well as every spare.",
+                    &[("n", (slot + 1).to_string())],
+                );
+                self.status(t, "ok");
+                return Ok(());
+            }
             let s: Vec<String> = swaps
                 .iter()
                 .map(|(t, o, n)| {
