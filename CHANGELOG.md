@@ -4,6 +4,13 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 2.1.5 (2026-11-27)
+
+**Why update:** Check now and tunnel restarts no longer show working nodes as dead while PIA reconnects.
+
+- Fixed: Check now and the check after a tunnel restart tested nodes while PIA was reconnecting and showed working nodes as dead. They now wait for PIA, up to 45 s, and test a failed node again 10 s later before they mark it dead.
+- Changed: the router's sing-box builds are checked every 6 hours and published by themselves after the Linux tests, with no pull request to merge. Reality Hop still asks before it updates the router.
+
 ## 2.1.4 (2026-11-27)
 
 **Why update:** the PC tunnel no longer keeps dead nodes while PIA is connected, router devices no longer get nodes that fail only from the router, and the router starts its tunnel again after a crash.

@@ -179,6 +179,13 @@ pub fn check_pc_with(
         nodes.iter_mut().for_each(|n| set_pc(n, None, Value::Null));
         return Ok(Some(PcCheck { now: using, exit: None, stale: true }));
     }
+    test_nodes(api, nodes.iter_mut().collect())?;
+    tunnel_fails_note(paths, nodes, now);
+    Ok(Some(PcCheck { now: using, exit: if exit_ip { pc_exit() } else { None }, stale: false }))
+}
+
+// Test nodes through the running tunnel at the same time, one retry each, and set their pc_ms and pc_why
+fn test_nodes(api: &ControlApi, nodes: Vec<&mut Value>) -> Result<(), NotAnObject> {
     let results: Vec<_> = std::thread::scope(|sc| {
         let jobs: Vec<_> = nodes
             .iter()
@@ -192,12 +199,30 @@ pub fn check_pc_with(
             .collect();
         jobs.into_iter().map(|j| j.join().unwrap_or(Ok((None, Value::from("no response"))))).collect()
     });
-    for (n, r) in nodes.iter_mut().zip(results) {
+    for (n, r) in nodes.into_iter().zip(results) {
         let (ms, why) = r?;
         set_pc(n, ms, why);
     }
+    Ok(())
+}
+
+// The nodes that failed in check_pc, tested again after wait: one dropped probe, or a PIA reconnect, does not mark a
+// node dead. Notes tunnel fails again with the new results; how many still fail (engine.pc_recheck)
+pub fn recheck_failed_with(
+    api: &ControlApi,
+    paths: &Paths,
+    nodes: &mut [Value],
+    wait: Duration,
+    now: f64,
+) -> Result<usize, NotAnObject> {
+    let failed = |n: &Value| n.get("pc_ms").is_none_or(Value::is_null);
+    if !nodes.iter().any(failed) {
+        return Ok(0);
+    }
+    std::thread::sleep(wait);
+    test_nodes(api, nodes.iter_mut().filter(|n| failed(n)).collect())?;
     tunnel_fails_note(paths, nodes, now);
-    Ok(Some(PcCheck { now: using, exit: if exit_ip { pc_exit() } else { None }, stale: false }))
+    Ok(nodes.iter().filter(|n| failed(n)).count())
 }
 
 // A node that fails in the running tunnel can still pass the candidate test. It stays out of the spares for

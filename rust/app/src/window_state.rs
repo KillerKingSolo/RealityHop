@@ -385,6 +385,8 @@ impl Worker<'_> {
             let ext = std::thread::spawn(move || if listening { engine::clash_api::pc_exit() } else { None });
             let mut list = self.w().list("pc").to_vec();
             if pcs["api"] == true {
+                // tests through the tunnel fail while PIA reconnects (a restart of the tunnel drops PIA too)
+                engine::watcher::pia_wait_steady(45, 5);
                 match engine::clash_api::check_pc(self.paths, &mut list, false, now()) {
                     Ok(Some(r)) if r.stale => {
                         self.w().pc_pending = true;
@@ -392,6 +394,7 @@ impl Worker<'_> {
                     }
                     Ok(Some(_)) => {
                         self.w().pc_pending = false;
+                        self.recheck_pc(&mut list);
                         let pings: Vec<(String, Option<i64>)> =
                             list.iter().map(|n| (f(n, "server"), n.get("pc_ms").and_then(Value::as_i64))).collect();
                         engine::history::record(&self.paths.history, &pings, None, now());
@@ -418,6 +421,24 @@ impl Worker<'_> {
             }
         }
         w.judge(&mode);
+    }
+
+    // Nodes that failed through the PC tunnel get a second test 10 s later, after PIA is steady, before the window
+    // shows them dead: a dropped probe or a PIA reconnect is not a dead node (recheck_pc)
+    fn recheck_pc(&self, list: &mut [Value]) {
+        let k = list.iter().filter(|n| n.get("pc_ms").is_none_or(Value::is_null)).count();
+        if k == 0 {
+            return;
+        }
+        let Ok(api) = engine::clash_api::ControlApi::pc(self.paths) else { return };
+        say(&format!(
+            "PC: {k} node(s) failed; testing them again in 10 s so a dropped probe does not mark them dead..."
+        ));
+        engine::watcher::pia_wait_steady(45, 5);
+        if let Ok(left) = engine::clash_api::recheck_failed_with(&api, self.paths, list, Duration::from_secs(10), now())
+        {
+            say(&format!("PC: re-check: {} of {} nodes working", list.len() - left, list.len()));
+        }
     }
 
     // Remember whether the router answers on this network (router_seen)

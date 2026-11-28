@@ -91,6 +91,25 @@ fn check_pc_tests_each_node_with_one_retry_and_notes_tunnel_fails() {
 }
 
 #[test]
+fn recheck_tests_only_the_failed_nodes_again() {
+    let p = temp_data("recheck");
+    let mut ns = nodes(&SERVERS[..2]);
+    ns.iter_mut().for_each(|n| n["pc_ms"] = Value::Null); // both failed the first check
+    let api = fake_api("s3cret");
+    let left = clash_api::recheck_failed_with(&api, &p, &mut ns, Duration::ZERO, NOW).unwrap();
+    assert_eq!(left, 1);
+    assert_eq!((&ns[0]["pc_ms"], &ns[1]["pc_ms"]), (&json!(42), &Value::Null));
+    let f = engine::data_files::jload(&p.tunnel_fails);
+    assert_eq!(Value::Object(f), json!({SERVERS[1]: NOW}));
+    // nothing failed: nothing tested, nothing written
+    let q = temp_data("recheck-none");
+    let mut ok = vec![json!({"server": SERVERS[0], "tag": "vless-9", "pc_ms": 5})];
+    assert_eq!(clash_api::recheck_failed_with(&api, &q, &mut ok, Duration::ZERO, NOW), Ok(0));
+    assert_eq!(ok[0]["pc_ms"], 5);
+    assert!(!q.tunnel_fails.exists());
+}
+
+#[test]
 fn an_older_node_set_is_not_tested() {
     let p = temp_data("stale");
     let mut ns = nodes(&["203.0.113.9"]);

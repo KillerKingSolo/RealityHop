@@ -14,7 +14,7 @@ use crate::settings::{self, Settings, router_only, stopped};
 use crate::translations::tr;
 use serde_json::{Value, json};
 use std::sync::{Arc, Condvar, Mutex};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 /// The loopback port the running watcher holds, so a second one does not start.
 pub const WATCH_PORT: u16 = 47291;
@@ -433,6 +433,33 @@ pub fn pia_state() -> String {
         None,
     );
     r.map(|o| crate::python_compat::strip(&o.stdout).to_string()).unwrap_or_default()
+}
+
+// Wait up to max_s for PIA to be steady (Connected, or off), then settle_s more when it had to wait. False when it is
+// still reconnecting. Node tests through the PC tunnel fail while PIA reconnects (engine.pia_wait_steady)
+pub fn pia_wait_steady(max_s: u64, settle_s: u64) -> bool {
+    if !std::path::Path::new(crate::pia_split_tunnel::PIACTL).exists() {
+        return true;
+    }
+    let t0 = Instant::now();
+    let mut waited = false;
+    loop {
+        let st = pia_state();
+        if matches!(st.as_str(), "Connected" | "Disconnected" | "") {
+            if waited {
+                std::thread::sleep(Duration::from_secs(settle_s));
+            }
+            return true;
+        }
+        if t0.elapsed() >= Duration::from_secs(max_s) {
+            return false;
+        }
+        if !waited {
+            say(&format!("PIA is {}; waiting for it before testing the nodes...", st.to_lowercase()));
+        }
+        waited = true;
+        std::thread::sleep(Duration::from_secs(2));
+    }
 }
 
 // Whether PIA is installed and connected now
