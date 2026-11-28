@@ -1,15 +1,15 @@
 {
   "go": "1.27.4",
   "stable": {
-    "singbox": "1.14.4",
+    "singbox": "1.14.6",
     "sha256": {
-      "arm64": "ce31fd23d5b7edfd9da19ea0d5d1db84e6a0214e5deb7f3f0b612a1529792343"
+      "arm64": "160f150d623b6ef865c37b9eaef1f7fdbeadb5637872b46ed1dbf87da4cbddcb"
     }
   },
   "preview": {
-    "singbox": "1.15.0-alpha.13",
+    "singbox": "1.15.0-alpha.15",
     "sha256": {
-      "arm64": "b7c042b351f9ccf72b1dc28e4c801f4446bbad80f230aba547581993cfb089cf"
+      "arm64": "4494c9bf5fd300212e06ed10d62bc65c166cf903a8f435588ba3b5c016dbef7a"
     }
   }
 }
