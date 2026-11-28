@@ -160,7 +160,15 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
             return Ok(None);
         }
     }
-    let r = check_pc(paths, &mut cur, false, now()).map_err(|_| "not a JSON object".to_string())?;
+    let mut r = check_pc(paths, &mut cur, false, now()).map_err(|_| "not a JSON object".to_string())?;
+    if r.as_ref().is_some_and(|r| r.stale) && core_mode(paths) && running_set_failing(paths) {
+        // the PC tunnel still runs an older set (it waits while PIA is connected) and most of its nodes fail: the
+        // waiting set is better than a dying one
+        say("most nodes the PC tunnel still runs fail; it takes the waiting node set now");
+        core_restart(paths);
+        event(paths, "restart", "PC tunnel took the waiting node set: most of its running nodes failed");
+        r = check_pc(paths, &mut cur, false, now()).map_err(|_| "not a JSON object".to_string())?;
+    }
     let side = if r.is_some_and(|r| !r.stale) {
         Side::Pc // this PC's own tunnel is the judge
     } else if router_up(paths, ssh) {
@@ -186,8 +194,10 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
         dead = dead_of(&res);
         say(&format!("re-check: {}", tally(&res, &dead)));
     }
-    if !dead.is_empty() && (paths.core.exists() || router_only(paths)) {
-        // second opinion: a fresh test instance, not the running tunnel
+    // second opinion: a fresh test instance on this PC, not the running tunnel. It speaks for the router only when every
+    // node failed there (the router's tunnel may be the problem): a node can fail from the router and pass from the PC
+    let second = side == Side::Pc || dead.len() == res.len();
+    if !dead.is_empty() && second && (paths.core.exists() || router_only(paths)) {
         let mut again: Vec<Value> = cur.iter().filter(|n| dead.contains(&field(n, "tag"))).cloned().collect();
         node_test(paths, ssh, &mut again, false)?;
         let fine: Vec<String> = again.iter().filter(|n| n["ok"] == true).map(|n| field(n, "tag")).collect();
@@ -200,6 +210,9 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
                 }
             }
         }
+    }
+    if side == Side::Pc && router_up(paths, ssh) {
+        dead.extend(router_dead(paths, ssh, &cur, &dead, &tally)?);
     }
     tray_mark(paths, st, &res, Some(&dead));
     if side == Side::Pc {
@@ -276,6 +289,48 @@ pub fn watch_cycle(paths: &Paths, ssh: &mut impl Ssh, st: &mut WatchState) -> Re
         }
     }
     Ok(out)
+}
+
+// The PC tunnel runs an older node set and fewer than half of its nodes pass a quick test
+fn running_set_failing(paths: &Paths) -> bool {
+    crate::pc_tunnel::regroup_within(paths, 5000).len() < SLOTS / 2
+}
+
+// The PC judged the nodes; the router devices use the same set through the router's own tunnel, where a node can fail
+// while it passes from the PC. The nodes that fail there twice, 30 s apart, while others pass. Empty when the router
+// runs another set or its tunnel is down (nothing to say about the nodes)
+fn router_dead(
+    paths: &Paths,
+    ssh: &mut impl Ssh,
+    cur: &[Value],
+    dead: &[String],
+    tally: &dyn Fn(&Results, &[String]) -> String,
+) -> Result<Vec<String>, String> {
+    let secret = router::secret(&crate::data_files::read_json(&paths.router_cfg).map_err(|e| e.to_string())?);
+    let mut test = |rc: &mut Vec<Value>| -> Option<Vec<String>> {
+        let ck = router::check_phone(ssh, rc, &secret).ok()?;
+        if !ck.service || crate::node_manager::router_stale(paths, &ck.cfg) {
+            return None;
+        }
+        let res = results(rc, "phone_ms");
+        let rd = dead_of(&res);
+        if rd.len() == res.len() {
+            return None; // every node fails there: the router's tunnel or line, not the nodes
+        }
+        say(&format!("router check: {}", tally(&res, &rd)));
+        Some(rd.into_iter().filter(|t| !dead.contains(t)).collect())
+    };
+    let mut rc = cur.to_vec();
+    let Some(first) = test(&mut rc).filter(|d| !d.is_empty()) else { return Ok(vec![]) };
+    say("re-checking the router in 30 s so one dropped probe does not cost a node...");
+    std::thread::sleep(Duration::from_secs(30));
+    let mut rc = cur.to_vec();
+    let again = test(&mut rc).unwrap_or_default();
+    let both: Vec<String> = first.into_iter().filter(|t| again.contains(t)).collect();
+    if !both.is_empty() {
+        say(&format!("{} fail on the router while they pass on this PC; replacing them", both.join(", ")));
+    }
+    Ok(both)
 }
 
 // Follow the router's nodes when another PC or the router's self-repair changed them (router_sync), logged and kept in
@@ -1080,6 +1135,13 @@ pub fn pin_judge(
 fn steer(p: &Paths, own: bool, carrier: Option<String>) {
     use std::sync::atomic::Ordering;
     let mine = HOLDS.fetch_add(1, Ordering::SeqCst) + 1;
+    // a node set waits for the PC tunnel while PIA is connected (a restart would drop it). PIA is down now: the restart
+    // costs nothing, and the running set may be the reason it dropped
+    if crate::node_manager::pending_deploy(p) == Some(true) && core_restart(p) {
+        say("PIA drop: the PC tunnel takes the waiting node set now");
+        event(p, "restart", "PC tunnel took the waiting node set during a PIA drop");
+        return;
+    }
     // a pinned node stays while it passes a test of its own. It fails only when another node passes the same test:
     // while PIA reconnects there is no network and every test fails, which says nothing about the pinned node
     if let Some(server) = crate::clash_api::pin_of(p, "pc") {

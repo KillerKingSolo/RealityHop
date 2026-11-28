@@ -7,7 +7,16 @@ C=/etc/sing-box/config.json; V=/etc/sing-box/vault.json; L=/etc/sing-box/heal.lo
 API=http://127.0.0.1:9090; URL=https://www.gstatic.com/generate_204
 log() { echo "$(date '+%F %T') $*" >> $L; tail -n 200 $L > $L.t && mv $L.t $L; }
 
-pgrep -f '/etc/sing-box/config[.]json' >/dev/null || exit 0     # service off on purpose: leave it alone
+# sing-box not running: off on purpose (service disabled) is left alone. Enabled but down (it crashed, or procd gave up
+# restarting it after a reboot) leaves the devices diverted into a dead port: start it again. Checked every 2 minutes
+up() { pgrep -f '/etc/sing-box/config[.]json' >/dev/null; }
+if ! up; then
+    [ "$(uci -q get sing-box.main.enabled)" = 1 ] || exit 0
+    sleep 15; up && exit 0     # a push or restart was in progress
+    /etc/init.d/sing-box restart; sleep 8
+    if up; then log "sing-box was not running; started it again"; else log "sing-box was not running and did not start"; fi
+    exit 0
+fi
 
 # heal.sh pin (cron, every 2 minutes): a node pinned from the PC stays while it works; when it fails twice, 20 s
 # apart, the tunnel picks its node automatically again
