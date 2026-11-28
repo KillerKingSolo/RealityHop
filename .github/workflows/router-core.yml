@@ -1,9 +1,9 @@
 name: router-core
 
 # Reality Hop's router build of sing-box (router-core/), built by rh-tools router-core (rust/tools).
-# Every 6 hours: when sing-box (stable or preview) or Go has a new release, build and test it on Linux and open a pull
-# request with the new router-core/version.json; it closes older router-core pull requests it replaces. Nothing reaches a
-# router until that pull request is merged.
+# Every 6 hours: when sing-box (stable or preview) or Go has a new release, build and test it on Linux, commit the new
+# router-core/version.json to main and publish the builds. No pull request; Reality Hop still asks before it updates a
+# router.
 # On main (a merge, or any change in router-core/): build what version.json pins, fail unless every SHA-256 matches,
 # test, and put the files on the rolling releases router-core-stable and router-core-preview, where Reality Hop looks.
 
@@ -80,17 +80,20 @@ jobs:
             router-core/out/stable/
             router-core/out/preview/
 
-  propose:
-    name: propose router core update (pull request)
+  record:
+    name: record the new versions on main
     needs: build
     if: needs.build.outputs.new == 'yes' && github.event_name != 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: main
           persist-credentials: false
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -98,7 +101,9 @@ jobs:
           name: router-core
           path: /tmp/rc
 
-      - name: Open a pull request with the new version.json
+      # a push with this token does not start the workflow again
+      - name: Commit version.json to main
+        id: commit
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -106,36 +111,23 @@ jobs:
           cp /tmp/rc/version.json router-core/version.json
           V=router-core/version.json
           S=$(jq -r .stable.singbox "$V"); P=$(jq -r .preview.singbox "$V"); G=$(jq -r .go "$V")
-          B="router-core/$S-$P-go$G"
-          if git ls-remote --exit-code --heads "https://github.com/$REPO.git" "$B" >/dev/null; then echo "$B is open already"; exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git switch -c "$B"; git add router-core/version.json
-          git commit -m "router-core: sing-box $S (stable), $P (preview), Go $G"
-          git push "https://x-access-token:$GH_TOKEN@github.com/$REPO.git" "HEAD:refs/heads/$B"
-          {
-            echo "New upstream versions for Reality Hop's router build of sing-box. Built and tested on Linux by this workflow."
-            echo
-            echo "| Channel | sing-box | SHA-256 (linux/arm64) |"
-            echo "|---|---|---|"
-            for c in stable preview; do
-              echo "| $c | $(jq -r ".$c.singbox" "$V") | \`$(jq -r ".$c.sha256.arm64" "$V")\` |"
-            done
-            echo
-            echo "Go $G. Release notes: https://github.com/SagerNet/sing-box/releases"
-            echo
-            echo "Merging publishes these builds to router-core-stable and router-core-preview. Reality Hop then offers them to routers (the person confirms each update)."
-          } > /tmp/body.md
-          N=$(gh pr create --repo "$REPO" --head "$B" --base main --title "router-core: sing-box $S / $P, Go $G" --body-file /tmp/body.md)
-          # older router-core pull requests are out of date now: close them and delete their branches
-          gh pr list --repo "$REPO" --state open --limit 100 --json number,headRefName \
-            --jq ".[] | select((.headRefName | startswith(\"router-core/\")) and .headRefName != \"$B\") | .number" |
-          while read -r n; do gh pr close "$n" --repo "$REPO" --delete-branch --comment "Replaced by $N (newer upstream versions)."; done
+          git add "$V"
+          git diff --cached --quiet || git commit -q -m "router-core: sing-box $S (stable), $P (preview), Go $G"
+          U="https://x-access-token:$GH_TOKEN@github.com/$REPO.git"
+          git pull -q --rebase "$U" main && git push -q "$U" HEAD:main
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          # router-core pull requests from before this was automatic are out of date: close them
+          gh pr list --repo "$REPO" --state open --limit 100 --json number,headRefName             --jq '.[] | select(.headRefName | startswith("router-core/")) | .number' |
+          while read -r n; do gh pr close "$n" --repo "$REPO" --delete-branch --comment "Published automatically now."; done
 
   publish:
     name: publish router core files
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [build, record]
+    if: >-
+      always() && needs.build.result == 'success' &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') || needs.record.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -149,7 +141,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          SHA: ${{ github.sha }}
+          SHA: ${{ needs.record.outputs.sha || github.sha }}
         run: |
           for ch in stable preview; do
             t="router-core-$ch"; d="rc/out/$ch"; m="$d/manifest-arm64.json"

@@ -36,9 +36,9 @@ cargo run -p realityhop-tools -- router-core --verify
 
 ## How it gets to routers
 
-1. **Daily check:** the [router-core workflow](../.github/workflows/router-core.yml) looks for a new sing-box release (stable and preview) and a new Go.
-2. **Pull request:** when it finds one, it builds and tests the new version on Linux and opens a pull request with the new `version.json`.
-3. **Merge:** merging publishes the build to the rolling releases `router-core-stable` and `router-core-preview`.
+1. **Check every 6 hours:** the [router-core workflow](../.github/workflows/router-core.yml) looks for a new sing-box release (stable and preview) and a new Go.
+2. **Build and test:** when it finds one, it builds and tests the new version on Linux.
+3. **Publish:** when the tests pass, it commits the new `version.json` to main and publishes the build to the rolling releases `router-core-stable` and `router-core-preview`.
 4. **Offer:** Reality Hop checks once a day. When the router does not run the newest build of its channel, it asks first. It shows the version the router runs now and the new one.
 5. **Install:**
    1. Download, check the SHA-256, upload to the router's RAM.
