@@ -4,6 +4,15 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 2.1.6 (2026-11-27)
+
+**Why update:** the router update offer no longer gets lost behind Settings, Settings names upgrades right, and update checks no longer fail after a few restarts.
+
+- Fixed: Settings called a newer alpha or beta build, such as 1.15.0-alpha.13 to 1.15.0-alpha.15, a downgrade.
+- Fixed: closing Settings while the router update offer waited behind it counted as Later and hid the offer for 3 days. The offer now shows again after Settings closes.
+- Fixed: a few restarts in an hour used up GitHub's request limit, and update checks failed with HTTP 403. GitHub's answers are kept for 15 minutes, and the last answer is used when GitHub refuses.
+- Changed: the router build workflow commits as the repository owner, not as github-actions[bot].
+
 ## 2.1.5 (2026-11-27)
 
 **Why update:** Check now and tunnel restarts no longer show working nodes as dead while PIA reconnects.

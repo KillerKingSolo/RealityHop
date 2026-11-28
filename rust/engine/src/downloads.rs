@@ -5,6 +5,8 @@ use crate::activity_log::{dbg, say};
 use crate::paths::Paths;
 use crate::processes_and_ports::port_open;
 use crate::router::Ssh;
+use serde_json::{Value, json};
+use std::path::Path;
 use std::sync::Mutex;
 use std::time::{Duration, Instant, SystemTime};
 
@@ -16,6 +18,11 @@ const DNS_DOWN_FOR: Duration = Duration::from_secs(600);
 const FEED_KEEP: Duration = Duration::from_secs(900);
 /// The largest download taken (a Reality Hop release is about 50 MB).
 const MAX_BYTES: u64 = 512 * 1024 * 1024;
+/// GitHub's API: 60 asks an hour per address without a login, shared by everyone behind the same VPN exit.
+const API: &str = "https://api.github.com/";
+/// An API answer this fresh (seconds) is used without asking GitHub again: without a login GitHub counts every ask,
+/// a 304 too, so app restarts and dialogs in a row would use up the hour.
+pub const API_FRESH: f64 = 900.0;
 
 static DNS_DOWN: Mutex<Option<Instant>> = Mutex::new(None);
 static FEED: Mutex<Option<(Instant, String)>> = Mutex::new(None);
@@ -46,6 +53,14 @@ impl std::fmt::Display for GetError {
 
 impl std::error::Error for GetError {}
 
+/// One answer: its HTTP status (304 for not modified), ETag and body.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Got {
+    pub status: u16,
+    pub etag: Option<String>,
+    pub body: Vec<u8>,
+}
+
 // A failed name lookup (Python's socket.gaierror): Windows' resolver errors, or the system resolver's message elsewhere
 fn lookup_failed(e: &std::io::Error) -> bool {
     matches!(e.raw_os_error(), Some(11001..=11004) if cfg!(windows))
@@ -60,7 +75,7 @@ fn fetch(
     wait: Duration,
     total: Duration,
     proxy: Option<&str>,
-) -> Result<Vec<u8>, GetError> {
+) -> Result<Got, GetError> {
     let mut cfg = ureq::Agent::config_builder()
         .timeout_connect(Some(wait))
         .timeout_recv_response(Some(wait))
@@ -80,7 +95,11 @@ fn fetch(
         ureq::Error::Timeout(ureq::Timeout::RecvBody) => GetError::TooSlow(total.as_secs()),
         e => GetError::Failed(e.to_string()),
     };
-    req.call().map_err(map)?.into_body().with_config().limit(MAX_BYTES).read_to_vec().map_err(map)
+    let r = req.call().map_err(map)?;
+    let status = r.status().as_u16();
+    let etag = r.headers().get("etag").and_then(|v| v.to_str().ok()).map(str::to_string);
+    let body = r.into_body().with_config().limit(MAX_BYTES).read_to_vec().map_err(map)?;
+    Ok(Got { status, etag, body })
 }
 
 // Whether a direct name lookup failed in the last 10 minutes
@@ -89,15 +108,71 @@ fn dns_down() -> bool {
 }
 
 // A whole download from GitHub: direct first, then through the PC tunnel, which gets past a block. The retry also
-// covers a download that stalls partway, as DPI filters do. timeout is in seconds (engine.gh_get)
+// covers a download that stalls partway, as DPI filters do. API answers go through api_cached. timeout is in seconds
+// (engine.gh_get)
 pub fn gh_get(paths: &Paths, url: &str, timeout: u64, headers: &[(&str, &str)]) -> Result<Vec<u8>, GetError> {
+    if !url.starts_with(API) {
+        return gh_got(paths, url, timeout, headers).map(|g| g.body);
+    }
+    let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap_or_default().as_secs_f64();
+    api_cached(&paths.data.join("github-cache.json"), url, now, |etag| {
+        let h: Vec<(&str, &str)> = headers.iter().copied().chain(etag.map(|e| ("If-None-Match", e))).collect();
+        gh_got(paths, url, timeout, &h)
+    })
+}
+
+// A GitHub API answer through the cache in file (url -> ETag, body, time). An answer under API_FRESH old is used as
+// is. Else GitHub is asked with the kept ETag: a 304 (not modified) gives the kept answer without sending it again.
+// When GitHub refuses (403 or 429: the hourly limit is used up), the kept answer is used too (engine.api_cached)
+pub fn api_cached(
+    file: &Path,
+    url: &str,
+    now: f64,
+    get: impl FnOnce(Option<&str>) -> Result<Got, GetError>,
+) -> Result<Vec<u8>, GetError> {
+    let mut all = crate::data_files::jload(file);
+    let kept = all.get(url).cloned().unwrap_or(Value::Null);
+    let body = kept["body"].as_str().map(|b| b.as_bytes().to_vec());
+    let at = kept["at"].as_f64().unwrap_or(0.0);
+    if let Some(b) = &body
+        && (0.0..API_FRESH).contains(&(now - at))
+    {
+        return Ok(b.clone());
+    }
+    let etag = body.as_ref().and(kept["etag"].as_str());
+    let mut keep = |etag: &str, text: &str| {
+        all.insert(url.to_string(), json!({"etag": etag, "body": text, "at": now}));
+        let _ = crate::data_files::jsave(file, &Value::Object(all.clone()), None);
+    };
+    match get(etag) {
+        Ok(g) if g.status == 304 => {
+            let b = body.ok_or_else(|| GetError::Failed("304 without a kept answer".into()))?;
+            keep(etag.unwrap_or_default(), &String::from_utf8_lossy(&b));
+            Ok(b)
+        }
+        Ok(g) => {
+            if let (Some(e), Ok(text)) = (&g.etag, std::str::from_utf8(&g.body)) {
+                keep(e, text);
+            }
+            Ok(g.body)
+        }
+        Err(GetError::Status(c @ (403 | 429))) if body.is_some() => {
+            say(&format!("GitHub refused (HTTP {c}, its hourly limit); using its last answer"));
+            Ok(body.unwrap_or_default())
+        }
+        Err(e) => Err(e),
+    }
+}
+
+// gh_get without the API cache: the answer with its status and ETag
+fn gh_got(paths: &Paths, url: &str, timeout: u64, headers: &[(&str, &str)]) -> Result<Got, GetError> {
     let (wait, total) = (Duration::from_secs(timeout), Duration::from_secs(timeout * 6));
     let tunnel_up = || !crate::settings::router_only(paths) && port_open(2080);
     let tunnel = || {
         let t = Instant::now();
         let r = fetch(url, headers, wait * 3, total, Some(TUNNEL_PROXY));
         dbg(|| match &r {
-            Ok(b) => format!("download via tunnel ok {} B {:.1} s {url}", b.len(), t.elapsed().as_secs_f64()),
+            Ok(g) => format!("download via tunnel ok {} B {:.1} s {url}", g.body.len(), t.elapsed().as_secs_f64()),
             Err(e) => format!("download via tunnel FAILED {:.1} s: {e} {url}", t.elapsed().as_secs_f64()),
         });
         r
@@ -112,9 +187,9 @@ pub fn gh_get(paths: &Paths, url: &str, timeout: u64, headers: &[(&str, &str)]) 
     }
     let t = Instant::now();
     match fetch(url, headers, wait, total, None) {
-        Ok(b) => {
-            dbg(|| format!("download direct ok {} B {:.1} s {url}", b.len(), t.elapsed().as_secs_f64()));
-            Ok(b)
+        Ok(g) => {
+            dbg(|| format!("download direct ok {} B {:.1} s {url}", g.body.len(), t.elapsed().as_secs_f64()));
+            Ok(g)
         }
         Err(GetError::Status(c)) => Err(GetError::Status(c)),
         Err(e) => {

@@ -2,9 +2,14 @@
 'use strict';
 
 // Show a dialog's content; null closes it and runs what the dialog asked for on close
-let panelClosed = null;
+let panelClosed = null;   // a dialog sets its close action here just before panel([...])
+let panelShown = null;    // the close action of the dialog on screen
+// Show a dialog, or close it (null). A dialog that another one replaces gets its close action with replaced = true
 function panel(content) {
-  if (!content && panelClosed) { const f = panelClosed; panelClosed = null; f(); }
+  const prev = panelShown, wide = $('panelBox').classList.contains('xwide');
+  panelShown = content ? panelClosed : null; panelClosed = null;
+  if (prev) prev(!!content);
+  if (content) $('panelBox').classList.toggle('xwide', wide);
   $('panelBox').replaceChildren(...(content ? [progSlot(), ...content] : []));
   $('panel').hidden = !content;
 }
@@ -78,10 +83,14 @@ function toggleRow(text, on) {
 }
 
 // Compare two version texts by their first three numbers: 1.12.0 > 1.11.9
+// as engine::version::vkey: 1.15.0-alpha.13 < 1.15.0-alpha.15 < 1.15.0-beta.1 < 1.15.0-rc.1 < 1.15.0
 function cmpVer(a, b) {
-  const p = x => (x.match(/\d+/g) || []).slice(0, 3).map(Number);
-  const [x, y] = [p(a), p(b)];
-  for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0);
+  const key = v => {
+    const m = /^v?(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)\.?(\d*))?/.exec(v || '') || [];
+    return [+m[1] || 0, +m[2] || 0, +m[3] || 0, m[4] ? ['alpha', 'beta', 'rc'].indexOf(m[4]) : 3, +m[5] || 0];
+  };
+  const [x, y] = [key(a), key(b)];
+  for (let i = 0; i < 5; i++) if (x[i] !== y[i]) return x[i] - y[i];
   return 0;
 }
 

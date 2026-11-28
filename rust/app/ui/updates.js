@@ -110,7 +110,8 @@ async function openRouterCore() {
   a.onclick = () => invoke('open_url', { url: `https://github.com/${r.repo}/tree/main/router-core` });
   links.append(a);
   row.append(install, later, el('span', 'grow'), links);
-  panelClosed = () => { if (!answered) invoke('rcore_later'); };
+  // closed unanswered: Later. Covered by another dialog: shown again after it
+  panelClosed = replaced => { if (answered) return; if (replaced) setTimeout(openRouterCore, 5000); else invoke('rcore_later'); };
   panel([el('div', 'title', await T("Update the router's sing-box?")), card,
     el('div', 'note', await T('A smaller sing-box made for routers: only what Reality Hop uses, built from the official source. The tunnel on the router drops for about 10 seconds. If the new build does not start, the old one goes back by itself.')), row]);
 }

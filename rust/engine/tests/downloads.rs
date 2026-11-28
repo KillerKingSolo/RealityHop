@@ -125,3 +125,48 @@ fn node_lists_then_the_saved_copy() {
     assert_eq!(downloads::feed_download_from(&p, &mut NoRouter, &[&bad]), Ok(NODE.to_string()));
     assert!(said("every node list source failed; using the saved copy from 0 h ago"));
 }
+
+#[test]
+fn github_api_answers_are_kept_and_asked_again_with_their_etag() {
+    use downloads::{API_FRESH, Got, api_cached};
+    let d = std::env::temp_dir().join(format!("rh-api-cache-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&d);
+    std::fs::create_dir_all(&d).unwrap();
+    let f = d.join("github-cache.json");
+    let url = "https://api.github.com/repos/o/r/releases/latest";
+    let got =
+        |status, etag: Option<&str>, body: &str| Ok(Got { status, etag: etag.map(Into::into), body: body.into() });
+    // nothing kept: refused is an error, a fresh answer is kept
+    assert_eq!(api_cached(&f, url, 1000.0, |_| Err(GetError::Status(403))), Err(GetError::Status(403)));
+    assert_eq!(
+        api_cached(&f, url, 1000.0, |e| {
+            assert_eq!(e, None);
+            got(200, Some("\"a\""), "v1")
+        })
+        .unwrap(),
+        b"v1"
+    );
+    // within API_FRESH: GitHub is not asked
+    assert_eq!(api_cached(&f, url, 1000.0 + API_FRESH - 1.0, |_| panic!("asked again")).unwrap(), b"v1");
+    // later: asked with the ETag; 304 gives the kept answer
+    let r = api_cached(&f, url, 2000.0, |e| {
+        assert_eq!(e, Some("\"a\""));
+        got(304, None, "")
+    });
+    assert_eq!(r.unwrap(), b"v1");
+    // the hourly limit used up: the kept answer
+    assert_eq!(api_cached(&f, url, 3000.0, |_| Err(GetError::Status(403))).unwrap(), b"v1");
+    assert_eq!(api_cached(&f, url, 4000.0, |_| Err(GetError::Status(429))).unwrap(), b"v1");
+    // other errors stay errors; a changed answer replaces the kept one
+    assert_eq!(api_cached(&f, url, 5000.0, |_| Err(GetError::Status(404))), Err(GetError::Status(404)));
+    assert_eq!(api_cached(&f, url, 6000.0, |_| got(200, Some("\"b\""), "v2")).unwrap(), b"v2");
+    assert_eq!(
+        api_cached(&f, url, 7000.0, |e| {
+            assert_eq!(e, Some("\"b\""));
+            got(304, None, "")
+        })
+        .unwrap(),
+        b"v2"
+    );
+    let _ = std::fs::remove_dir_all(&d);
+}
