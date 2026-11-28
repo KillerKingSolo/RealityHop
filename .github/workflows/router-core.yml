@@ -1,14 +1,15 @@
 name: router-core
 
 # Reality Hop's router build of sing-box (router-core/), built by rh-tools router-core (rust/tools).
-# Daily: when sing-box (stable or preview) or Go has a new release, build and test it on Linux and open a pull request
-# with the new router-core/version.json. Nothing reaches a router until that pull request is merged.
+# Every 6 hours: when sing-box (stable or preview) or Go has a new release, build and test it on Linux and open a pull
+# request with the new router-core/version.json; it closes older router-core pull requests it replaces. Nothing reaches a
+# router until that pull request is merged.
 # On main (a merge, or any change in router-core/): build what version.json pins, fail unless every SHA-256 matches,
 # test, and put the files on the rolling releases router-core-stable and router-core-preview, where Reality Hop looks.
 
 on:
   schedule:
-    - cron: '23 5 * * *'
+    - cron: '23 */6 * * *'   # GitHub often starts scheduled runs hours late
   workflow_dispatch:
   push:
     branches: [main]
@@ -125,7 +126,11 @@ jobs:
             echo
             echo "Merging publishes these builds to router-core-stable and router-core-preview. Reality Hop then offers them to routers (the person confirms each update)."
           } > /tmp/body.md
-          gh pr create --repo "$REPO" --head "$B" --base main --title "router-core: sing-box $S / $P, Go $G" --body-file /tmp/body.md
+          N=$(gh pr create --repo "$REPO" --head "$B" --base main --title "router-core: sing-box $S / $P, Go $G" --body-file /tmp/body.md)
+          # older router-core pull requests are out of date now: close them and delete their branches
+          gh pr list --repo "$REPO" --state open --limit 100 --json number,headRefName \
+            --jq ".[] | select((.headRefName | startswith(\"router-core/\")) and .headRefName != \"$B\") | .number" |
+          while read -r n; do gh pr close "$n" --repo "$REPO" --delete-branch --comment "Replaced by $N (newer upstream versions)."; done
 
   publish:
     name: publish router core files
