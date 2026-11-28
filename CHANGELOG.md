@@ -4,6 +4,15 @@ Each release explains what changed and why it matters to you. Installed copies u
 Reality Hop updates automatically). To update by hand, download `RealityHop.exe` (Windows) or the `.dmg` for your Mac
 from the release.
 
+## 2.1.4 (2026-11-27)
+
+**Why update:** the PC tunnel no longer keeps dead nodes while PIA is connected, router devices no longer get nodes that fail only from the router, and the router starts its tunnel again after a crash.
+
+- Fixed: while PIA was connected, the PC tunnel kept its old node set until PIA showed "Disconnected", which PIA rarely does. It now takes the waiting set on a PIA drop, or when fewer than half of its running nodes work.
+- Fixed: nodes that failed only from the router were never replaced. The hourly check now also tests the router's tunnel and replaces nodes that fail there twice, 30 s apart.
+- Fixed: if sing-box on the router crashed or did not come back after a reboot, the router devices had no internet. The router's self-repair now starts it again within 2 minutes. A service turned off on purpose is left alone.
+- Changed: Rust 1.100.1, cargo-deny 0.22.2, and updated crates.
+
 ## 2.1.3 (2026-11-25)
 
 **Why update:** more nodes to choose from, speed tests that no longer fail good nodes, and Candidates shows each test as it runs.

@@ -50,5 +50,5 @@ jobs:
         with:
           persist-credentials: false
       - run: rustup toolchain install
-      - run: cargo install --locked cargo-deny@0.22.1
+      - run: cargo install --locked cargo-deny@0.22.2
       - run: cargo deny --locked check
